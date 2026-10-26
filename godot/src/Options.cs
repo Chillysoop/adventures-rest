@@ -108,6 +108,9 @@ public sealed class Options
     public string TownName = "";
     public bool MayorFallen;
 
+    /// <summary>--rare-find rarity: a hero's company brings home a magic item of that rarity (legendary, very-rare...), for the alert's shots (with --notices).</summary>
+    public string? RareFind;
+
     /// <summary>--episode id: strike a townsperson out on the streets with that inspiration or break, look at them and open their inspector.</summary>
     public string? Episode;
 
@@ -322,6 +325,7 @@ public sealed class Options
                 case "--town": o.TownName = Next(); break;
                 case "--mayor-fallen": o.MayorFallen = true; o.Tab = "Mayor"; break;
                 case "--episode": o.Episode = Next(); break;
+                case "--rare-find": o.RareFind = Next(); break;
                 case "--intro": o.Intro = Next(); break;
                 case "--last-battle": o.LastBattle = Next(); break;
                 case "--tower": o.Tower = Next(); break;

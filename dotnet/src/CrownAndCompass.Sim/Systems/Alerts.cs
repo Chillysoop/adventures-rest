@@ -625,7 +625,7 @@ public static class Alerts
             // Finer than all the finders carried slides a tile out of the rail; the rest only badge it.
             var found = f.Great ? Treasure : RareFind;
             string key = $"treasure:{f.Id}";
-            string kind = it.Rarity != "" ? Cap($"{it.Rarity.Replace('-', ' ')} {it.Category}".Trim()) : Cap(it.Category);
+            string kind = Cap($"{it.Rarity} {it.Category}".Trim().Replace('-', ' '));
             string from = f.SiteId != null && Quests.Site(t, f.SiteId) is { } site ? $"\n• From {site.Def.Name}" : "";
             string text = $"{Cap(f.Who)} find{(f.Company ? "" : "s")} the {it.Name}";
             var holder = t.Agents.Where(a => !a.Dead && !a.Departed && a.Hero != null && a.Hero.Magic.Values.Contains(it)).OrderBy(a => a.Id != f.HeroId).ThenBy(a => a.Id).FirstOrDefault();
