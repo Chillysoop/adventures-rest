@@ -461,6 +461,20 @@ public static class City
         return false;
     }
 
+    /// <summary>Whether a point lies under a wall the player has drawn: no zone is painted there.</summary>
+    public static bool OnDrawnWall(Town town, double x, double y)
+    {
+        var strip = town.Content.City.WallStrip;
+        double dx = x - Town.Center, dy = y - Town.Center, dist = Math.Sqrt(dx * dx + dy * dy), a = Math.Atan2(dy, dx);
+        for (int ring = 0; ring < WallRings; ring++)
+        {
+            if (WallLines.Plan(town, ring) is not { Radii.Length: > 0 } p) continue;
+            double off = dist - WallLines.RadiusAt(p, a);
+            if (off >= -strip.Inside && off <= strip.Outside) return true;
+        }
+        return false;
+    }
+
     public static double Edge(int seed, int ring, double angle)
     {
         double c = Math.Cos(angle), s = Math.Sin(angle);

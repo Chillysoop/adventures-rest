@@ -416,7 +416,7 @@
     {
       "id": "draw-walls",
       "title": "Draw your walls",
-      "text": "You draw where walls run. Pick a wall on the build bar:\n• Click corners round the town; click the first to close\n• It must ring the town hall, through no building\n• Click the line to add gates (1 to 4)\n• Masons start once it has a gate, as timber and stone allow",
+      "text": "You draw where walls run. Pick a wall on the build bar:\n• Drag for curves, click for corners; back to the first point to close\n• It must ring the town hall, through no building\n• Hills and slopes make it dearer: green is cheap, red dear\n• Nothing is zoned under it\n• Click the line to add gates (1 to 4)\n• Masons start once it has a gate, as timber and stone allow",
       "when": "day:30",
       "teaches": ["command:DrawWall", "command:PlaceGate", "command:RemoveGate", "key:Enter", "key:KpEnter", "key:Backspace"]
     },
@@ -933,6 +933,7 @@
     {"id": "refugees", "title": "Refugees", "text": "Folk fleeing burned or raided villages camp by the road.\n• They work, buy and build at once\n• They wait while homes and work go up\n• A big column asks you first: take them, some, or none\n• Sheltering them earns Mandate, thanks and a name\n• They post a plea to retake their home: clear it, and those still camped go home and rebuild\n• Settled ones stay for good", "point": "alerts", "when": "refugees", "teaches": []},
     {"id": "frontier", "title": "Walls, gate and fields", "text": "[b]Defence[/b] → Guard: the wall, the gate and the fields.\n• Fields inside the walls yield half: farm outside\n• Raiders strip fields no [b]guard flag[/b] stands over\n• A wall wants a watchman every 12 paces at night\n• Gate law: [b]Open[/b], [b]Watched[/b] or [b]Shut[/b]\n• Watched and shut turn away footpads and spies, but fewer settlers come", "point": "tab:Defence:Guard", "until": "tab:Defence", "when": "day:30", "teaches": ["command:SetGate"]},
     {"id": "last-ride", "title": "The last ride", "text": "Your champions are strong enough to face the big bad.\n• [b]War[/b] → [b]Ride[/b] sends them for its seat\n• No company goes there on its own: the call is yours\n• Its host always marches in the end: meet it at the walls or on the road", "point": "tab:War", "until": "tab:War", "when": "alert:ride", "teaches": ["command:CallLastRide"]},
+    {"id": "wall-works", "title": "Towers and barracks on the wall", "text": "Towers and wall barracks go where you put them.\n• Pick one on the build bar or in [b]Defence[/b] → Walls\n• Click a stretch of the wall\n• One of each to a stretch\n• Towers watch and shoot; barracks house the watch", "point": "tab:Defence:Walls", "when": "day:60", "teaches": ["command:BuildOnWall"]},
     {"id": "rare-finds", "title": "A rare find", "text": "Heroes brought home a [b]rare[/b] or finer magic item.\n• The tile wears its rarity: [color=#5b8fe0]rare[/color], [color=#a86ae0]very rare[/color], [color=#e09a3a]legendary[/color], [color=#e0503a]artifact[/color]\n• [b]Click[/b] it: the hero who carries it, or its card in the [b]Armory[/b]\n• Nobody can use it? Give it to a hero who can", "point": "alerts", "when": "alert:treasure", "teaches": []}
   ],
   "untaught": {}

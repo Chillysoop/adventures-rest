@@ -346,6 +346,11 @@ public partial class Main
         }
         if (item.Defense is DefenseWork d)
         {
+            if (d is DefenseWork.Tower or DefenseWork.Barracks)
+            {
+                _map.Planner.Pick(b.ButtonPressed ? new Planner.PlanTool(null, null) { OnWall = d } : null);
+                return;
+            }
             if (DrawsFirst(d))
             {
                 _map.Planner.Pick(b.ButtonPressed ? new Planner.PlanTool(null, null) { Wall = WallLines.RingOf(d), Work = d } : null);
@@ -456,7 +461,9 @@ public partial class Main
             { Zone: Zone.Farmland, Crop: string c } => $"Sow {(Farming.Crop(town, c)?.Name ?? c).ToLowerInvariant()} beyond the houses · [ ] size · Right-click: done",
             { Zone: Zone z, Density: > 0 } t => $"Paint {Density.Name(town, t.Density).ToLowerInvariant()} {Planning.ZoneName(z)}, also over built streets · [ ] size · Right-click: done",
             { Zone: Zone z } => $"Paint {Planning.ZoneName(z)} on open ground · [ ] size · Right-click: done",
-            { Wall: int } => "Click corners round the town · click the first to close · Backspace: undo a corner · Right-click: done",
+            { Wall: int } => "Drag for curves, click for corners · back to the first point to close · Backspace: undo · Right-click: done",
+            { OnWall: DefenseWork.Tower } => "Click a stretch of wall for the tower · Shift+click: another · Right-click: done",
+            { OnWall: DefenseWork } => "Click a stretch of wall for the barracks · Right-click: done",
             { Gate: int } => "Click on the wall's line for a gate (1 to 4) · Right-click: done",
             { Building: string id } => $"Click to place the {town.Content.Building(id).Name.ToLowerInvariant()} · drag to turn · Shift+click: another · Right-click: done",
             _ => GroupLook[_buildGroup].Hint,

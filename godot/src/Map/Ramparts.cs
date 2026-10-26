@@ -151,7 +151,7 @@ public partial class TownView
         // Wall barracks: long stone blocks against the inside of the wall, west and east.
         for (int b = 0; b < d.Barracks; b++)
         {
-            var at = RayHit(loop, Bearing(town, b == 0 ? 2 : 6));
+            var at = RayHit(loop, Bearing(town, Garrison.BarracksSection(town, b)));
             var inward = (Geo.Center - at).Normalized();
             var p = at + inward * 0.55f;
             float yaw = Mathf.Atan2(inward.X, inward.Y);

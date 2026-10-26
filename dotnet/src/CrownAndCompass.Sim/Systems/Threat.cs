@@ -85,6 +85,10 @@ public sealed class Defenses
     public int Barracks { get; set; }
     public List<int> BarracksBuilding { get; set; } = [];
 
+    /// <summary>The wall sections the player put each tower and barracks on, in the order they were built (<see cref="Threat.BuildOnWall"/>).</summary>
+    public List<int> TowerAt { get; set; } = [];
+    public List<int> BarracksAt { get; set; } = [];
+
     /// <summary>The building raiders last struck, and the tick its alarm ends: who is near it and outside the walls runs for their life (<see cref="Passage.Fleeing"/>).</summary>
     public int? AlarmBuilding { get; set; }
     public int AlarmUntil { get; set; }
@@ -640,10 +644,43 @@ public static class Threat
                 return "needs the stone walls";
         }
         if (spec.Tier != "" && !City.Reached(town, spec.Tier)) return $"needs the town to be a {City.TierName(town, spec.Tier).ToLowerInvariant()}";
-        // Every wall needs a gate, put on its line by hand before the masons start.
+        // Every wall is drawn by hand, and needs a gate put on its line, before the masons start.
+        if (IsWall(what) && WallLines.Plan(town, WallLines.RingOf(what)) is not { Radii.Length: > 0 }) return "draw its line first";
         if (IsWall(what) && WallLines.Gates(town, WallLines.RingOf(what)).Count == 0) return "needs a gate: place one on the wall's line";
         if (town.Treasury < BuildCost(town, what)) return "not enough gold";
         return null;
+    }
+
+    /// <summary>Why a tower or barracks can't go on the wall at a point, or null (<see cref="BuildOnWall"/>).</summary>
+    public static string? OnWallBlocked(Town town, DefenseWork what, double x, double y)
+    {
+        if (what is not (DefenseWork.Tower or DefenseWork.Barracks)) return "that is not built on the wall";
+        if (BuildBlocked(town, what) is { } why) return why;
+        int ring = town.Defenses.CityWall == PalisadeState.Built ? 1 : 0;
+        double a = Math.Atan2(y - Town.Center, x - Town.Center);
+        var (px, py) = WallLines.Point(town, ring, a);
+        if (Js.Hypot(px - x, py - y) > WallLines.Rules(town).Snap) return "it goes on the wall";
+        int section = Garrison.SectionAt(town, x, y);
+        var d = town.Defenses;
+        if (what == DefenseWork.Tower && Enumerable.Range(0, d.Towers + d.TowersBuilding.Count).Any(i => Garrison.TowerSection(town, i) == section)) return "a tower stands on that stretch";
+        if (what == DefenseWork.Barracks && Enumerable.Range(0, d.Barracks + d.BarracksBuilding.Count).Any(i => Garrison.BarracksSection(town, i) == section)) return "barracks stand on that stretch";
+        return null;
+    }
+
+    /// <summary>The player's tower or wall barracks, put on the stretch of wall they clicked. Returns why not, or null.</summary>
+    public static string? BuildOnWall(Town town, DefenseWork what, double x, double y)
+    {
+        if (OnWallBlocked(town, what, x, y) is { } why) return why;
+        int section = Garrison.SectionAt(town, x, y);
+        var d = town.Defenses;
+        var list = what == DefenseWork.Tower ? d.TowerAt : d.BarracksAt;
+        int built = what == DefenseWork.Tower ? d.Towers + d.TowersBuilding.Count : d.Barracks + d.BarracksBuilding.Count;
+        // Sections already standing by the old order keep their place; this one comes next.
+        while (list.Count < built) list.Add(what == DefenseWork.Tower ? Garrison.TowerSection(town, list.Count) : Garrison.BarracksSection(town, list.Count));
+        list.Add(section);
+        if (Build(town, what)) return null;
+        list.RemoveAt(list.Count - 1);
+        return "the steward holds it for your word";
     }
 
     public static bool Build(Town town, DefenseWork what)
@@ -655,7 +692,7 @@ public static class Threat
         if (IsWall(what))
         {
             // A wall's timber and stone come off the market as it rises (Haul), so it waits when the market runs dry.
-            town.Book(TreasuryAccount.Defenses, -spec.Cost);
+            town.Book(TreasuryAccount.Defenses, -spec.Cost * Land(town, what));
         }
         else
         {
@@ -689,7 +726,7 @@ public static class Threat
                 break;
             case DefenseWork.Barracks:
                 d.BarracksBuilding.Add(ready);
-                town.Log(LedgerCategory.War, Importance.Notable, $"Masons hollow out barracks in the thickness of the walls, bunks for {town.Content.Garrison.BarracksHouses} of the watch.");
+                town.Log(LedgerCategory.War, Importance.Notable, $"Masons hollow out barracks in the thickness of the {town.Content.Garrison.Sections[Garrison.BarracksSection(town, d.Barracks + d.BarracksBuilding.Count - 1)]} wall, bunks for {town.Content.Garrison.BarracksHouses} of the watch.");
                 break;
             case DefenseWork.StoneWall:
                 d.StoneWall = PalisadeState.Building;
@@ -708,8 +745,12 @@ public static class Threat
     public static double BuildCost(Town town, DefenseWork what)
     {
         var spec = Spec(town, what);
-        return Js.Round(spec.Cost + town.Market.Quote(Good.Timber, spec.Timber) + town.Market.Quote(Good.Stone, spec.Stone));
+        double land = Land(town, what);
+        return Js.Round(spec.Cost * land + town.Market.Quote(Good.Timber, spec.Timber * land) + town.Market.Quote(Good.Stone, spec.Stone * land));
     }
+
+    /// <summary>What the lie of the land does to a wall's cost (<see cref="WallLines.Terrain(Town, int)"/>); 1 for any other work.</summary>
+    public static double Land(Town town, DefenseWork what) => IsWall(what) ? WallLines.Terrain(town, WallLines.RingOf(what)) : 1;
 
     /// <summary>The walls themselves, raised along the line the player drew, as the market has their timber and stone.</summary>
     public static bool IsWall(DefenseWork w) => w is DefenseWork.Palisade or DefenseWork.StoneWall or DefenseWork.CityWall;
@@ -727,8 +768,8 @@ public static class Threat
             // A work held back indefinitely (ready at int.MaxValue) draws nothing and can't slip further.
             if (state != PalisadeState.Building || ready is not int tick || tick == int.MaxValue) continue;
             var spec = Spec(town, work);
-            double share = 1, paid = 0;
-            foreach (var (g, total) in new[] { (Good.Timber, spec.Timber), (Good.Stone, spec.Stone) })
+            double share = 1, paid = 0, land = Land(town, work);
+            foreach (var (g, total) in new[] { (Good.Timber, spec.Timber * land), (Good.Stone, spec.Stone * land) })
             {
                 if (total <= 0) continue;
                 double need = total / Math.Max(1, spec.Days);
@@ -807,7 +848,7 @@ public static class Threat
         if (stage < StageIndex(ThreatStage.Probing)) return;
         if (town.Defenses.Palisade == PalisadeState.None && town.Treasury > BuildCost(town, DefenseWork.Palisade) + 150)
         {
-            WallLines.EnsureGate(town, 0);
+            WallLines.StandIn(town, 0);
             Build(town, DefenseWork.Palisade);
         }
         // The palisade's towers; more on the stone come later, among the wall works (Garrison.Daily).

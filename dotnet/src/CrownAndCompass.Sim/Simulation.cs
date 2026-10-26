@@ -465,6 +465,9 @@ public sealed class Simulation
     /// <summary>Order a palisade or a watchtower.</summary>
     public bool BuildDefense(DefenseWork what) => Threat.Build(Town, what);
 
+    /// <summary>A tower or wall barracks on the stretch of wall nearest the point. Returns why not, or null.</summary>
+    public string? BuildOnWall(DefenseWork what, double x, double y) => Threat.BuildOnWall(Town, what, x, y);
+
     /// <summary>Lays out where a wall runs (ring 0 round the old town, 1 the city wall) as a closed loop in tiles; null, or why not.</summary>
     public string? DrawWall(int ring, IEnumerable<(double X, double Y)> points) => WallLines.Draw(Town, ring, points.ToList());
 
