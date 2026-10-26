@@ -363,6 +363,9 @@ public sealed record SiteDef
 
     /// <summary>The ready-made enemy group holding it (groups.json), or "": its foes, boss and lineage come from the group.</summary>
     public string Group { get; init; } = "";
+
+    /// <summary>The site these are the deeps of (<see cref="Systems.Dungeons"/>), or "": it lies under it, at the same spot.</summary>
+    public string Under { get; init; } = "";
 }
 
 /// <summary>Town-wide economic rules.</summary>
@@ -1818,6 +1821,9 @@ public sealed class Content
     /// <summary>Heroes' lasting wounds and how they mend (content/game/wounds.json).</summary>
     public Systems.WoundRules Wounds { get; init; } = new();
 
+    /// <summary>Dungeon maps, room features, reactions between trips, approaches and deeps (content/game/dungeons.json).</summary>
+    public Systems.DungeonRules Dungeons { get; init; } = new();
+
     /// <summary>Adventurers' word of the town and what it does to who comes (content/game/word.json).</summary>
     public Systems.WordRules Word { get; init; } = new();
 
@@ -2093,6 +2099,7 @@ public sealed class Content
             Prowess = Parse<Systems.ProwessRules>("prowess.json"),
             Bestiary = Parse<Systems.BestiaryRules>("bestiary.json"),
             Wounds = Parse<WoundRules>("wounds.json"),
+            Dungeons = Parse<Systems.DungeonRules>("dungeons.json"),
             Word = Parse<WordRules>("word.json"),
             Omens = Parse<OmenRules>("omens.json"),
             Weather = Parse<WeatherRules>("weather.json"),

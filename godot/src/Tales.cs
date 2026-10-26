@@ -167,9 +167,23 @@ public partial class Main
         _taleBox.AddChild(foot);
     }
 
-    /// <summary>The room each beat happens in: -1 on the road, then one room per encounter inside, the boss's last.</summary>
+    /// <summary>
+    /// The room each beat happens in: -1 on the road, then one room per encounter inside, the boss's last. A chronicle
+    /// with the place's map (<see cref="Chronicle.Rooms"/>) names the map's own rooms, by the lines told in each.
+    /// </summary>
     private static List<int> Rooms(Chronicle c)
     {
+        if (c.Rooms.Count > 0)
+        {
+            var at = new List<int>();
+            int now = -1;
+            foreach (var b in c.Beats)
+            {
+                if (c.Visits.FirstOrDefault(v => b.Line >= v.From && b.Line <= v.To) is { } v) now = v.Room;
+                at.Add(now);
+            }
+            return at;
+        }
         var rooms = new List<int>();
         int room = -1;
         foreach (var b in c.Beats)
@@ -408,12 +422,18 @@ public partial class TaleMap : Control
     private readonly HashSet<int> _dead = [];
     private readonly Dictionary<int, Vector2> _pos = [];
 
+    /// <summary>The place's own map, when the chronicle has one: the main way's rooms in order, and the rooms walked into this time.</summary>
+    private readonly List<RoomPlan> _way = [];
+    private readonly HashSet<int> _visited = [];
+
     public TaleMap(Chronicle c, List<Agent> members, List<int> rooms)
     {
         _c = c;
         _members = members;
         _rooms = rooms;
-        _count = Math.Max(1, rooms.Count == 0 ? 1 : rooms.Max() + 1);
+        _way = c.Rooms.Where(r => !r.Side).ToList();
+        foreach (var v in c.Visits) _visited.Add(v.Room);
+        _count = _way.Count > 0 ? _way.Count : Math.Max(1, rooms.Count == 0 ? 1 : rooms.Max() + 1);
         foreach (var b in c.Beats) if (b.Kind is "fight" or "boss" or "trap" or "hazard" or "puzzle" or "parley" or "treasure") _kinds.Add(b.Kind);
         MouseFilter = MouseFilterEnum.Ignore;
     }
@@ -440,6 +460,19 @@ public partial class TaleMap : Control
 
     private Vector2 Road => new(38, Size.Y / 2);
 
+    /// <summary>Where a room of the place's map sits: the main way along the passage, a side room off its room, away from the middle.</summary>
+    private Vector2 Spot(int id)
+    {
+        int i = _way.FindIndex(r => r.Id == id);
+        if (i >= 0) return Room(i);
+        var room = _c.Rooms.FirstOrDefault(r => r.Id == id);
+        if (room == null) return Road;
+        var from = Spot(room.From);
+        int k = _c.Rooms.Where(r => r.Side && r.From == room.From).ToList().FindIndex(r => r.Id == id);
+        float side = from.Y > Size.Y / 2 ? -1 : 1;
+        return from + new Vector2(k * 46 - 10, side * (62 + k * 8));
+    }
+
     /// <summary>Put the figures where they stand now, without walking there (for screenshots).</summary>
     public void Snap() => _snap = true;
 
@@ -449,7 +482,7 @@ public partial class TaleMap : Control
     {
         int room = _at < 0 ? -1 : _rooms[Math.Min(_at, _rooms.Count - 1)];
         // At the end they are home, at the road's start, unless nobody came back.
-        var at = room < 0 || _at < 0 ? Road : Room(room);
+        var at = room < 0 || _at < 0 ? Road : _way.Count > 0 ? Spot(room) : Room(room);
         int i = _members.FindIndex(m => m.Id == hero);
         float angle = i * (float)(Math.Tau / Math.Max(1, _members.Count)) + 0.6f;
         return at + new Vector2((float)Math.Cos(angle), (float)Math.Sin(angle)) * 15;
@@ -479,6 +512,12 @@ public partial class TaleMap : Control
         for (int k = 0; k < 6; k++)
             DrawCircle(new Vector2(rand.Next(20, (int)size.X - 20), rand.Next(20, (int)size.Y - 20)), rand.Next(10, 34), new Color(Paper2, 0.35f));
 
+        if (_way.Count > 0)
+        {
+            DrawPlan(size, rand);
+            DrawFigures();
+            return;
+        }
         // The road in, then the passage room to room.
         var road = Road;
         DrawDashedLine(road, Room(0), Faint, 2, 6);
@@ -525,6 +564,128 @@ public partial class TaleMap : Control
             }
         }
 
+        DrawFigures();
+        DrawString(Ui.Display, new Vector2(size.X - 14 - Ui.Display.GetStringSize(_c.SiteName.ToUpperInvariant(), HorizontalAlignment.Left, -1, 12).X, size.Y - 12), _c.SiteName.ToUpperInvariant(), HorizontalAlignment.Left, -1, 12, Faint);
+    }
+
+    /// <summary>The place's own map: rooms cleared on earlier trips hatched, side rooms nobody found dashed, each room's feature inked beside it.</summary>
+    private void DrawPlan(Vector2 size, Random rand)
+    {
+        var road = Road;
+        DrawDashedLine(road, Room(0), Faint, 2, 6);
+        DrawString(Ui.Bold, road + new Vector2(-24, -18), "ROAD", HorizontalAlignment.Left, -1, 10, Faint);
+        if (_c.Approach is "sneak" or "siege" or "parley")
+            DrawString(Ui.Bold, new Vector2(14, 22), _c.Approach switch { "sneak" => "BY A BACK WAY", "siege" => "AFTER A SIEGE", _ => "UNDER A TRUCE" }, HorizontalAlignment.Left, -1, 10, Ink);
+        for (int i = 0; i + 1 < _way.Count; i++) DrawLine(Room(i), Room(i + 1), Ink, 3);
+        var seenNow = new HashSet<int>(_c.Visits.TakeWhile(v => _at < 0 || v.From <= _c.Beats[Math.Min(_at, _c.Beats.Count - 1)].Line).Select(v => v.Room));
+        foreach (var r in _c.Rooms.Where(r => r.Side)) DrawDashedLine(Spot(r.From), Spot(r.Id), _visited.Contains(r.Id) ? Ink : Faint, 2, 5);
+        foreach (var r in _c.Rooms)
+        {
+            bool boss = r.Kind == "boss";
+            var c = Spot(r.Id);
+            float w = boss ? 58 : r.Side ? 32 : 40, h = boss ? 44 : r.Side ? 24 : 30;
+            float jx = (float)(rand.NextDouble() * 6 - 3), jy = (float)(rand.NextDouble() * 6 - 3);
+            var rect = new Rect2(c - new Vector2(w / 2 + jx, h / 2 + jy), new Vector2(w, h));
+            bool here = _visited.Contains(r.Id);
+            bool seen = seenNow.Contains(r.Id) || _at < 0 && here;
+            // Cleared before this trip: they walked through it.
+            bool before = r.Cleared && !here;
+            DrawRect(rect, seen ? new Color(Paper2, 0.9f) : new Color(Paper, 1));
+            if (before)
+                for (float x = rect.Position.X + 4; x < rect.End.X; x += 7)
+                    DrawLine(new Vector2(x, rect.End.Y - 2), new Vector2(Math.Min(rect.End.X - 2, x + 10), Math.Max(rect.Position.Y + 2, rect.End.Y - 12)), new Color(Faint, 0.6f), 1);
+            if (r.Side && !here && !r.Cleared) DrawDashedRect(rect, Faint);
+            else DrawRect(rect, boss ? Blood : Ink, false, boss ? 3 : 2);
+            Mark(c, r.Kind, boss, seen || before);
+            if (r.Feature != "") Feature(rect.End + new Vector2(-2, -h - 4), r.Feature);
+        }
+        DrawString(Ui.Display, new Vector2(size.X - 14 - Ui.Display.GetStringSize(_c.SiteName.ToUpperInvariant(), HorizontalAlignment.Left, -1, 12).X, size.Y - 12), _c.SiteName.ToUpperInvariant(), HorizontalAlignment.Left, -1, 12, Faint);
+    }
+
+    private void DrawDashedRect(Rect2 r, Color col)
+    {
+        DrawDashedLine(r.Position, new Vector2(r.End.X, r.Position.Y), col, 2, 4);
+        DrawDashedLine(new Vector2(r.End.X, r.Position.Y), r.End, col, 2, 4);
+        DrawDashedLine(r.End, new Vector2(r.Position.X, r.End.Y), col, 2, 4);
+        DrawDashedLine(new Vector2(r.Position.X, r.End.Y), r.Position, col, 2, 4);
+    }
+
+    /// <summary>What was in a room, as a mark a game master would ink.</summary>
+    private void Mark(Vector2 c, string kind, bool boss, bool seen)
+    {
+        var mark = new Color(boss ? Blood : Ink, seen ? 1 : 0.35f);
+        switch (kind)
+        {
+            case "boss":
+                DrawCircle(c, 7, mark);
+                DrawLine(c + new Vector2(-12, 12), c + new Vector2(12, -12), mark, 2);
+                DrawLine(c + new Vector2(-12, -12), c + new Vector2(12, 12), mark, 2);
+                break;
+            case "trap":
+            case "hazard":
+                DrawLine(c + new Vector2(-7, -7), c + new Vector2(7, 7), mark, 2);
+                DrawLine(c + new Vector2(-7, 7), c + new Vector2(7, -7), mark, 2);
+                break;
+            case "treasure":
+                DrawCircle(c, 6, new Color(Ui.Gold, seen ? 1 : 0.35f));
+                DrawArc(c, 6, 0, (float)Math.Tau, 16, mark, 1.5f);
+                break;
+            case "puzzle":
+            case "parley":
+                DrawString(Ui.Bold, c + new Vector2(-4, 6), "?", HorizontalAlignment.Left, -1, 16, mark);
+                break;
+            default:
+                DrawLine(c + new Vector2(-8, 0), c + new Vector2(8, 0), mark, 2);
+                DrawLine(c + new Vector2(0, -6), c + new Vector2(0, 6), mark, 2);
+                break;
+        }
+    }
+
+    /// <summary>A room's feature, inked small at its corner: dark, a chasm, water, a crawl, webs, a cold wrongness, a fall of rubble.</summary>
+    private void Feature(Vector2 at, string id)
+    {
+        var c = at;
+        switch (id)
+        {
+            case "dark":
+                DrawCircle(c, 6, Ink);
+                DrawCircle(c + new Vector2(2.5f, -1.5f), 5, Paper);
+                break;
+            case "chasm":
+                DrawPolyline([c + new Vector2(-7, -4), c + new Vector2(-2, 4), c + new Vector2(2, -4), c + new Vector2(7, 4)], Ink, 2);
+                break;
+            case "flooded":
+                for (int k = 0; k < 2; k++)
+                    DrawArc(c + new Vector2(0, k * 5 - 2), 6, (float)Math.PI * 0.15f, (float)Math.PI * 0.85f, 6, new Color("3f6f8f"), 2);
+                break;
+            case "narrow":
+                DrawLine(c + new Vector2(-3, -7), c + new Vector2(-3, 7), Ink, 2);
+                DrawLine(c + new Vector2(3, -7), c + new Vector2(3, 7), Ink, 2);
+                break;
+            case "webbed":
+                for (int k = 0; k < 3; k++)
+                {
+                    float a = k * (float)Math.PI / 3;
+                    var d = new Vector2((float)Math.Cos(a), (float)Math.Sin(a)) * 7;
+                    DrawLine(c - d, c + d, Faint, 1.5f);
+                }
+                DrawArc(c, 4, 0, (float)Math.Tau, 10, Faint, 1);
+                break;
+            case "unhallowed":
+                DrawCircle(c, 6, new Color("6b5a8a"));
+                DrawCircle(c + new Vector2(-2, -1), 1.4f, Paper);
+                DrawCircle(c + new Vector2(2, -1), 1.4f, Paper);
+                break;
+            case "rubble":
+                DrawCircle(c + new Vector2(-3, 2), 3, Faint);
+                DrawCircle(c + new Vector2(3, 3), 2.5f, Faint);
+                DrawCircle(c + new Vector2(0, -2), 3, Faint);
+                break;
+        }
+    }
+
+    private void DrawFigures()
+    {
         // The figures: a coin for each hero, their initial on it; a cross for the fallen.
         foreach (var m in _members)
         {
@@ -544,7 +705,6 @@ public partial class TaleMap : Control
             DrawCircle(p, 8.5f, col);
             DrawString(Ui.Bold, p + new Vector2(-4.5f, 5), m.GivenName[..1], HorizontalAlignment.Left, -1, 13, Colors.White);
         }
-        DrawString(Ui.Display, new Vector2(size.X - 14 - Ui.Display.GetStringSize(_c.SiteName.ToUpperInvariant(), HorizontalAlignment.Left, -1, 12).X, size.Y - 12), _c.SiteName.ToUpperInvariant(), HorizontalAlignment.Left, -1, 12, Faint);
     }
 
     private static Color ClassColor(string cls)

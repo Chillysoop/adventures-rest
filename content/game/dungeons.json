@@ -1,0 +1,108 @@
+{
+  "_doc": "Dungeon maps (Systems/Dungeons.cs). Every site's delve is a map drawn once from its own dice: a main way of rooms (its deck, 2 + tier of them as before) to the heart, side rooms off it (sideRooms by tier, from the rest of the deck or caches of the hoard's gold), and a feature in some rooms. Cleared rooms stay cleared between trips; the occupants react to the time between (reactions by site kind). Companies choose an approach at the door (approaches). Clearing a site of tier deeps.minTier or more may open its deeps: a new site a tier harder below it, with a sure find in its hoard.",
+  "sideRooms": [0, 1, 1, 2, 2, 2, 3],
+  "sideHealthy": 0.6,
+  "findDc": 11,
+  "findPerTier": 1,
+  "cacheGold": [0.15, 0.3],
+  "cacheItem": 0.15,
+  "passHours": 0.25,
+  "featureChance": 0.35,
+  "pull": 0.25,
+  "features": [
+    {
+      "id": "dark", "name": "pitch dark", "icon": "feature-dark", "weight": 3, "habitats": ["caves", "underworld", "tomb", "ruins"],
+      "text": "the lanterns barely reach the walls",
+      "answer": "{name}'s eyes find the way in the dark",
+      "races": ["dwarf", "elf", "half-orc", "gnome", "catfolk"], "classes": ["wizard", "sorcerer", "cleric", "warlock", "bard"],
+      "attack": -2
+    },
+    {
+      "id": "chasm", "name": "chasm", "icon": "feature-chasm", "weight": 2, "habitats": ["caves", "mountain", "underworld", "ruins", "badlands"],
+      "text": "a chasm splits the hall",
+      "answer": "{name} gets a line across the chasm",
+      "classes": ["monk", "ranger", "rogue"], "minLevel": 1,
+      "check": { "ability": "dex", "dc": 10, "perTier": 1, "die": 6 }
+    },
+    {
+      "id": "flooded", "name": "flooded", "icon": "feature-flooded", "weight": 2, "habitats": ["swamp", "coast", "lake", "caves", "ocean", "plane-of-water"],
+      "text": "black water stands waist-deep",
+      "answer": "{name} knows how to wade it",
+      "classes": ["druid", "ranger", "warden"],
+      "attack": -1, "ac": -1, "hours": 1
+    },
+    {
+      "id": "narrow", "name": "narrow", "icon": "feature-narrow", "weight": 2, "habitats": [],
+      "text": "the way narrows to a crawl",
+      "answer": "{name} slips ahead and holds the far end",
+      "races": ["halfling", "gnome"], "classes": ["rogue", "monk"],
+      "ac": -2
+    },
+    {
+      "id": "webbed", "name": "webbed", "icon": "feature-webbed", "weight": 1, "habitats": ["forest", "caves", "jungle", "underworld"],
+      "text": "webs hang thick from the ceiling",
+      "answer": "{name} burns the webs away",
+      "classes": ["wizard", "sorcerer", "druid"], "minLevel": 1,
+      "monstersFirst": true
+    },
+    {
+      "id": "unhallowed", "name": "unhallowed", "icon": "feature-unhallowed", "weight": 2, "habitats": ["tomb", "temple", "hell", "abyss"],
+      "text": "the air is cold and wrong",
+      "answer": "{name} speaks a blessing and the cold lifts",
+      "classes": ["cleric", "paladin", "reliquarian"],
+      "attack": -1, "ac": -1
+    },
+    {
+      "id": "rubble", "name": "rubble", "icon": "feature-rubble", "weight": 2, "habitats": ["ruins", "mountain", "caves", "laboratory"],
+      "text": "half the roof has come down",
+      "answer": "{name} finds a way round the fall",
+      "classes": ["cartographer", "ranger", "barbarian"],
+      "hours": 2
+    }
+  ],
+  "reactions": {
+    "_doc": "What the occupants do between trips, by site kind: everyDays per reaction (at most max), chosen by weight. regroup retakes the cleared room nearest the heart; traps sets a trap in a cleared room; allies brings more foes to every fight (swell); hoard hides the hoard deeper (a perception check at the heart, or only part of the gold).",
+    "everyDays": 6,
+    "max": 3,
+    "trapDc": 11,
+    "trapDie": 8,
+    "hiddenShare": 0.5,
+    "kinds": {
+      "tribe": { "regroup": 3, "traps": 2, "allies": 2, "hoard": 1 },
+      "rivals": { "regroup": 2, "traps": 3, "allies": 1, "hoard": 2 },
+      "schemers": { "regroup": 1, "traps": 3, "allies": 2, "hoard": 2 },
+      "undead": { "regroup": 3, "allies": 1 },
+      "beasts": { "regroup": 2 },
+      "dragon": { "regroup": 1, "hoard": 2 }
+    },
+    "texts": {
+      "regroup": "{they} have taken back {room} since the last company came.",
+      "traps": "{they} have strung a new trap across {room}.",
+      "allies": "{they} have called in friends: there are more of them now.",
+      "hoard": "{they} have moved the hoard somewhere deeper."
+    }
+  },
+  "approaches": {
+    "noise": 0.8,
+    "_doc": "How a company goes in, chosen at the door by weight plus up to noise: storm (fight room by room), sneak (the heist's slip-past checks; rooms passed stay held), parley (talk the master down, as the talk-down terms), siege (camp outside days, thinning every fight by swell, with a sally each night). A mapped place (scouted, or a company came home from it) adds mapped to sneak and siege. Weaker parties lean on underdog per level they are short.",
+    "storm": { "weight": 1.0, "bold": 0.4 },
+    "sneak": { "weight": 0.5, "min": 5, "mapped": 0.4, "underdog": 0.3, "maxParty": 4 },
+    "parley": { "weight": 0.4, "min": 3, "underdog": 0.3, "minInt": 6 },
+    "siege": { "weight": 0.4, "mapped": 0.3, "underdog": 0.2, "minParty": 3, "days": 2, "swell": -1, "sally": 0.4, "kinds": ["tribe", "rivals"] },
+    "texts": {
+      "storm": "They go in the front way, weapons out.",
+      "sneak": "{name} leads them in by a back way, quiet as cats.",
+      "parley": "They go to the gate under a branch of truce.",
+      "siege": "They camp round {site} to starve it out before going in."
+    }
+  },
+  "deeps": {
+    "minTier": 2,
+    "chance": 0.35,
+    "maxDepth": 2,
+    "loot": 1.5,
+    "habitats": ["underworld", "caves"],
+    "names": ["the Deeps of {site}", "the Vaults under {site}", "the Lower Halls of {site}"],
+    "found": "Below {site}, the {party} find a stair going down into the dark. Something older lives there."
+  }
+}

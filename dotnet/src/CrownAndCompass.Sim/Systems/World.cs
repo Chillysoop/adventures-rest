@@ -156,6 +156,8 @@ public static class World
     /// </summary>
     public static (double Bearing, double Reach) Place(Town town, SiteState s)
     {
+        // The deeps lie under the site they open from.
+        if (s.Def.Under != "" && Quests.Site(town, s.Def.Under) is { } up && up != s) return Place(town, up);
         int i = town.Sites.IndexOf(s);
         double reach = Out(s) * (0.82 + Hash(i * 7 + 3) * 0.3);
         if (RegionOf(town, s) is { } region)

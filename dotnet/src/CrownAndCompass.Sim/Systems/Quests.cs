@@ -18,6 +18,9 @@ public sealed class SiteState(SiteDef def)
     public bool Cleared { get; set; }
     public int Attempts { get; set; }
 
+    /// <summary>Its map of rooms, drawn when a company first goes in (<see cref="Dungeons"/>).</summary>
+    public DungeonState? Dungeon { get; set; }
+
     /// <summary>A cleared isle in the sky shows a seam of lift-crystal (<see cref="Crystal"/>), and the town may have a mine on it.</summary>
     public bool Seam { get; set; }
     public bool Mined { get; set; }
@@ -267,6 +270,11 @@ public sealed record Chronicle(
 
     /// <summary>The bounty paid them, and what they split.</summary>
     public int Gold { get; init; }
+
+    /// <summary>How they went in, the rooms as they met them, and the place's map as it stood after (<see cref="Dungeons"/>), for the tale's map.</summary>
+    public string Approach { get; init; } = "";
+    public IReadOnlyList<RoomVisit> Visits { get; init; } = [];
+    public IReadOnlyList<RoomPlan> Rooms { get; init; } = [];
 
     /// <summary>How it ended in a word: a party that pulled out with what the bounty asked for (captives, the fallen, the hoard) got the job done.</summary>
     public string Verdict => GoalMet && Outcome == ExpeditionOutcome.Retreated ? "job done" : Outcome.ToString().ToLowerInvariant();
@@ -716,6 +724,9 @@ public static class Quests
                 Beats = result.Beats,
                 MemberIds = members.Select(m => m.Id).ToList(),
                 Dead = result.Dead,
+                Approach = result.Approach,
+                Visits = result.Visits,
+                Rooms = result.Rooms,
             };
             town.Chronicles.Add(chronicle);
 
@@ -847,6 +858,7 @@ public static class Quests
             if (result.Outcome == ExpeditionOutcome.Wiped) Stories.Lost(town, Remains.Lie(town, party, s, members), party);
             foreach (var (rite, id) in rites) town.Log(LedgerCategory.Faith, Importance.Major, rite, [id]);
             Lairs.AfterDelve(town, s, result);
+            Dungeons.Home(town, party, s, result);
             Spoils.Homecoming(town, party, s, result, survivors, bounty);
             foreach (var it in result.Items)
             {

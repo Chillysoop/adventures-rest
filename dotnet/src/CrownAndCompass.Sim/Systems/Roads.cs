@@ -962,7 +962,18 @@ public static class Roads
             {
                 v.SpendSlots(party.Sendings);
                 v.Track(site.Def);
-                outcome = v.Delve(site.Def, content.Roads.Retreat.Retries);
+                // The place as they find it: its map, and what its occupants did since the last company came.
+                v.Map = Dungeons.Map(town, site);
+                var (found, more) = Dungeons.React(town, site, (int)Math.Floor(v.Clock));
+                v.Swell += more;
+                foreach (var line in found)
+                {
+                    v.Log(line);
+                    v.Mark("react");
+                }
+                bool parley = Menaces.At(town, site.Def.Id) == null && site.Def.Id != content.Enemy.Outpost.Id && Captives.At(town, site.Def.Id) == null;
+                v.Choose(site.Def, v.Map.Mapped || v.Tracked, parley);
+                if (!v.Wiped) outcome = v.Delve(site.Def, content.Roads.Retreat.Retries);
             }
             leave = v.Clock;
         }
