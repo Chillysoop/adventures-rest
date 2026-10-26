@@ -35,6 +35,7 @@ public partial class Main
         var r = t.Content.Research;
         var st = t.Research;
         p.Begin();
+        StewardStrip(p, "research");
 
         var rank = Research.Rank(t);
         int circle = Research.Circle(t);

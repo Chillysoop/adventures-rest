@@ -135,6 +135,7 @@ public static class Legacies
         if (l == null || l.Memorial) return false;
         double cost = MemorialCost(town, l);
         if (town.Treasury < cost) return false;
+        if (Stewards.Intercept(town, "honours", new StewardAsk { Area = "honours", Kind = "memorial", Title = $"Raise a memorial to {town.Agent(heroId).Name} · {Js.Str(cost)}g", Why = "• A fallen hero of the town\n• Memorials inspire the living", I1 = heroId, Cost = cost })) return false;
         town.Book(TreasuryAccount.Legacies, -cost);
         Honor(town, l);
         town.Log(LedgerCategory.Town, Importance.Notable,

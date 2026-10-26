@@ -136,6 +136,7 @@ public static class Trade
     {
         if (town.Trade.Routes.FirstOrDefault(r => r.Id == routeId) is not { Closed: false } route) return false;
         if (WagonCost(town, route) is not double cost || town.Treasury < cost) return false;
+        if (Stewards.Intercept(town, "realm", new StewardAsk { Area = "realm", Kind = "wagon", Title = $"Another wagon to {SettlementOf(town, route).Name} · {Js.Str(cost)}g", Why = "• The road pays\n• The cheapest wagon to add", I1 = routeId, Cost = cost })) return false;
         town.Book(TreasuryAccount.Trade, -cost);
         route.Wagons++;
         town.Log(LedgerCategory.Town, Importance.Notable,
@@ -186,6 +187,7 @@ public static class Trade
         var s = town.Settlements[settlementId];
         if (Refuse(town, s) != null || !Offers(town, s).Contains(import)) return null;
         double cost = OpenCost(town, s);
+        if (Stewards.Intercept(town, "realm", new StewardAsk { Area = "realm", Kind = "route", Title = $"Open a trade route to {s.Name} · {Js.Str(cost)}g", Why = $"• {export} out, {import} in\n• The best-liked people with a road", I1 = settlementId, S1 = export.ToString(), S2 = import.ToString(), Cost = cost })) return null;
         town.Book(TreasuryAccount.Trade, -cost);
         var route = new TradeRoute
         {

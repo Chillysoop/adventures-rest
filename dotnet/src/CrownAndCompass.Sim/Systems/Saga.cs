@@ -316,11 +316,13 @@ public static class Saga
         return s.YokeId is int id && !s.Defied && s.Menaces[id - 1].Origin == Menaces.FromWarband;
     }
 
-    public static void Daily(Town town, bool autoMayor, bool ride = true)
+    /// <param name="answer">The castellan answers the menaces' demands.</param>
+    /// <param name="ride">The bountymaster calls the last ride and posts bounties on rising menaces.</param>
+    public static void Daily(Town town, bool answer, bool ride = true)
     {
         var s = town.Saga;
         if (!s.Enabled || town.Outcome != null || Rules(town).Acts.Count == 0) return;
-        Menaces.Daily(town, autoMayor);
+        Menaces.Daily(town, answer, ride);
         if (town.Outcome != null) return;
         AdvanceAct(town);
         Lull(town);

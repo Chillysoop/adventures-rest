@@ -20,7 +20,7 @@ public partial class Main
     private static readonly DockGroup[] Groups =
     [
         new("Town", "tab-city", new Color("8cc084"), "The city, the mayor, its notables and the Ledger", [Tab.City, Tab.Mayor, Tab.Notables, Tab.Ledger]),
-        new("Council", "tab-council", new Color("e8b93a"), "The council, institutions and faiths", [Tab.Council, Tab.Institutions, Tab.Faith]),
+        new("Council", "tab-council", new Color("e8b93a"), "The council, institutions, faiths and the lesser council", [Tab.Council, Tab.Institutions, Tab.Faith, Tab.Automate]),
         new("Heroes", "tab-companies", new Color("74aee6"), "Bounties, companies and the armory", [Tab.Bounties, Tab.Companies, Tab.Armory]),
         new("War", "tab-war", new Color("ef7f6f"), "Foes, the army and the town's defence", [Tab.War, Tab.Army, Tab.Defence]),
         new("Realm", "tab-campaign", new Color("5ec2b0"), "The campaign, diplomacy and trade", [Tab.Campaign, Tab.Diplomacy]),
@@ -37,6 +37,7 @@ public partial class Main
         [Tab.Council] = "Council",
         [Tab.Institutions] = "Institutions",
         [Tab.Faith] = "Faith",
+        [Tab.Automate] = "Automate",
         [Tab.Bounties] = "Bounties",
         [Tab.Companies] = "Roster",
         [Tab.Armory] = "Armory",
@@ -59,6 +60,7 @@ public partial class Main
         [Tab.Council] = "Motions, members, taxes and the town's laws",
         [Tab.Institutions] = "Guilds, colleges and their keepers",
         [Tab.Faith] = "Gods, shrines and the factions",
+        [Tab.Automate] = "The lesser council: hand areas to stewards",
         [Tab.Bounties] = "Post jobs and follow parties on the road",
         [Tab.Companies] = "Roster of companies: sort, compare, offer jobs",
         [Tab.Armory] = "Gifts, loot and pacts with heroes",

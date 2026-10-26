@@ -93,10 +93,22 @@ public partial class Main
         };
         if (why is "built" or "dug") p.Row($"{head}  {Tag(Ui.Cap(why), Ui.Good)}");
         else if (why == "under way") p.Row($"{head}  {Tag("Rising", Ui.Gold)}");
+        else if (why is null or "draw its line first" && DrawsFirst(w))
+            p.Row($"{head}  {Tag($"{Math.Round(cost)}g")}", ("Draw", true, true, () => DrawWall(w)));
         else if (why != null && why != "not enough gold") p.Row($"{head}{count}  {Tag(Ui.Cap(why))}");
         else if (w is DefenseWork.Tower or DefenseWork.Barracks)
             p.Row($"{head}{count}", ($"Place {Math.Round(cost)}g", why == null, true, () => _map.Planner.Pick(new Planner.PlanTool(null, null) { OnWall = w })));
         else p.Row($"{head}{count}", ($"Build {Math.Round(cost)}g", why == null, true, () => Act(() => _sim.BuildDefense(w))));
+    }
+
+    /// <summary>Pick up the wall tool for this wall's loop, the Build bar's way: drag curves, click corners, then snap a gate on.</summary>
+    private void DrawWall(DefenseWork w)
+    {
+        _map.Flagging = false;
+        _map.Brush = null;
+        _map.Decorator.Pick(null);
+        _map.Planner.Pick(new Planner.PlanTool(null, null) { Wall = WallLines.RingOf(w), Work = w });
+        CloseWindow();
     }
 
     /// <summary>The town's own strength: the defence meter, the watch's orders, the walls and the wardens.</summary>
@@ -106,6 +118,7 @@ public partial class Main
         var t = _sim.Town;
         double def = Threat.Defense(t);
         p.Begin();
+        StewardStrip(p, "defence", "frontier", "lairs");
         double? est = Discovery.Known(t, Discovery.Warband) && Threat.IsActive(t) ? Threat.EstimatedStrength(t) : null;
         double scale = Math.Max(Math.Max(def, est ?? 0), 1);
         p.Meter("Your defence", 100 * def / scale, $"{Math.Round(def)}");

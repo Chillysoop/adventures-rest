@@ -17,6 +17,8 @@
   "expectMost": 30,
   "dangerPerThousand": 0.35,
   "dangerMost": 0.5,
+  "outsideBuild": 0.5,
+  "outsideComfort": -0.05,
   "gates": [
     {
       "id": "open",

@@ -47,6 +47,7 @@ public partial class Main
         var t = _sim.Town;
         var r = t.Content.Armory;
         p.Begin();
+        StewardStrip(p, "armory");
         var stock = t.Armory.Stock.OrderBy(s => Sim.Systems.Armory.IsStone(t, s.Item) ? 1 : 0).ThenByDescending(s => s.Item.Tier).ThenBy(s => s.Id).ToList();
         var carriers = t.Heroes.Where(h => h.Hero!.Stone).OrderBy(h => h.Hero!.PartyName ?? "", StringComparer.Ordinal).ThenBy(h => h.Id).ToList();
         var offers = t.Armory.Offers.OrderBy(o => o.Until).ThenBy(o => o.Id).ToList();

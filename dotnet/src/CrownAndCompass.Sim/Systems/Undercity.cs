@@ -118,6 +118,7 @@ public static class Undercity
     {
         var l = Of(town, id);
         if (l == null || l.Patrol == on) return false;
+        if (Stewards.Intercept(town, "order", new StewardAsk { Area = "order", Kind = "undercity", Title = on ? $"Patrol {Def(town, l).Name} · {Js.Str(Rules(town).PatrolCost)}g a day" : $"Stop patrolling {Def(town, l).Name}", Why = on ? "• Something stirs below\n• Lanterns keep it down" : "• It is quiet below\n• Saves the watch's wages", S1 = id, I1 = on ? 1 : 0 })) return false;
         l.Patrol = on;
         town.Log(LedgerCategory.Town, Importance.Routine,
             on ? $"The watch takes lanterns down into {Def(town, l).Name} each night, for {Js.Str(Rules(town).PatrolCost)} gold a day."

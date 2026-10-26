@@ -139,6 +139,9 @@ public static class Alerts
 
     public static List<Alert> Standing(Town town) => Rules.SelectMany(r => r(town)).ToList();
 
+    /// <summary>The alerts the player sees: those a steward running its area answers stay off the rail (<see cref="Stewards.Quiet"/>); what the steward did goes in its report.</summary>
+    public static List<Alert> Shown(Town town, SimulationOptions o) => Standing(town).Where(a => !Stewards.Quiet(town, o, a.Kind.Id)).ToList();
+
     private static string Days(int n) => n == 1 ? "1 day" : $"{n} days";
 
     /// <summary>An enemy's envoys at a minor power's door: outbid them with gifts before it answers.</summary>
