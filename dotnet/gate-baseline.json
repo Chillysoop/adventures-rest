@@ -18,110 +18,110 @@
     {
       "seed": 1,
       "outcome": "won",
-      "day": 645,
-      "population": 2089,
-      "treasury": 72484,
-      "ledger": 47791,
-      "chronicles": 301
+      "day": 582,
+      "population": 2002,
+      "treasury": 1536,
+      "ledger": 42823,
+      "chronicles": 296
     },
     {
       "seed": 2,
       "outcome": "won",
-      "day": 552,
-      "population": 2144,
-      "treasury": 29483,
-      "ledger": 41884,
-      "chronicles": 247
+      "day": 525,
+      "population": 2002,
+      "treasury": 24540,
+      "ledger": 39668,
+      "chronicles": 207
     },
     {
       "seed": 3,
       "outcome": "won",
-      "day": 525,
-      "population": 1837,
-      "treasury": 27323,
-      "ledger": 37309,
-      "chronicles": 225
+      "day": 545,
+      "population": 2265,
+      "treasury": 57880,
+      "ledger": 43905,
+      "chronicles": 261
     },
     {
       "seed": 4,
       "outcome": "won",
-      "day": 585,
-      "population": 1748,
-      "treasury": 1784,
-      "ledger": 37589,
-      "chronicles": 257
+      "day": 625,
+      "population": 1822,
+      "treasury": 16210,
+      "ledger": 39784,
+      "chronicles": 280
     },
     {
       "seed": 5,
       "outcome": "won",
-      "day": 559,
-      "population": 2028,
-      "treasury": 24675,
-      "ledger": 39250,
-      "chronicles": 264
+      "day": 531,
+      "population": 2030,
+      "treasury": 32441,
+      "ledger": 38296,
+      "chronicles": 220
     },
     {
       "seed": 6,
       "outcome": "won",
-      "day": 601,
-      "population": 1839,
-      "treasury": 4805,
-      "ledger": 38971,
-      "chronicles": 278
+      "day": 552,
+      "population": 2242,
+      "treasury": 63494,
+      "ledger": 36930,
+      "chronicles": 254
     },
     {
       "seed": 7,
       "outcome": "won",
-      "day": 552,
-      "population": 2136,
-      "treasury": 120029,
-      "ledger": 44089,
-      "chronicles": 288
+      "day": 617,
+      "population": 1863,
+      "treasury": 15578,
+      "ledger": 38982,
+      "chronicles": 250
     },
     {
       "seed": 8,
       "outcome": "won",
-      "day": 535,
-      "population": 1870,
-      "treasury": 72761,
-      "ledger": 36554,
-      "chronicles": 248
+      "day": 558,
+      "population": 1884,
+      "treasury": 8731,
+      "ledger": 35088,
+      "chronicles": 284
     },
     {
       "seed": 9,
       "outcome": "won",
-      "day": 614,
-      "population": 1673,
-      "treasury": 11705,
-      "ledger": 37660,
-      "chronicles": 293
+      "day": 678,
+      "population": 1887,
+      "treasury": 14360,
+      "ledger": 40727,
+      "chronicles": 316
     },
     {
       "seed": 10,
       "outcome": "won",
-      "day": 587,
-      "population": 1790,
-      "treasury": 9535,
-      "ledger": 39442,
-      "chronicles": 257
+      "day": 628,
+      "population": 1970,
+      "treasury": 55570,
+      "ledger": 36628,
+      "chronicles": 259
     },
     {
       "seed": 11,
       "outcome": "won",
       "day": 563,
-      "population": 2177,
-      "treasury": 75689,
-      "ledger": 39899,
-      "chronicles": 228
+      "population": 1826,
+      "treasury": 65146,
+      "ledger": 37299,
+      "chronicles": 219
     },
     {
       "seed": 12,
       "outcome": "won",
-      "day": 597,
-      "population": 1868,
-      "treasury": 3793,
-      "ledger": 38927,
-      "chronicles": 258
+      "day": 600,
+      "population": 1744,
+      "treasury": 7074,
+      "ledger": 38566,
+      "chronicles": 263
     }
   ]
 }
