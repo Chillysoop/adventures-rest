@@ -79,9 +79,18 @@ public static class Economy
         }
 
         double yield = Decor.Yield(town, b) * Skills.Yield(b) * (b.Def.Zone == Zone.Farmland ? Powers.Harvest(town) * Endless.Harvest(town) * Weather.Harvest(town) * Frontier.FarmYield(town, b) : 1);
+        bool carted = Workings.Carted(town, b);
+        if (carted) yield *= Workings.Yield(town, b);
         foreach (var (good, qty) in b.Def.Produces)
         {
-            double revenue = town.Market.Sell(good, qty * rate * yield * Farming.Yield(town, b, good) * TownYield(town, good, 0) * TownYield(town, good, 1) * Founding.Yield(town, good));
+            double made = qty * rate * yield * Farming.Yield(town, b, good) * TownYield(town, good, 0) * TownYield(town, good, 1) * Founding.Yield(town, good);
+            // Cut far out: it waits for the cart home (Workings.Daily) and is paid for when it reaches market.
+            if (carted)
+            {
+                b.Cart += made;
+                continue;
+            }
+            double revenue = town.Market.Sell(good, made);
             double tax = revenue * salesTax;
             town.Book(TreasuryAccount.SalesTax, tax);
             b.Cash += revenue - tax;

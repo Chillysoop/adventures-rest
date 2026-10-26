@@ -179,6 +179,7 @@ public sealed class Simulation
         Streets.Markets(t);
         if (Hand("planning")) Construction.Daily(t);
         Construction.Imports(t);
+        Workings.Daily(t);
         Construction.Mend(t);
         Streets.Wear(t);
         Streets.Closes(t);

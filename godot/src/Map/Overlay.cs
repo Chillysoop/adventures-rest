@@ -23,6 +23,7 @@ public partial class Overlay(MapView map) : Control
         DrawWeather(town);
         DrawTerrain(town);
         DrawWilds(town);
+        DrawCartRoads(town);
         DrawSites(town);
         DrawFinds(town);
         DrawTrails(town);
@@ -519,6 +520,34 @@ public partial class Overlay(MapView map) : Control
                     bool blocked = !map.BrushErasing && Wilds.CellBlocked(town, x, y) != null;
                     DrawColoredPolygon(q, new Color(blocked ? new Color("c0392b") : ink, 0.38f));
                 }
+        }
+    }
+
+    /// <summary>
+    /// The cart roads from far lumber camps and quarries' workings (<see cref="Workings"/>): a dashed track from the town to
+    /// the woods or the rock, red while a cart lately taken on it calls for patrols, with what share of carts it loses.
+    /// </summary>
+    private void DrawCartRoads(Town town)
+    {
+        foreach (var w in town.Content.Workings.Goods)
+        {
+            if (Workings.Nearest(town, w.Good) is not { } road || !Workings.Afar(town, road)) continue;
+            if (!town.Buildings.Any(b => b.Complete && w.Buildings.Contains(b.Def.Id))) continue;
+            bool raided = town.Workings.RaidedGood == w.Good && town.Day - town.Workings.RaidedDay <= town.Content.Workings.Raid.AlertDays;
+            var ink = raided ? new Color("c0392b") : new Color("b07a44");
+            Vector2? last = null;
+            const int Steps = 24;
+            for (int i = 1; i <= Steps; i++)
+            {
+                double t = (double)i / Steps;
+                bool on = map.OnScreen(map.Gen.At(Geo.FromDays(road.X * t, road.Y * t), 0.5f), out var at);
+                if (on && last is { } from) DrawDashedLine(from, at, new Color(ink, 0.9f), 3, 10);
+                last = on ? at : null;
+            }
+            if (!map.OnScreen(map.Gen.At(Geo.FromDays(road.X, road.Y), 2), out var end)) continue;
+            Disc(end, 11, new Color("2a241c"), ink, 2.5f);
+            DrawTextureRect(Ui.Icon(w.Good == Good.Timber ? "timber" : "stone"), new Rect2(end - new Vector2(8, 8), new Vector2(16, 16)), false);
+            Text(end + new Vector2(0, 26), $"{Js.Str(Js.Round(road.Days * 10) / 10)}d · {Js.Str(Js.Round(Workings.RaidChance(town, road) * 100))}% lost", Ui.Bold, 13, ink.Lerp(Cream, 0.35f));
         }
     }
 

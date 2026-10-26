@@ -125,7 +125,7 @@ public static class Construction
             double price = 0;
             foreach (var (g, need) in Needs(b))
                 price += Math.Min(carry * need / loads, town.Market.Stock(g)) * town.Market.Price(g);
-            if (price > owner.Gold) carry *= Math.Max(0, owner.Gold) / price;
+            if (price > 0 && price > owner.Gold) carry *= Math.Max(0, owner.Gold) / price;
         }
         double got = 0, cost = 0;
         foreach (var (g, need) in Needs(b))

@@ -666,7 +666,7 @@ public static class City
 
     /// <summary>Whether the town could build this at all now: tier reached and a ward it may stand in is open.</summary>
     public static bool Unlocked(Town town, BuildingDef d) =>
-        Reached(town, d.Tier) && (d.Wards.Count == 0 || d.Wards.Any(town.City.OpenWards.Contains));
+        Reached(town, d.Tier) && (d.Wards.Count == 0 || d.Wards.Any(town.City.OpenWards.Contains)) && Workings.Locked(town, d) == null;
 
     /// <summary>Why the town's tier or wards keep it from this building, or null.</summary>
     public static string? Locked(Town town, BuildingDef d)
@@ -675,6 +675,7 @@ public static class City
         if (d.Coast && !Fleet.Coastal(town)) return "needs a town founded on the sea";
         if (d.River && Fleet.Coastal(town)) return "a town on the sea builds a harbour";
         if (Lofted.Locked(town, d) is { } lofted) return lofted;
+        if (Workings.Locked(town, d) is { } land) return land;
         if (d.Wards.Count > 0 && !d.Wards.Any(town.City.OpenWards.Contains))
             return $"needs the {string.Join(" or the ", d.Wards.Select(w => Ward(town, w).Name))} to grow up";
         return null;
