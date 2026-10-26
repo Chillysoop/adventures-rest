@@ -548,7 +548,8 @@ public static class Alerts
                 "The masons on the walls stand idle half the day: the market is short of timber and stone. Zone industry for a quarry and a lumber camp, or wait for the market to fill.");
         foreach (var b in t.Buildings)
         {
-            if (!Construction.Stalled(t, b)) continue;
+            // Townsfolk's sites wait on the market or send away for their own; the build bar says why zones sit idle.
+            if (b.OwnerId != null || !Construction.Stalled(t, b)) continue;
             var (timber, stone) = Construction.Wanting(b);
             string what = timber > 0 && stone > 0 ? "timber and stone" : stone > 0 ? "stone" : "timber";
             string from = stone > 0 && !t.Buildings.Any(q => q.Complete && q.Def.Id == "quarry") ? "There is no quarry: zone industry for one, or" :

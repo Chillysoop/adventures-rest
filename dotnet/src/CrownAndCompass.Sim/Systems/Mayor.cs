@@ -176,9 +176,11 @@ public static class Mayor
         double cost = house.Cost + Planning.Materials(town, house);
         if (town.Treasury < cost + 50) return false;
 
-        town.Book(TreasuryAccount.CharterHouses, -cost);
-        Planning.BuyMaterials(town, house);
+        // Its timber and stone come off the market as hauled (Construction.Haul), like any council site.
+        town.Book(TreasuryAccount.CharterHouses, -house.Cost);
         var site = town.AddBuilding(house, lot, null, Property.NameFor(town, house, null), false);
+        site.Paid = house.Cost;
+        site.Draws = true;
         site.LaborBudget = Construction.Hours(town, house) * Brain.ConstructionWage;
         town.Log(LedgerCategory.Town, Importance.Routine, $"With {homeless} people sleeping rough, the council commissions {site.Name}.");
         return true;

@@ -904,6 +904,9 @@ public static class City
         var nh = Housing(town, next.Id);
         if (nh != null && NeedsBlocked(town, house, nh) is { } need) return need;
         if (nh != null && Prospect(town, house, nh) < town.Content.City.UpgradeAt) return "the town can't yet give a bigger house what it wants";
+        // A new storey is built from the town's own timber and stone, never sent for.
+        bool noTimber = town.Market.Stock(Good.Timber) < next.Timber, noStone = town.Market.Stock(Good.Stone) < next.Stone;
+        if (noTimber || noStone) return $"the market is short of {(noTimber && noStone ? "timber and stone" : noStone ? "stone" : "timber")}";
         return null;
     }
 

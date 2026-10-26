@@ -20,7 +20,11 @@ public static class Economy
                 // A site put first takes on two hired hands.
                 for (int hand = b.Priority ? 2 : 1; hand > 0 && b.IsSite; hand--)
                 {
-                    if (Construction.Short(town, b)) Construction.Haul(town, b);
+                    // A hand with nothing to carry and nothing to raise goes unpaid.
+                    if (Construction.Short(town, b))
+                    {
+                        if (!Construction.Haul(town, b)) break;
+                    }
                     else b.Raise(town, Seasons.Build(town) * Decrees.Build(town) * Institutions.Build(town));
                     b.LaborBudget = Math.Max(0, b.LaborBudget - Brain.ConstructionWage);
                 }

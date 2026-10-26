@@ -84,17 +84,18 @@ public static class Construction
     public static bool Short(Town town, Building b) => b.IsSite && b.Hauled < 1 && b.BuildProgress >= Ready(town, b) - 1e-9;
 
     /// <summary>
-    /// An hour's hauling onto a site by someone of the given strength modifier (day labourers count as average). A council site
-    /// that <see cref="Building.Draws"/> its materials takes them off the market's stock, paying for each load as it goes; when
-    /// the market has none (or a site put first is waiting on them) the haulers stand idle and the site stalls.
+    /// An hour's hauling onto a site by someone of the given strength modifier (day labourers count as average). A site
+    /// that <see cref="Building.Draws"/> its materials takes them off the market's stock, its builder paying for each load as
+    /// it goes; when the market has none (or a site put first is waiting on them) the haulers stand idle and the site stalls.
+    /// Returns whether anything was carried.
     /// </summary>
-    public static void Haul(Town town, Building b, int strength = 0)
+    public static bool Haul(Town town, Building b, int strength = 0)
     {
         double loads = Materials(b.Def);
         if (loads <= 0)
         {
             b.Hauled = 1;
-            return;
+            return true;
         }
         double carry = Math.Min(Rules(town).Load * Math.Max(0.5, 1 + 0.1 * strength), (1 - b.Hauled) * loads);
         if (b.Draws)
@@ -103,28 +104,46 @@ public static class Construction
             if (carry <= 0)
             {
                 if (b.StalledSince < 0) b.StalledSince = town.Tick;
-                return;
+                return false;
             }
             b.StalledSince = -1;
         }
         b.Hauled = Math.Min(1, b.Hauled + carry / loads);
+        return true;
     }
 
-    /// <summary>Loads a drawing site gets off the market this hour, its timber and stone in proportion, paid from the treasury.</summary>
+    /// <summary>
+    /// Loads a drawing site gets off the market this hour, its timber and stone in proportion, paid by whoever builds it: the
+    /// treasury for the council's sites, the owner's purse for a townsman's (who takes only what they can pay for).
+    /// </summary>
     private static double Draw(Town town, Building b, double carry, double loads)
     {
         if (!b.Priority && Waiting(town, b)) return 0;
-        double got = 0, cost = 0;
-        foreach (var (g, need) in new[] { (Good.Timber, Math.Max(0, b.Def.Timber)), (Good.Stone, Math.Max(0, b.Def.Stone)) })
+        var owner = b.OwnerId is int o ? town.Agent(o) : null;
+        if (owner != null)
         {
-            if (need <= 0) continue;
+            double price = 0;
+            foreach (var (g, need) in Needs(b))
+                price += Math.Min(carry * need / loads, town.Market.Stock(g)) * town.Market.Price(g);
+            if (price > owner.Gold) carry *= Math.Max(0, owner.Gold) / price;
+        }
+        double got = 0, cost = 0;
+        foreach (var (g, need) in Needs(b))
+        {
             var (qty, paid) = town.Market.Take(g, carry * need / loads);
             got += qty;
             cost += paid;
         }
-        if (cost > 0) town.Book(TreasuryAccount.Works, -cost);
+        if (owner != null) owner.Gold -= cost;
+        else if (cost > 0) town.Book(TreasuryAccount.Works, -cost);
         b.Paid += cost;
         return got;
+    }
+
+    private static IEnumerable<(Good Good, double Need)> Needs(Building b)
+    {
+        if (b.Def.Timber > 0) yield return (Good.Timber, b.Def.Timber);
+        if (b.Def.Stone > 0) yield return (Good.Stone, b.Def.Stone);
     }
 
     /// <summary>Whether a site put first is short of materials, so the others leave the market's stock to it.</summary>
@@ -135,7 +154,7 @@ public static class Construction
         return false;
     }
 
-    /// <summary>A council site that has stood waiting on timber or stone for a few hours.</summary>
+    /// <summary>A site that has stood waiting on timber or stone for a few hours.</summary>
     public static bool Stalled(Town town, Building b) => b.IsSite && b.Draws && b.StalledSince >= 0 && town.Tick - b.StalledSince >= Rules(town).StallHours;
 
     /// <summary>The timber and stone a site still needs carried onto it.</summary>
@@ -155,6 +174,7 @@ public static class Construction
     public static string? CaravanBlocked(Town town, Building b)
     {
         if (!b.IsSite || !b.Draws || b.Hauled >= 1) return "it has its materials";
+        if (b.ImportDue >= 0) return "its own carts are on the road";
         if (town.Treasury < CaravanCost(town, b)) return "not enough gold";
         return null;
     }
@@ -168,6 +188,7 @@ public static class Construction
         if (b.Draws) b.Paid += cost;
         b.Hauled = 1;
         b.StalledSince = -1;
+        b.ImportDue = -1;
         town.Log(LedgerCategory.Construction, Importance.Notable, $"A caravan brings timber and stone for {b.Name}, for {Js.Str(cost)} gold, and the builders go back to work.");
         return true;
     }
@@ -176,7 +197,43 @@ public static class Construction
     public static void Daily(Town town)
     {
         foreach (var b in town.Buildings)
-            if (Stalled(town, b) && town.Tick - b.StalledSince >= 24 && town.Treasury > CaravanCost(town, b) + 300) SendCaravan(town, b);
+            if (b.OwnerId == null && Stalled(town, b) && town.Tick - b.StalledSince >= 24 && town.Treasury > CaravanCost(town, b) + 300) SendCaravan(town, b);
+    }
+
+    /// <summary>What a townsman pays a carter to bring the rest of a stalled site's materials from afar: dearer than the council's caravan.</summary>
+    public static double ImportCost(Town town, Building b) => Js.Round(CaravanCost(town, b) * Rules(town).ImportPremium);
+
+    /// <summary>
+    /// Daily: a townsman whose site has stood stalled <see cref="ConstructionRules.ImportWait"/> days sends for the rest from
+    /// afar if they can pay, and it comes <see cref="ConstructionRules.ImportDays"/> days later; one who can't waits on the market.
+    /// </summary>
+    public static void Imports(Town town)
+    {
+        var r = Rules(town);
+        foreach (var b in town.Buildings)
+        {
+            if (b.OwnerId is not int o || !b.IsSite || !b.Draws) continue;
+            if (b.ImportDue >= 0)
+            {
+                if (b.Hauled >= 1) b.ImportDue = -1;
+                else if (town.Tick >= b.ImportDue)
+                {
+                    b.Hauled = 1;
+                    b.ImportDue = -1;
+                    b.StalledSince = -1;
+                    town.Log(LedgerCategory.Construction, Importance.Routine, $"Carts reach {b.Name} with its timber and stone, and the builders go back to work.");
+                }
+                continue;
+            }
+            if (!Stalled(town, b) || town.Tick - b.StalledSince < r.ImportWait * SimTime.HoursPerDay) continue;
+            var owner = town.Agent(o);
+            double cost = ImportCost(town, b);
+            if (owner.Gold < cost + r.ImportReserve) continue;
+            owner.Gold -= cost;
+            b.Paid += cost;
+            b.ImportDue = town.Tick + r.ImportDays * SimTime.HoursPerDay;
+            town.Log(LedgerCategory.Construction, Importance.Routine, $"{owner.Name} gives up waiting on the market and sends away for timber and stone for {b.Name}, for {Js.Str(cost)} gold. The carts are {r.ImportDays} days out.", [owner.Id]);
+        }
     }
 
     /// <summary>The ways the town mends what storms, fires and enemies wreck: "crews" (builders as they come to it), "first" (put first), "hire" (the council pays hands).</summary>
@@ -271,8 +328,17 @@ public sealed record ConstructionRules
     public double Footings { get; init; } = 0.1;
     public double Load { get; init; } = 3;
 
-    /// <summary>Hours a council site may wait on timber or stone before it counts as stalled.</summary>
+    /// <summary>Hours a site may wait on timber or stone before it counts as stalled.</summary>
     public int StallHours { get; init; } = 6;
+
+    /// <summary>
+    /// A townsman's stalled site: days its owner waits on the market before sending for the rest by caravan, the days the
+    /// caravan takes on the road, its price over the council's caravan, and the gold the owner keeps back.
+    /// </summary>
+    public int ImportWait { get; init; } = 8;
+    public int ImportDays { get; init; } = 10;
+    public double ImportPremium { get; init; } = 2;
+    public double ImportReserve { get; init; } = 40;
 
     /// <summary>Hired hands mending damage ("hire" repairs): gold an hour of work, hours a day at each building, and the treasury kept back.</summary>
     public double Hire { get; init; } = 1.5;
