@@ -465,9 +465,10 @@ public partial class MapView : Control
         var evening = new Color("ffb878");
         var moon = new Color("8fa8e8");
         _sun.LightColor = day.Lerp(evening, dusk).Lerp(moon, night);
-        _sun.LightEnergy = Mathf.Lerp(1.45f, 0.32f, night);
-        _env.AmbientLightColor = new Color("a4b4c6").Lerp(new Color("4a5a88"), night).Lerp(new Color("c08060"), _fire * night * 0.5f);
-        _env.AmbientLightEnergy = Mathf.Lerp(0.48f, 0.4f, night);
+        // A bright moon: night should read as night, but the town stays legible (a third of every day is dark).
+        _sun.LightEnergy = Mathf.Lerp(1.45f, 0.62f, night);
+        _env.AmbientLightColor = new Color("a4b4c6").Lerp(new Color("6a7cb4"), night).Lerp(new Color("c08060"), _fire * night * 0.5f);
+        _env.AmbientLightEnergy = Mathf.Lerp(0.48f, 0.62f, night);
         var haze = new Color("c4cfd2").Lerp(new Color("e2b896"), dusk * 0.6f).Lerp(new Color("1c2236"), night);
         _env.BackgroundColor = haze;
         _env.FogLightColor = haze;

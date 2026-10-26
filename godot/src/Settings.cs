@@ -334,7 +334,7 @@ public partial class Main
     /// <summary>Start the clock watch afresh on a new or loaded town, so what it already holds stops nothing.</summary>
     private void ResetClockWatch()
     {
-        _clockTick = _deadHeroes = _crisisMark = _mayorDown = -1;
+        _clockTick = _deadHeroes = _crisisMark = _mayorDown = _rideSeen = _marchSeen = -1;
         _motionSeen = _sim.Town.Motions.Count == 0 ? -1 : _sim.Town.Motions.Max(m => m.Id);
     }
 

@@ -147,7 +147,7 @@ public static class Population
         attraction += frontier;
         // A haven's name travels: the roads bring hopefuls to a town known to take people in.
         double haven = Refugees.Appeal(town);
-        attraction += haven;
+        attraction += haven + Frontier.Draw(town);
         // Settlers want land to build on: with no residential lot zoned and for sale, fewer come.
         double land = Planning.VacantZoned(town, Zone.Residential) == 0 ? 0.15 : 0;
         if (land > 0) attraction -= land;

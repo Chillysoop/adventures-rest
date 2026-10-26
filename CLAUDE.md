@@ -101,6 +101,16 @@
   the market's stock as hauled and stall when it's out (`Construction.Stalled`, the `stalled` alert, `SendCaravan`);
   `Building.Priority` sends builders and materials to a site first. Client: `Map/MonumentMeshes.cs`, the card in `Panels.cs`
   (`--at temple --card` shows it).
+- Frontier (`Systems/Frontier.cs`, `content/game/frontier.json`): fields inside the outermost standing wall yield `insideFarm`;
+  fields beyond it with no guard flag over them are stripped by night by `Danger` (warband stage, hostile menaces, size, wealth).
+  A wall gives its full strength (`Threat.Fortification`) only manned, a watchman per `tilesPerGuard` of it (`Frontier.Manned`).
+  The gate law (`Simulation.SetGate`: open/watched/shut) turns away covert agents (`Blows.Strike`) and strangers who rob an
+  open town, at a cost in settlers. Raiders come bigger for a rich town (`Frontier.Lure`). Mood expectations grow with size (`Expect`).
+- News diet (`Systems/News.cs`, `content/game/news.json`): only `budget` Notable lines a day from busy kinds (war, stories,
+  council and hardship always pass); the rest go Routine into a morning digest line. Write Notable lines as before.
+- The last battle: the champions ride for the big bad's seat only on the mayor's call (`Simulation.CallLastRide`, alert `ride`;
+  the stand-in calls it with the bounties hand), no company takes the seat on its own account, and the host always marches
+  after its patience. Client card `godot/src/LastBattle.cs` (clock stop `last-battle`, `--last-battle ride|march|ready`).
 - Paving (`Systems/Paving.cs`, city.json `paving`): no player-laid paving. From the `tier` charter the masons cobble streets
   on their own, nearest the centre first, `perDay` tiles from the market's stone stock (never imported) and the treasury above
   `reserve` (`Street.Cobbled`, `FromEnd`). Houses near cobbles gain `comfort`; the client draws them from the ground texture's blue

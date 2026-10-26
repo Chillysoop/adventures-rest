@@ -15,7 +15,7 @@ public sealed record HordeRules
     public int MusterDays { get; init; } = 3;
     public int MarchDays { get; init; } = 6;
 
-    /// <summary>Days past due it waits for a full host before it marches with what it has, and the least share of one it will march with.</summary>
+    /// <summary>Days past due it waits for a full host before it marches with what it has, and the share under which the town hears it comes thin.</summary>
     public int Patience { get; init; } = 20;
     public double MinShare { get; init; } = 0.6;
 
@@ -85,8 +85,8 @@ public sealed class HordeState
 /// hears that a host is gathering, but how big it is, when it moves and which way it comes only with eyes on its
 /// camps (a tower or patrol beside them, a scrying, a scout) or on the road. With none, the first word of the march
 /// comes from a frightened carter a day or two out. Heroes who fight at a camp thin it; clearing a holding scatters
-/// its camp and slows the rest; an army can meet the host on the road (<see cref="Field"/>). Struck often enough,
-/// the host is too thin to march at all. No countdown is ever shown: only stages.
+/// its camp and slows the rest; an army can meet the host on the road (<see cref="Field"/>). Struck often, it comes
+/// thin, but it always comes: past its patience it marches with what it has. No countdown is ever shown: only stages.
 /// </summary>
 public static class Horde
 {
@@ -166,14 +166,12 @@ public static class Horde
             if (!claimed && (m.NextAssaultTick is not int next || town.Tick < next)) return;
             double share = Gathered(town) / full;
             int late = m.NextAssaultTick is int due ? (town.Tick - due) / SimTime.HoursPerDay : 0;
-            if (!claimed && share < 0.999 && (late < r.Patience || share < r.MinShare))
+            // It waits for a full host, but not forever: past its patience it marches with what it has.
+            if (!claimed && share < 0.999 && late < r.Patience) return;
+            if (share < r.MinShare && !h.ToldThin)
             {
-                if (late >= r.Patience && !h.ToldThin)
-                {
-                    h.ToldThin = true;
-                    Tell(town, m, r.Thin, Importance.Major);
-                }
-                return;
+                h.ToldThin = true;
+                Tell(town, m, r.Thin, Importance.Major);
             }
             h.Stage = HordeStage.Mustering;
             h.MusterTick = town.Tick + r.MusterDays * SimTime.HoursPerDay;
@@ -282,7 +280,7 @@ public static class Horde
     {
         var h = State(town);
         var r = Rules(town);
-        m.Power = Math.Max(1, Gathered(town));
+        m.Power = Math.Max(1, Math.Max(Gathered(town), Full(town, m) * Storyteller.Of(town).HordeFloor));
         foreach (var c in h.Camps) c.Strength = 0;
         h.Stage = HordeStage.Marching;
         int days = r.MarchDays + Seasons.MarchDays(town);

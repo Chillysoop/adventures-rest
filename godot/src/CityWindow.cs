@@ -199,19 +199,19 @@ public partial class Main
         var effects = new List<string>();
         string Pct(double y) => Ui.C(y >= 1 ? Ui.Good : Ui.Bad, $"[b]{Math.Round(y * 100)}%[/b]");
         double food = s.YieldOf(Good.Food);
-        if (Math.Abs(food - 1) > 0.05) effects.Add(Ui.Tip($"{Ui.Img("food", 16)} {Pct(food)}", "Fields yield"));
+        if (Math.Abs(food - 1) > 0.05) effects.Add(Ui.Tip($"{Ui.Img("food", 16)} {Pct(food)} {W("fields")}", "Fields yield"));
         foreach (var (g, y) in s.Yields)
-            if (g != Good.Food && Math.Abs(y - 1) > 0.15) effects.Add(Ui.Tip($"{Ui.Img(g.ToString().ToLowerInvariant(), 16)} {Pct(y)}", $"{g} output"));
-        if (Math.Abs(s.Build - 1) > 0.05) effects.Add(Ui.Tip($"{Ui.Img("tools", 16)} {Pct(s.Build)}", "Building speed"));
-        if (s.Mood != 0) effects.Add(Ui.Tip($"{Ui.Img("mandate", 16)} {Ui.Signed(s.Mood)}", "Mood"));
-        effects.Add(Ui.Tip($"{Ui.Img("ui-trade", 16)} {Ui.C(Ui.Gold, $"[b]{s.ImportPremium:0.#}×[/b]")}", "Caravans charge this much for what the town lacks"));
-        if (s.MarchDays > 0) effects.Add(Ui.Tip($"{Ui.Img("ui-road", 16)} {Ui.C(Ui.Bad, $"[b]+{Ui.Days(s.MarchDays).Replace(' ', '\u00a0')}[/b]")}", "Armies march slower"));
+            if (g != Good.Food && Math.Abs(y - 1) > 0.15) effects.Add(Ui.Tip($"{Ui.Img(g.ToString().ToLowerInvariant(), 16)} {Pct(y)} {W(g.ToString().ToLowerInvariant())}", $"{g} output"));
+        if (Math.Abs(s.Build - 1) > 0.05) effects.Add(Ui.Tip($"{Ui.Img("tools", 16)} {Pct(s.Build)} {W("building")}", "Building speed"));
+        if (s.Mood != 0) effects.Add(Ui.Tip($"{Ui.Img("mandate", 16)} {Ui.Signed(s.Mood)} {W("mood")}", "Mood"));
+        effects.Add(Ui.Tip($"{Ui.Img("ui-trade", 16)} {Ui.C(Ui.Gold, $"[b]{s.ImportPremium:0.#}×[/b]")} {W("imports")}", "Caravans charge this much for what the town lacks"));
+        if (s.MarchDays > 0) effects.Add(Ui.Tip($"{Ui.Img("ui-road", 16)} {Ui.C(Ui.Bad, $"[b]+{Ui.Days(s.MarchDays).Replace(' ', '\u00a0')}[/b]")} {W("marches")}", "Armies march slower"));
         var busy = s.Menace.Where(kv => kv.Value >= 1.25).Select(kv => kv.Key).ToList();
         var quiet = s.Menace.Where(kv => kv.Value <= 0.7).Select(kv => kv.Key).ToList();
         if (s.Warband >= 1.25) busy.Insert(0, "the warband");
         if (s.Warband <= 0.7) quiet.Insert(0, "the warband");
-        if (busy.Count > 0) effects.Add(Ui.Tip($"{Ui.Img("threat", 16)} {Ui.C(Ui.Bad, "[b]▲[/b]")}", $"On the move: {Expedition.ListNames(busy)}"));
-        if (quiet.Count > 0) effects.Add(Ui.Tip($"{Ui.Img("threat", 16)} {Ui.C(Ui.Good, "[b]▼[/b]")}", $"Lie low: {Expedition.ListNames(quiet)}"));
+        if (busy.Count > 0) effects.Add(Ui.Tip($"{Ui.Img("threat", 16)} {Ui.C(Ui.Bad, "[b]▲[/b]")} {W("foes")}", $"On the move: {Expedition.ListNames(busy)}"));
+        if (quiet.Count > 0) effects.Add(Ui.Tip($"{Ui.Img("threat", 16)} {Ui.C(Ui.Good, "[b]▼[/b]")} {W("foes")}", $"Lie low: {Expedition.ListNames(quiet)}"));
         p.Text(Ui.Chips(effects.ToArray()), 13);
         RenderOmen(p, t);
 
@@ -239,21 +239,24 @@ public partial class Main
         p.Text($"{Ui.Tip($"{Ui.Img(o.Icon, 18)} [b]{Ui.Esc(o.Name)}[/b]", $"The seers foretold it for this year. {o.Text}")}  {when}  {effects}", 13);
     }
 
+    /// <summary>A one-word label after a chip's figure, so the row reads without hovering.</summary>
+    private static string W(string word) => Ui.Dim($"[font_size=11]{word}[/font_size]");
+
     /// <summary>What an omen does, as chips: green for a boon, red for a trial.</summary>
     public static List<string> OmenEffects(OmenDef o)
     {
         var e = new List<string>();
         string Pct(double y) => Ui.C(y >= 1 ? Ui.Good : Ui.Bad, $"[b]{Math.Round(y * 100)}%[/b]");
-        foreach (var (g, y) in o.Yields) e.Add(Ui.Tip($"{Ui.Img(g.ToString().ToLowerInvariant(), 14)} {Pct(y)}", $"{g} output"));
-        if (o.Mood != 0) e.Add(Ui.Tip($"{Ui.Img("mandate", 14)} {Ui.Signed(o.Mood)}", "Mood"));
-        if (Math.Abs(o.Build - 1) > 0.01) e.Add(Ui.Tip($"{Ui.Img("tools", 14)} {Pct(o.Build)}", "Building speed"));
-        if (o.Arrivals != 0) e.Add(Ui.Tip($"{Ui.Img("population", 14)} {Ui.C(o.Arrivals > 0 ? Ui.Good : Ui.Bad, o.Arrivals > 0 ? "[b]▲[/b]" : "[b]▼[/b]")}", "Settlers"));
-        if (o.Heroes != 0) e.Add(Ui.Tip($"{Ui.Img("heroes", 14)} {Ui.C(o.Heroes > 0 ? Ui.Good : Ui.Bad, o.Heroes > 0 ? "[b]▲[/b]" : "[b]▼[/b]")}", "Heroes walking in"));
-        if (Math.Abs(o.Tourists - 1) > 0.01) e.Add(Ui.Tip($"{Ui.Img("ui-person", 14)} {Pct(o.Tourists)}", "Visitors"));
-        if (o.Menace > 1.01 || o.Warband > 1.01) e.Add(Ui.Tip($"{Ui.Img("threat", 14)} {Ui.C(Ui.Bad, "[b]▲[/b]")}", "Enemies on the move"));
-        else if (o.Menace < 0.99 || o.Warband < 0.99) e.Add(Ui.Tip($"{Ui.Img("threat", 14)} {Ui.C(Ui.Good, "[b]▼[/b]")}", "Enemies lie low"));
-        if (o.MarchDays != 0) e.Add(Ui.Tip($"{Ui.Img("ui-road", 14)} {Ui.C(o.MarchDays > 0 ? Ui.Good : Ui.Bad, $"[b]{(o.MarchDays > 0 ? "+" : "")}{Ui.Days(o.MarchDays).Replace(' ', '\u00a0')}[/b]")}", "Armies march"));
-        if (Math.Abs(o.Sick - 1) > 0.01) e.Add(Ui.Tip($"{Ui.Img("sickness", 14)} {Pct(o.Sick)}", "Sickness spreads"));
+        foreach (var (g, y) in o.Yields) e.Add(Ui.Tip($"{Ui.Img(g.ToString().ToLowerInvariant(), 14)} {Pct(y)} {W(g.ToString().ToLowerInvariant())}", $"{g} output"));
+        if (o.Mood != 0) e.Add(Ui.Tip($"{Ui.Img("mandate", 14)} {Ui.Signed(o.Mood)} {W("mood")}", "Mood"));
+        if (Math.Abs(o.Build - 1) > 0.01) e.Add(Ui.Tip($"{Ui.Img("tools", 14)} {Pct(o.Build)} {W("building")}", "Building speed"));
+        if (o.Arrivals != 0) e.Add(Ui.Tip($"{Ui.Img("population", 14)} {Ui.C(o.Arrivals > 0 ? Ui.Good : Ui.Bad, o.Arrivals > 0 ? "[b]▲[/b]" : "[b]▼[/b]")} {W("settlers")}", "Settlers"));
+        if (o.Heroes != 0) e.Add(Ui.Tip($"{Ui.Img("heroes", 14)} {Ui.C(o.Heroes > 0 ? Ui.Good : Ui.Bad, o.Heroes > 0 ? "[b]▲[/b]" : "[b]▼[/b]")} {W("heroes")}", "Heroes walking in"));
+        if (Math.Abs(o.Tourists - 1) > 0.01) e.Add(Ui.Tip($"{Ui.Img("ui-person", 14)} {Pct(o.Tourists)} {W("visitors")}", "Visitors"));
+        if (o.Menace > 1.01 || o.Warband > 1.01) e.Add(Ui.Tip($"{Ui.Img("threat", 14)} {Ui.C(Ui.Bad, "[b]▲[/b]")} {W("foes")}", "Enemies on the move"));
+        else if (o.Menace < 0.99 || o.Warband < 0.99) e.Add(Ui.Tip($"{Ui.Img("threat", 14)} {Ui.C(Ui.Good, "[b]▼[/b]")} {W("foes")}", "Enemies lie low"));
+        if (o.MarchDays != 0) e.Add(Ui.Tip($"{Ui.Img("ui-road", 14)} {Ui.C(o.MarchDays > 0 ? Ui.Good : Ui.Bad, $"[b]{(o.MarchDays > 0 ? "+" : "")}{Ui.Days(o.MarchDays).Replace(' ', '\u00a0')}[/b]")} {W("marches")}", "Armies march"));
+        if (Math.Abs(o.Sick - 1) > 0.01) e.Add(Ui.Tip($"{Ui.Img("sickness", 14)} {Pct(o.Sick)} {W("sickness")}", "Sickness spreads"));
         return e;
     }
 

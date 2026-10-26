@@ -125,7 +125,7 @@ public partial class Main
             int hurt = heroes.Count(h => !h.IsAway && !Quests.Available(h));
             int ready = heroes.Count(Quests.Available);
             var why = new List<string>();
-            if (ready > 0) why.Add($"{ready} ready, a party needs 3");
+            if (ready > 0) why.Add(ready < 3 ? $"Only {ready} ready: a party needs 3" : $"{ready} ready, but their companies are out on the road");
             if (road > 0) why.Add($"{road} on the road");
             if (hurt > 0) why.Add($"{hurt} resting their wounds");
             if (heroes.Count == 0) why.Add("no heroes on the town's books");

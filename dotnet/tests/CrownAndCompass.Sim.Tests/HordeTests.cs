@@ -50,7 +50,7 @@ public class HordeTests
     }
 
     [Fact]
-    public void FightsAtACampThinItAndAThinHostWillNotMarch()
+    public void FightsAtACampThinItAndAThinHostStillMarches()
     {
         var (sim, m) = Crowned();
         var t = sim.Town;
@@ -61,12 +61,15 @@ public class HordeTests
         Horde.Daily(t, m);
         Assert.Equal(100 * (1 - Horde.Rules(t).Struck), Seat(t, m).Strength, 6);
 
-        // Long past due with too little gathered: it waits, and the town hears it is too thin.
+        // Short of its due, thin: it waits.
         foreach (var c in Horde.State(t).Camps) c.Strength = 0;
-        m.NextAssaultTick = t.Tick - (Horde.Rules(t).Patience + 1) * SimTime.HoursPerDay;
+        m.NextAssaultTick = t.Tick - (Horde.Rules(t).Patience - 2) * SimTime.HoursPerDay;
         Horde.Daily(t, m);
         Assert.Equal(HordeStage.Gathering, Horde.State(t).Stage);
-        Assert.Null(m.ArrivalTick);
+        // Long past due with too little gathered: it musters anyway, and the town hears it comes thin.
+        m.NextAssaultTick = t.Tick - (Horde.Rules(t).Patience + 1) * SimTime.HoursPerDay;
+        Horde.Daily(t, m);
+        Assert.Equal(HordeStage.Mustering, Horde.State(t).Stage);
         Assert.True(Horde.State(t).ToldThin);
     }
 

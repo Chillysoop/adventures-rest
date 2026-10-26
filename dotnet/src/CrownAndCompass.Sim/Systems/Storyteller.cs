@@ -50,8 +50,15 @@ public sealed record StorytellerDef
     public double HordeGrowth { get; init; } = 1;
     public double HordeSize { get; init; } = 1;
 
+    /// <summary>The least share of a full host the big bad marches with, however its camps were thinned (0 for no floor).</summary>
+    public double HordeFloor { get; init; }
+
     /// <summary>On the strength (champions' level and the town's size) each act waits for (<see cref="Saga"/>).</summary>
     public double Acts { get; init; } = 1;
+
+    /// <summary>Extra times a beaten big bad gets away, and levels the champions must have over the plain bar before they can ride for its seat.</summary>
+    public int Escapes { get; init; }
+    public int RideOver { get; init; }
 
     /// <summary>How far each of the above may swing either way, rolled each time (0 for none).</summary>
     public double Swing { get; init; }

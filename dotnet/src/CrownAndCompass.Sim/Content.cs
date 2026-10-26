@@ -1725,6 +1725,10 @@ public sealed class Content
     public BountyRules Bounties { get; init; } = new();
     public BroadsheetRules Broadsheet { get; init; } = new();
     public ClockworkRules Clockwork { get; init; } = new();
+    /// <summary>How much of the day's news reaches the Notable Ledger, and the digest for the rest (content/game/news.json).</summary>
+    public Systems.NewsRules News { get; init; } = new();
+    public Systems.FrontierRules Frontier { get; init; } = new();
+
     /// <summary>The tax rate and the unrest of underfunded services (content/game/taxes.json).</summary>
     public TaxRules Taxes { get; init; } = new();
     /// <summary>Trade guilds, their demands and their strikes (content/game/guilds.json).</summary>
@@ -2044,6 +2048,8 @@ public sealed class Content
             Broadsheet = Parse<BroadsheetRules>("broadsheet.json"),
             Clockwork = Parse<ClockworkRules>("clockwork.json"),
             Taxes = Parse<TaxRules>("taxes.json"),
+            News = Parse<Systems.NewsRules>("news.json"),
+            Frontier = Parse<Systems.FrontierRules>("frontier.json"),
             Guilds = Parse<GuildRules>("guilds.json"),
             Patrons = Parse<PatronRules>("patrons.json"),
             Taverns = Parse<Systems.TavernRules>("taverns.json"),

@@ -8,7 +8,7 @@
   "stakes": [
     { "id": "low", "name": "low", "dueDays": 3, "xp": 30 },
     { "id": "medium", "name": "rising", "dueDays": 4, "xp": 60 },
-    { "id": "high", "name": "high", "dueDays": 4, "xp": 120 }
+    { "id": "high", "name": "high", "dueDays": 4, "xp": 120, "floor": 8 }
   ],
   "levels": [0, 150, 400, 750, 1200, 1750, 2400, 3150, 4000, 5000],
   "titles": ["Reeve", "Reeve", "Alderman", "Alderman", "Burgomaster", "Burgomaster", "Lord Mayor", "Lord Mayor", "Warden of the March", "Warden of the March"],

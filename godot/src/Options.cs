@@ -119,6 +119,7 @@ public sealed class Options
 
     /// <summary>--intro lineage: show that faction's first-meeting card (intros.json).</summary>
     public string? Intro;
+    public string? LastBattle;
 
     /// <summary>Claim this road to victory once the town is staged, for shots of a road being held (victory.json id).</summary>
     public string? Claim;
@@ -322,6 +323,7 @@ public sealed class Options
                 case "--mayor-fallen": o.MayorFallen = true; o.Tab = "Mayor"; break;
                 case "--episode": o.Episode = Next(); break;
                 case "--intro": o.Intro = Next(); break;
+                case "--last-battle": o.LastBattle = Next(); break;
                 case "--tower": o.Tower = Next(); break;
                 case "--wilds": o.Wilds = Next(); break;
                 case "--claim": o.Claim = Next(); break;

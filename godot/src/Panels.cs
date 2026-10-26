@@ -39,6 +39,12 @@ public partial class Main
             p.Card($"{Ui.Img("foe-unseen", 30)}  [font_size=17][b]No foes known[/b][/font_size]\n{Ui.C(Ui.Ink2, "[font_size=13]• Scouts and scrying find them\n• Witnesses and messengers bring word\n• Parties meet them on the road[/font_size]")}");
             p.Buttons(("Army", true, false, () => OpenWindow(Tab.Army)), ("Defence", true, false, () => OpenWindow(Tab.Defence)), ("Bounty board", true, false, () => OpenWindow(Tab.Bounties)));
         }
+        if (Saga.Champions(t, out _, out var bigSeat) is { } champions)
+        {
+            p.Heading("The last ride");
+            p.Row($"{string.Join("  ", champions.Select(h => Ui.Chip("heroes", $"{h.GivenName} {h.Hero!.Level}", Ui.Ink, Ui.Cap(h.Hero.Cls.Name))))}  {Ui.Dim("→ " + Ui.Esc(bigSeat!.Def.Name))}",
+                ("Ride", true, true, () => Act(() => _sim.CallLastRide())));
+        }
         if (band) RenderWarband(p, t);
         if (foes.Count > 0)
         {
@@ -376,8 +382,9 @@ public partial class Main
         int pct = (int)Math.Round(rate * 100);
         p.Heading("Taxes");
         double mood = Taxes.Mood(t) + r.Mood * unrest / 100;
-        string taxTip = $"Taken from every sale, drink and hearth. Above {Math.Round(usual * 100)}% each point sours the townsfolk and puts settlers off; below it pleases them.";
-        p.Row($"{Ui.Tip($"[b]Tax rate[/b]  {Tag($"{pct}%", rate > usual + 1e-9 ? Ui.Bad : rate < usual - 1e-9 ? Ui.Good : Ui.Ink)}", taxTip)}\n[font_size=12]{Ui.Chip("ui-heart", Ui.Signed(mood, "0.0"), null, "What the tax rate does to every townsperson's mood now", 13)}[/font_size]",
+        string taxTip = $"Taken from every sale, drink and hearth. Above {Math.Round(usual * 100)}% each point sours the townsfolk and puts settlers off; below it pleases them. Above {Math.Round(r.HeavyFrom * 100)}% it stirs unrest by itself: good for filling a war chest, not for long.";
+        double heavy = Taxes.Heavy(t);
+        p.Row($"{Ui.Tip($"[b]Tax rate[/b]  {Tag($"{pct}%", rate > usual + 1e-9 ? Ui.Bad : rate < usual - 1e-9 ? Ui.Good : Ui.Ink)}", taxTip)}\n[font_size=12]{Ui.Chip("ui-heart", Ui.Signed(mood, "0.0"), null, "What the tax rate does to every townsperson's mood now", 13)}{(heavy > 0 ? " " + Ui.Chip("suspicion", $"+{Math.Round(heavy)}", Ui.Bad, "Unrest a heavy tax stirs by itself", 13) : "")}[/font_size]",
             ("−1%", rate > r.Min + 1e-9, false, () => Act(() => _sim.SetTax(rate - r.Step))),
             ("+1%", rate < r.Max - 1e-9, true, () => Act(() => _sim.SetTax(rate + r.Step))));
         double income = Taxes.Income(t), services = Taxes.Services(t), funding = Taxes.Funding(t);
@@ -386,7 +393,9 @@ public partial class Main
             Ui.Chip("ui-up", $"+{income:N0}g/day", shortfall ? Ui.Bad : Ui.Good, "Taxes, rents and trade coming in each day"),
             Ui.Chip("gold", $"−{services:N0}g/day", shortfall ? Ui.Bad : Ui.Ink, "What the town's services cost each day: the watch, the roads, the wells and the institutions"));
         p.Meter("Unrest", unrest, $"{Math.Round(unrest)}", unrest >= 25);
-        p.Note(unrest >= r.StrikeAt
+        p.Note(heavy > 0 && !shortfall
+            ? $"The tax itself stirs unrest. Bring it back to {Math.Round(r.HeavyFrom * 100)}% or below once the chest is full."
+            : unrest >= r.StrikeAt
             ? "Workers are striking over failing services. Raise taxes or find more income: trade routes, wonders, institutions that pay."
             : shortfall
                 ? "Services cost more than the town takes in. Unrest is climbing: it sours every household, costs Mandate and turns settlers away, and at its worst workers walk out."

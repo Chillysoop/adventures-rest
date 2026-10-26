@@ -21,6 +21,7 @@ public static class ClockStops
         new("war", "War and raids", "Raids, battles, hosts on the march", true),
         new("deaths", "Deaths of heroes", "At home or abroad", true),
         new("crises", "Crises and the big bad", "Crisis turns and the big bad's moves", true),
+        new("last-battle", "The last battle", "Your champions ride for the big bad, or its host marches", true),
         new("mayor", "Your mayor falls", "Killed by a knife, a breach or the road", true),
         new("storm", "Storms", "A storm breaks over the town", false),
     ];

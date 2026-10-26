@@ -12,8 +12,8 @@ namespace CrownAndCompass.Client.Map;
 public partial class TownRolls(MapView map) : Control
 {
     /// <summary>Nearer than this the pops show; further out they are skipped.</summary>
-    public const float ShowDistance = 120;
-    private const int MaxShown = 6;
+    public const float ShowDistance = 45;
+    private const int MaxShown = 3;
     private const float Tumble = 0.5f, Hold = 1.9f, Fade = 0.45f;
 
     private sealed class Pop

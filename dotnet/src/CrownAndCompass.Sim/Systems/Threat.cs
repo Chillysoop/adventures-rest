@@ -143,6 +143,8 @@ public static class Threat
         double walls = w.CityWall == PalisadeState.Built ? d.CityWall
             : w.StoneWall == PalisadeState.Built ? d.StoneWall
             : w.Palisade == PalisadeState.Built ? d.Palisade : 1;
+        // A wall is only as strong as the watch on it.
+        walls = 1 + (walls - 1) * Frontier.WallShare(town);
         return walls * Blows.WallFactor(town) * Garrison.MoatFactor(town) * (1 + d.PerTower * w.Towers + Garrison.FortBonus(town) + Planning.Defense(town) + Founding.Defence(town));
     }
 
@@ -270,7 +272,7 @@ public static class Threat
         en.Raids++;
         en.RaidWaited = 0;
         en.NextRaidTick = town.Tick + (int)Math.Round(rng.Range(e.RaidEveryDays[0], e.RaidEveryDays[1] + 1) * Storyteller.RaidEvery(town) / Seasons.Warband(town)) * SimTime.HoursPerDay;
-        double raiders = Math.Max(4, Js.Round(en.Strength * e.RaidShare * (0.7 + rng.Next() * 0.6) * Storyteller.RaidStrength(town)));
+        double raiders = Math.Max(4, Js.Round(en.Strength * e.RaidShare * (0.7 + rng.Next() * 0.6) * Storyteller.RaidStrength(town) * Frontier.Lure(town)));
         var home = town.Heroes.Where(a => !a.IsAway).ToList();
         double local = LocalDefense(town);
         var party = Lairs.AwayParty(town);

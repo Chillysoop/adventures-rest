@@ -235,7 +235,7 @@ public static class Council
         var res = town.Residents;
         double mood = res.Count > 0 ? Js.Sum(res, a => a.LastDayMood) / res.Count : 65;
         var speaker = FindSeat(town, SeatId.Speaker);
-        double drift = (mood - 70) * 0.04 + Planning.Mandate(town) * 0.05 + Decor.Mandate(town) + Regalia.Mandate(town) + Mayoralty.Mandate(town);
+        double drift = (mood - 70 - Frontier.Expect(town)) * 0.04 + Planning.Mandate(town) * 0.05 + Decor.Mandate(town) + Regalia.Mandate(town) + Mayoralty.Mandate(town);
         if (speaker != null && speaker.HolderId != null) drift += speaker.Loyalty >= LowLoyalty ? 0.15 * Competence(town, speaker) : -0.5;
         // Goodwill fades: a mandate above its rest has to be kept earned.
         var rules = town.Content.Council;
@@ -348,12 +348,12 @@ public static class Council
                     return new Proposal(MotionKind.RaiseTax, 0, red ? "the books have run red this week" : underfunded ? "the town's services cost more than it takes in" : "the treasury is thin");
                 // Not below the Captain's own floor, or the two seats hire and dismiss the same watchmen by turns
                 // (a watch the town truly can't pay hands in its badges by itself).
-                if (red && town.Watch > 0 && town.Watch > town.Population / 30) return new Proposal(MotionKind.DismissWatch, 0, "the watch costs more than the town can bear");
+                if (red && town.Watch > 0 && town.Watch > town.Population / 30 && Frontier.Manned(town) >= 1) return new Proposal(MotionKind.DismissWatch, 0, "the watch costs more than the town can bear");
                 return null;
             }
             case SeatId.Captain:
-                if (brawls >= 2 || town.Watch < town.Population / 30)
-                    return new Proposal(MotionKind.HireWatch, 0, brawls >= 2 ? $"{brawls} brawls this week" : "the streets go unwatched");
+                if (brawls >= 2 || town.Watch < town.Population / 30 || Frontier.Manned(town) < town.Content.Frontier.WantManned)
+                    return new Proposal(MotionKind.HireWatch, 0, brawls >= 2 ? $"{brawls} brawls this week" : town.Watch < town.Population / 30 ? "the streets go unwatched" : "the walls go unmanned at night");
                 return KnightProposal(town);
             case SeatId.Speaker:
             {
