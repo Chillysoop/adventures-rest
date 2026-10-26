@@ -462,7 +462,13 @@ public sealed class WorldGen
         // On the town's grid the lots may be built on at any time: only sparse grass, which the buildings hide.
         if (Mathf.Abs(p.X - Geo.Center.X) < Geo.Grid / 2 + 1 && Mathf.Abs(p.Y - Geo.Center.Y) < Geo.Grid / 2 + 1)
         {
-            if (r < 0.3f) ChunkAdd(p, seed, Scatter.Tuft);
+            // Rock reaching in from the hills nearby: boulders and stones the town grows round (Workings.Cells).
+            if (EdgeAt(p) == Workings.Rock)
+            {
+                if (r < 0.75f) ChunkAdd(p, seed, r < 0.3f ? Scatter.Boulder : Scatter.Rock);
+                if (Geo.Hash(seed + 11) < 0.45f) ChunkAdd(p, seed + 17, Scatter.Rock);
+            }
+            else if (r < 0.3f) ChunkAdd(p, seed, Scatter.Tuft);
             return;
         }
         float rocky = biome is Biome.Crags ? 0.12f : biome is Biome.Hills ? 0.03f : 0.008f;
@@ -473,6 +479,19 @@ public sealed class WorldGen
         else if (f < 0.3f && r < rocky + 0.6f && biome is not Biome.Crags) kind = biome == Biome.Meadow && Geo.Hash(seed + 2) < 0.08f ? Scatter.Flowers : Scatter.Tuft;
         else return;
         ChunkAdd(p, seed, kind);
+    }
+
+    private byte[]? _edge;
+
+    /// <summary>Woods or rock reaching into the town's ground at a map tile (<see cref="Workings.Cells"/>), where nothing stands, is paved or zoned yet.</summary>
+    private byte EdgeAt(Vector2 p)
+    {
+        float px = p.X - Geo.Margin, py = p.Y - Geo.Margin;
+        if (px < 0 || py < 0 || px >= Geo.Grid || py >= Geo.Grid) return 0;
+        int i = (int)(py * Land.Res) * Land.Size + (int)(px * Land.Res);
+        var plan = _town.Plan;
+        if (plan.Taken[i] != 0 || plan.Paved[i] != 0 || plan.Zones[i] != 0) return 0;
+        return (_edge ??= Workings.Cells(_town))[i];
     }
 
     private void ChunkAdd(Vector2 p, int seed, byte kind)
@@ -516,6 +535,8 @@ public sealed class WorldGen
                 // No forest on water, bare peaks, steep scree, or the town's own clearing.
                 if (h < 0.4f || h > 36) f = 0;
                 f *= Mathf.SmoothStep(Geo.Clearing, Geo.Clearing + 22, p.DistanceTo(Geo.Center));
+                // Woods reaching into the town's own ground from a wood nearby stand thick: nothing is built there.
+                if (h >= 0.4f && EdgeAt(p) == Workings.Woods) f = Mathf.Max(f, 0.62f + 0.3f * Geo.Hash(Seed * 31 + y * N + x));
                 foreach (var pin in pins) f *= Mathf.SmoothStep(4, 9, p.DistanceTo(pin));
                 var nrm = NormalAt(x, y);
                 if (nrm.Y < 0.72f) f *= 0.3f;

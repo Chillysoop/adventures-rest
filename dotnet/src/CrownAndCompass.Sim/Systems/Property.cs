@@ -255,7 +255,13 @@ public static class Property
     public static string? Waiting(Town town, Zone zone)
     {
         if (zone is not (Zone.Residential or Zone.Commercial or Zone.Industry) || Land.OpenPlots(town, zone) == 0) return null;
-        if (!Construction.Room(town)) return "waits on builders: every crew is busy";
+        if (!Construction.Room(town))
+        {
+            var stalled = town.Buildings.Where(b => Construction.Zoned(town, b) && Construction.Stalled(town, b)).ToList();
+            if (stalled.Count == 0) return "waits on builders: every crew is busy";
+            bool stone = stalled.Any(b => Construction.Wanting(b).Stone > 0), timber = stalled.Any(b => Construction.Wanting(b).Timber > 0);
+            return $"waits on {(timber && stone ? "timber and stone" : stone ? "stone" : "timber")}: building sites stand idle";
+        }
         var workers = town.Workers;
         if (zone == Zone.Residential)
         {
@@ -330,10 +336,12 @@ public static class Property
 
         a.Gold -= lotPrice;
         town.Book(TreasuryAccount.LandSales, lotPrice);
-        a.Gold -= Planning.BuyMaterials(town, def);
         a.Gold -= def.Cost;
 
+        // The timber and stone come off the market as the haulers carry them, paid from the builder's purse: with none in
+        // town the site stalls until the market fills or the owner sends away for it (Construction.Imports).
         var site = town.AddBuilding(def, lot, a.Id, NameFor(town, def, a), false);
+        site.Draws = true;
         site.LaborBudget = Construction.Hours(town, def) * Brain.ConstructionWage;
 
         string what = def.Housing > 0 ? (rental ? $"a {def.Name.ToLowerInvariant()} to let" : "a home for the family") : site.Name;

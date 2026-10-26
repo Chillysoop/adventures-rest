@@ -131,6 +131,7 @@ public static class Roads
         var spots = town.Sites.Select(s => World.Spot(town, s)).ToList();
         Ranges(town, rng, spots);
         Country.Lay(town, rng, spots);
+        Country.Home(town, spots);
         town.Shaped = true;
     }
 

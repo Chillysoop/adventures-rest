@@ -575,6 +575,19 @@ public partial class Main
     /// <summary>The painted patrols: what each costs, how it has fared, the horse riding it, and the brush.</summary>
     private void RenderPatrols(Pane p, Town t)
     {
+        // The cart roads from far workings: what they lose, and how much of them patrols keep.
+        foreach (var w in t.Content.Workings.Goods)
+        {
+            if (Workings.Nearest(t, w.Good) is not { } road || !Workings.Afar(t, road) || !t.Buildings.Any(b => b.Complete && w.Buildings.Contains(b.Def.Id))) continue;
+            double lost = Workings.RaidChance(t, road), kept = Workings.Patrolled(t, road);
+            int lairs = Workings.LairsBy(t, road);
+            p.Row(Ui.Chips(
+                Ui.Chip(w.Good == Good.Timber ? "timber" : "stone", $"{(w.Good == Good.Timber ? "Timber" : "Stone")} road · {Js.Str(Js.Round(road.Days * 10) / 10)}d", null, "Carts bring loads home from the far working every few days. Raiders can take them."),
+                Ui.Chip("warband", $"{Js.Str(Js.Round(lost * 100))}% lost", lost >= 0.2 ? Ui.Bad : null, "Share of carts taken on the road: more for a long road, a dangerous land and lairs beside it."),
+                Ui.Chip("order-patrol", $"{Js.Str(Js.Round(kept * 100))}% patrolled", null, "Paint patrols over the road to keep the carts safe."),
+                lairs > 0 ? Ui.Chip("warband", $"{lairs} {(lairs == 1 ? "lair" : "lairs")} near", Ui.Bad, "Clear lairs beside the road and fewer carts are taken.") : ""),
+                ("Patrol it", kept < 0.9, true, () => Act(() => _sim.PaintWilds(Wilds.Patrol, Wilds.RoadCells(t, (road.X, road.Y))))));
+        }
         var horse = t.Army.Regiments.Where(r => r.Soldiers.Count > 0 && Army.Unit(t, r).Role == "horse").OrderBy(r => r.Id).ToList();
         foreach (var z in Wilds.OfKind(t, Wilds.Patrol).OrderBy(z => z.Id).ToList())
         {
