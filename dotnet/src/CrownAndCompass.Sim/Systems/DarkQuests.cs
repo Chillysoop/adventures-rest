@@ -191,7 +191,11 @@ public static class DarkQuests
         st.NextDay = town.Day + town.Rng.Range(Rules(town).Every[0], Rules(town).Every[1] + 1);
         m.Power = Math.Max(0, m.Power * (1 - Rules(town).FoilPower));
         if (def != null) town.Log(LedgerCategory.War, Importance.Major, Saga.Cap(Fill(town, def.Foiled, m, q)));
-        if (site != null && Plots.RelicFor(town, site) is { } item) Watch.ReceiveRelic(town, item, $"heroes who cleared {site.Def.Name}");
+        if (site != null && Plots.RelicFor(town, site) is { } item)
+        {
+            Watch.ReceiveRelic(town, item, $"heroes who cleared {site.Def.Name}");
+            Spoils.Found(town, item, "the heroes", true, null, site.Def.Id, []);
+        }
     }
 
     internal static void Finish(Town town, Menace m, DarkQuest q)

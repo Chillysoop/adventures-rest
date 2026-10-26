@@ -1,5 +1,5 @@
 {
-  "_doc": "What foes leave (Systems/Spoils.cs). trophies: parts, the first whose words are in a creature's name, else by type and challenge; a part's `types` are the creature types it comes from, which also make it an apothecary ingredient (alchemy.json ingredients `types`). The caravans pay `sellShare` of a part's worth, `routeShare` more for each open trade road up to `routeMost`. drops: magic items only these foes carry. recipes: what the town's craftsmen make from gold and parts; tier is the charter it needs.",
+  "_doc": "What foes leave (Systems/Spoils.cs). trophies: parts, the first whose words are in a creature's name, else by type and challenge; a part's `types` are the creature types it comes from, which also make it an apothecary ingredient (alchemy.json ingredients `types`). The caravans pay `sellShare` of a part's worth, `routeShare` more for each open trade road up to `routeMost`. drops: magic items only these foes carry. recipes: what the town's craftsmen make from gold and parts; tier is the charter it needs. A magic item of findRank or finer (2 rare, 3 very rare, 4 legendary, 5 artifact) a hero or company brings home raises the Rare find alert for findDays (greatRank or finer that beats all the finders already carry slides a tile out of the rail); findSkip kinds are used up and raise none.",
   "trophyChance": 0.35,
   "perCr": 0.06,
   "valuePerCr": 0.25,
@@ -9,6 +9,10 @@
   "dropPerCr": 0.12,
   "bossDrop": 1.5,
   "mostDrops": 1,
+  "findRank": 2,
+  "greatRank": 3,
+  "findDays": 3,
+  "findSkip": ["potion", "scroll", "ammunition"],
   "conquest": 2,
   "autoKeep": 12,
   "routeShare": 0.1,

@@ -44,7 +44,7 @@ public sealed record AlertKind(string Id, string Title, string Icon, AlertLevel 
 /// One thing the player should act on. The key stays the same while it is the same problem, so a dismissed
 /// alert stays dismissed until it is resolved and comes back. Site, agent or town aim the camera.
 /// </summary>
-public sealed record Alert(string Key, AlertKind Kind, string Text, string Tip, string? SiteId = null, int? AgentId = null, bool AtTown = false, int? StoryId = null, int? Wall = null, int? FindId = null, int? BuildingId = null);
+public sealed record Alert(string Key, AlertKind Kind, string Text, string Tip, string? SiteId = null, int? AgentId = null, bool AtTown = false, int? StoryId = null, int? Wall = null, int? FindId = null, int? BuildingId = null, LibItem? Item = null);
 
 /// <summary>
 /// The player's to-do list, in the manner of Paradox games. Standing alerts are read off the town each
@@ -100,6 +100,8 @@ public static class Alerts
     public static readonly AlertKind Work = new("work", "Idle hands", "population", AlertLevel.Decision, AlertWindow.City, "Growth>Why settlers");
     public static readonly AlertKind Settlers = new("settlers", "No settlers", "population", AlertLevel.Decision, AlertWindow.City, "Growth>Why settlers");
     public static readonly AlertKind Loot = new("loot", "Loot for sale", "gold", AlertLevel.Decision, AlertWindow.Armory, "Offered to the town");
+    public static readonly AlertKind Treasure = new("treasure", "A great find", "item-ring", AlertLevel.Decision, AlertWindow.Armory, "Items>In the armory");
+    public static readonly AlertKind RareFind = new("rarefind", "Rare find", "item-ring", AlertLevel.Minor, AlertWindow.Armory, "Items>In the armory");
     public static readonly AlertKind Gifts = new("gifts", "Arms to give", "heroes", AlertLevel.Minor, AlertWindow.Armory, "In the armory");
     public static readonly AlertKind Outpost = new("outpost", "Land to hold", "warband", AlertLevel.Minor, AlertWindow.None);
     public static readonly AlertKind Tower = new("tower", "Tower tested", "warband", AlertLevel.Urgent, AlertWindow.None);
@@ -129,10 +131,10 @@ public static class Alerts
 
     /// <summary>Every kind, in the order their icons sit on the strip within a level.</summary>
     public static readonly IReadOnlyList<AlertKind> Kinds =
-        [Siege, Sighted, Lurker, Captives, Overdue, Ride, Doom, Crisis, Sick, Fear, Hunger, Coffers, Underfunded, Unrest, Strike, Hostile, Motion, Guild, Balance, Fealty, Gathering, DarkQuest, Road, Clash, Traitor, Plot, Dark, Spent, Fields, Unmanned, Strangers, Stores, Story, Scry, Explorers, Fallen, LevelUp, Charter, GrandWork, Tourney, Bastion, Institution, Notable, Heroes, Honours, Courted, Envoy, Neighbour, Shadow, Loot, Stalled, Bridge, Ruin, Work, Settlers, Below, Scholars, Trade, Wager, Gifts, Tower, Patrol, Outpost, Housing, Rooms, Camp, Crowded, WarAsk];
+        [Siege, Sighted, Lurker, Captives, Overdue, Ride, Doom, Crisis, Sick, Fear, Hunger, Coffers, Underfunded, Unrest, Strike, Hostile, Motion, Guild, Balance, Fealty, Gathering, DarkQuest, Road, Clash, Traitor, Plot, Dark, Spent, Fields, Unmanned, Strangers, Stores, Story, Scry, Explorers, Fallen, LevelUp, Charter, GrandWork, Tourney, Bastion, Institution, Notable, Heroes, Honours, Courted, Envoy, Neighbour, Shadow, Treasure, Loot, Stalled, Bridge, Ruin, Work, Settlers, Below, Scholars, Trade, Wager, RareFind, Gifts, Tower, Patrol, Outpost, Housing, Rooms, Camp, Crowded, WarAsk];
 
     /// <summary>The standing rules, each naming what needs the player now. No rng and no writes: the client calls them often.</summary>
-    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Trades, Hostility, Winter, Growth, Routes, Region, Courting, Undercity, Study, Loyalty, Armoury, Homes, Sites, Allies, Word, Crowds, Keepers, Notables, Outposts, Lists, Brought, Missing, Frontiers];
+    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Trades, Hostility, Winter, Growth, Routes, Region, Courting, Undercity, Study, Loyalty, Armoury, Homes, Sites, Allies, Word, Crowds, Keepers, Notables, Outposts, Lists, Brought, Missing, Frontiers, Treasures];
 
     public static List<Alert> Standing(Town town) => Rules.SelectMany(r => r(town)).ToList();
 
@@ -608,6 +610,32 @@ public static class Alerts
         if (DarkCompany.Target(t) is { } site && t.DarkCompany.Ambush == null && DarkCompany.MeetTick(t) != null)
             yield return new("dark", Dark, $"{Cap(t.DarkCompany.Name)} ride for {site.Def.Name}",
                 $"They mean to rob its hoard for {Saga.BigBad(t)?.Leader}. Send a company there first, or ambush them on the road from the Campaign window.", SiteId: site.Def.Id);
+    }
+
+    /// <summary>
+    /// A rare or finer magic item heroes brought home in the last few days (spoils.json findDays): one look, at the hero
+    /// who carries it, or at the armory or the hall where it waits. Clicking it is the look, so the client clears it then.
+    /// </summary>
+    private static IEnumerable<Alert> Treasures(Town t)
+    {
+        var r = t.Content.Spoils;
+        foreach (var f in t.Spoils.Finds.Where(f => t.Day - f.Day <= r.FindDays).OrderBy(f => f.Id))
+        {
+            var it = f.Item;
+            // Finer than all the finders carried slides a tile out of the rail; the rest only badge it.
+            var found = f.Great ? Treasure : RareFind;
+            string key = $"treasure:{f.Id}";
+            string kind = Cap($"{it.Rarity} {it.Category}".Trim().Replace('-', ' '));
+            string from = f.SiteId != null && Quests.Site(t, f.SiteId) is { } site ? $"\n• From {site.Def.Name}" : "";
+            string text = $"{Cap(f.Who)} find{(f.Company ? "" : "s")} the {it.Name}";
+            var holder = t.Agents.Where(a => !a.Dead && !a.Departed && a.Hero != null && a.Hero.Magic.Values.Contains(it)).OrderBy(a => a.Id != f.HeroId).ThenBy(a => a.Id).FirstOrDefault();
+            if (holder != null)
+                yield return new(key, found, text, $"• {kind}{from}\n• {holder.GivenName} carries it", AgentId: holder.Id, Item: it);
+            else if (t.Armory.Stock.Any(s => s.Item == it))
+                yield return new(key, found, text, $"• {kind}{from}\n• In the armory: give it to a hero", Item: it);
+            else if (t.Relics.Contains(it.Id))
+                yield return new(key, found, text, $"• {kind}{from}\n• Kept in the town hall", AtTown: true, Item: it);
+        }
     }
 
     /// <summary>An ally called to arms that will come only for gold or a harder word.</summary>

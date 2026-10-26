@@ -101,6 +101,17 @@ public sealed record SpoilsRules
     public double RouteShare { get; init; } = 0.1;
     public int RouteMost { get; init; } = 5;
 
+    /// <summary>
+    /// A magic item of this rarity or finer (<see cref="Spoils.Rank"/>: 2 rare, 3 very rare, 4 legendary, 5 artifact)
+    /// found by heroes raises an alert for this many days, one of <see cref="GreatRank"/> or finer that beats all the
+    /// finders already carry a louder one. Kinds
+    /// in <see cref="FindSkip"/> (potions, scrolls) are used up, so they make no alert.
+    /// </summary>
+    public int FindRank { get; init; } = 2;
+    public int GreatRank { get; init; } = 3;
+    public int FindDays { get; init; } = 3;
+    public IReadOnlyList<string> FindSkip { get; init; } = [];
+
     private HashSet<string>? _signature;
 
     /// <summary>Whether the item only drops from the foes its drop names.</summary>
@@ -151,6 +162,29 @@ public sealed class SpoilsState
     public int Crafted { get; set; }
     public int Dropped { get; set; }
     public double Sold { get; set; }
+
+    /// <summary>Rare and finer magic items heroes brought home lately, for the alert (<see cref="Spoils.Found"/>).</summary>
+    public List<RareFind> Finds { get; } = [];
+    public int NextFind { get; set; } = 1;
+}
+
+/// <summary>A rare or finer magic item a hero or a company found, kept a few days for the alert.</summary>
+public sealed class RareFind
+{
+    public int Id { get; init; }
+    public int Day { get; init; }
+    public required LibItem Item { get; init; }
+
+    /// <summary>"Bryn" or "the Iron Wolves", and whether that is a whole company.</summary>
+    public string Who { get; init; } = "";
+    public bool Company { get; init; }
+
+    /// <summary>The hero who carries it home, if one does; the site it came from.</summary>
+    public int? HeroId { get; init; }
+    public string? SiteId { get; init; }
+
+    /// <summary>Finer than anything the finders carried: it slides a tile out of the rail, not only a badge.</summary>
+    public bool Great { get; init; }
 }
 
 /// <summary>
@@ -280,13 +314,15 @@ public static class Spoils
     private static void Bring(Town town, Party party, Bounty? bounty, LibItem it, IReadOnlyList<Agent> survivors, SiteState site)
     {
         town.Spoils.Dropped++;
+        var who = survivors.OrderByDescending(m => Gear.Gain(town.Content, m, it)).ThenBy(m => m.Id).First();
+        bool useful = Gear.Gain(town.Content, who, it) > 0;
+        Found(town, it, party, survivors, useful ? who.Id : null, site.Def.Id);
         if (Regalia.Is(town, it) || it.Slot == "town")
         {
             Watch.ReceiveRelic(town, it, party.Name);
             return;
         }
-        var who = survivors.OrderByDescending(m => Gear.Gain(town.Content, m, it)).ThenBy(m => m.Id).First();
-        if (Gear.Gain(town.Content, who, it) <= 0)
+        if (!useful)
         {
             Armory.Add(town, it, $"the {party.Name}' spoils");
             town.Log(LedgerCategory.Quest, Importance.Notable, $"The {party.Name} carry the {it.Name} home from {site.Def.Name}. Nobody among them can use it, so it goes to the armory.", survivors.Select(m => m.Id).ToList());
@@ -296,6 +332,34 @@ public static class Spoils
         if (Armory.HandIn(town, party, bounty, who, it)) return;
         Gear.Claim(town, who, it);
         Moments.Claimed(town, who, it, party.Name, site, survivors);
+    }
+
+    /// <summary>
+    /// Heroes bring home a magic item: one of <see cref="SpoilsRules.FindTier"/> or finer is kept a few days for the
+    /// alert (<see cref="Alerts"/>), named for the company when more than one rode, else for the hero.
+    /// </summary>
+    public static void Found(Town town, LibItem it, string who, bool company, int? heroId, string? siteId, IReadOnlyList<Agent> finders)
+    {
+        var r = Rules(town);
+        if (Rank(it) < r.FindRank || r.FindSkip.Contains(it.Category)) return;
+        var st = town.Spoils;
+        st.Finds.RemoveAll(f => town.Day - f.Day > r.FindDays);
+        // A company's first legendary is a moment; its fifth is a good day's work.
+        int best = finders.SelectMany(m => m.Hero?.Magic.Values ?? []).Select(Rank).DefaultIfEmpty(-1).Max();
+        bool great = Rank(it) >= r.GreatRank && Rank(it) > best;
+        st.Finds.Add(new RareFind { Id = st.NextFind++, Day = town.Day, Item = it, Who = who, Company = company, HeroId = heroId, SiteId = siteId, Great = great });
+    }
+
+    private static readonly string[] Rarities = ["common", "uncommon", "rare", "very-rare", "legendary", "artifact"];
+
+    /// <summary>An item's rarity as a rank: 0 common, 1 uncommon, 2 rare, 3 very rare, 4 legendary, 5 artifact (its tier when it names none).</summary>
+    public static int Rank(LibItem it) => Array.IndexOf(Rarities, it.Rarity) is var i && i >= 0 ? i : Math.Clamp(it.Tier, 0, Rarities.Length - 1);
+
+    public static void Found(Town town, LibItem it, Party party, IReadOnlyList<Agent> survivors, int? heroId, string? siteId)
+    {
+        bool company = survivors.Count > 1;
+        string who = company ? $"the {party.Name}" : survivors.FirstOrDefault()?.GivenName ?? $"the {party.Name}";
+        Found(town, it, who, company, heroId, siteId, survivors);
     }
 
     /// <summary>"3 wolf fangs", "a troll heart".</summary>

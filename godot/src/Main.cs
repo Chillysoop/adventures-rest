@@ -254,6 +254,7 @@ public partial class Main : Control
         if (_opts.Folk && _sim.Town.Workers.Where(a => !a.IsAway).OrderByDescending(a => a.Practice).ThenBy(a => a.Id).FirstOrDefault() is Agent folk)
             Select(Selection.Agent(folk.Id));
         if (_opts.Episode is string episode) StageEpisode(episode);
+        if (_opts.RareFind is string rarity) StageRareFind(rarity);
         if (_opts.Intro is string intro) StageIntro(intro);
         if (_opts.LastBattle is string moment) StageLastBattle(moment);
         if (_opts.Claim is string road && !_sim.ClaimRoad(road)) GD.Print($"Cannot claim {road}: {Victory.ClaimBlocked(_sim.Town, road)}");
@@ -367,6 +368,21 @@ public partial class Main : Control
         s.ThreatBy = state == "tested" ? "raiders out of the wilds" : "";
         _opts.Site = s.Def.Id;
         _opts.Cam ??= 26;
+    }
+
+    /// <summary>A hero home with a magic item of this rarity they can wear, as if from their company's last delve.</summary>
+    private void StageRareFind(string rarity)
+    {
+        var t = _sim.Town;
+        foreach (var hero in t.Heroes.OrderByDescending(h => h.Hero!.Level).ThenBy(h => h.Id))
+        {
+            if (t.Content.LootItems.Where(i => i.Rarity == rarity && Gear.Gain(t.Content, hero, i) > 0).OrderBy(i => i.Id, StringComparer.Ordinal).FirstOrDefault() is not { } item) continue;
+            var company = hero.Hero!.PartyName is string n ? Intel.Members(t, n) : [hero];
+            string who = company.Count > 1 ? $"the {hero.Hero.PartyName}" : hero.GivenName;
+            Spoils.Found(t, item, who, company.Count > 1, hero.Id, t.Sites.FirstOrDefault(s => s.Cleared)?.Def.Id, company);
+            Gear.Claim(t, hero, item);
+            return;
+        }
     }
 
     private void StageEpisode(string id)

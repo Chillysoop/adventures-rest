@@ -850,6 +850,7 @@ public static class Quests
             Spoils.Homecoming(town, party, s, result, survivors, bounty);
             foreach (var it in result.Items)
             {
+                if (it.HeroId == null || survivors.Any(m => m.Id == it.HeroId)) Spoils.Found(town, it.Item, party, survivors, it.HeroId, s.Def.Id);
                 if (it.HeroId == null) Watch.ReceiveRelic(town, it.Item, party.Name);
                 else if (survivors.Any(m => m.Id == it.HeroId) && !Armory.HandIn(town, party, bounty, town.Agent(it.HeroId.Value), it.Item))
                 {
