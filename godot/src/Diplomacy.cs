@@ -321,6 +321,7 @@ public partial class Main
         var w = t.Content.World.Standing;
         var tr = t.Content.Trade;
         p.Begin();
+        StewardStrip(p, "realm");
         var known = t.Settlements.Where(s => Neighbours.Known(t, s)).OrderBy(s => s.Razed).ThenByDescending(s => Shadows.Shadowed(s)).ThenByDescending(s => s.Allied).ThenByDescending(s => s.Standing).ThenBy(s => s.Id).ToList();
         int allies = known.Count(s => s.Allied);
         var open = Trade.Open(t).OrderBy(r => r.Id).ToList();

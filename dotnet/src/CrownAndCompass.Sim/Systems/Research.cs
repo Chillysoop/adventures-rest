@@ -428,6 +428,7 @@ public static class Research
     {
         var d = Rules(town).Discovery(id);
         if (d == null || !Available(town, d) || town.Research.Study == id) return false;
+        if (Stewards.Intercept(town, "research", new StewardAsk { Area = "research", Kind = "study", Title = $"Study {Lower(d.Name)}", Why = "• The scholars are free\n• The first open study", S1 = id })) return false;
         var st = town.Research;
         st.Progress[id] = st.Progress.Get(id, 0) + st.Notes;
         st.Notes = 0;
@@ -459,8 +460,9 @@ public static class Research
     public static bool Fund(Town town, int level)
     {
         if (level < 0 || level >= Rules(town).Funding.Count || level == town.Research.Funding) return false;
-        town.Research.Funding = level;
         var f = Rules(town).Funding[level];
+        if (Stewards.Intercept(town, "research", new StewardAsk { Area = "research", Kind = "fund", Title = $"Pay the scholars · {f.Name} · {Js.Str(FundingCost(town, level))}g a day", Why = level > town.Research.Funding ? "• The treasury can spare it\n• Faster studies" : "• The treasury is low\n• Studies slow down", I1 = level })) return false;
+        town.Research.Funding = level;
         town.Log(LedgerCategory.Town, Importance.Routine,
             level == 0 ? "The council stops paying its scholars. They work on, slowly, for love."
                 : $"The council funds its scholars: {f.Name}, {Js.Str(FundingCost(town, level))} gold a day.");

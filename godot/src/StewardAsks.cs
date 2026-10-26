@@ -6,7 +6,7 @@ namespace CrownAndCompass.Client;
 /// <summary>
 /// What stewards who ask first want to do: small yes/no cards under the alert strip. Hover the title for why, click
 /// it to open the card up; ✔ goes ahead, ✖ says no (the steward won't ask the same for a while). Areas are handed
-/// over on the Settings window's Stewards tab.
+/// over on Council › Automate; with two or more waiting, ✔ all / ✖ all answers them at once.
 /// </summary>
 public partial class Main
 {
@@ -29,6 +29,14 @@ public partial class Main
         if (sig == _asksSig) return;
         _asksSig = sig;
         Ui.Clear(_asks);
+        if (asks.Count >= 2)
+        {
+            var all = new HBoxContainer { SizeFlagsHorizontal = SizeFlags.ShrinkEnd };
+            all.AddThemeConstantOverride("separation", 4);
+            all.AddChild(AskButton("✔ all", Ui.Good, "Yes to every ask", () => AnswerAll(true)));
+            all.AddChild(AskButton("✖ all", Ui.Bad, "No to every ask", () => AnswerAll(false)));
+            _asks.AddChild(all);
+        }
         foreach (var a in asks.Take(AsksShown)) _asks.AddChild(AskCard(a));
         if (asks.Count > AsksShown) _asks.AddChild(Ui.Label($"+{asks.Count - AsksShown} more", Ui.Ink2, Ui.Bold, 11));
         _asks.Visible = asks.Count > 0;
@@ -60,7 +68,7 @@ public partial class Main
         row.AddChild(AskButton("✖", Ui.Bad, "No · not again for a while", () => AnswerAsk(id, false)));
         if (open)
         {
-            var why = Ui.Label((a.Why == "" ? "" : a.Why + "\n") + $"• {area.Name}: Settings › Stewards", Ui.Ink2, Ui.Body, 12);
+            var why = Ui.Label((a.Why == "" ? "" : a.Why + "\n") + $"• {area.Title}: Council › Automate", Ui.Ink2, Ui.Body, 12);
             why.AutowrapMode = TextServer.AutowrapMode.WordSmart;
             col.AddChild(why);
         }
@@ -73,6 +81,15 @@ public partial class Main
         b.AddThemeColorOverride("font_color", color);
         b.Pressed += then;
         return b;
+    }
+
+    private void AnswerAll(bool yes)
+    {
+        _sim.AnswerAllStewards(yes);
+        _askOpen = null;
+        _dirty = true;
+        SyncAsks();
+        GuideEvent("steward");
     }
 
     private void AnswerAsk(int id, bool yes)

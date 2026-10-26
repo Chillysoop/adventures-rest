@@ -47,7 +47,6 @@ public partial class Main
         ("game", "books", "Game"),
         ("camera", "compass", "Camera"),
         ("keys", "tab-build", "Keys"),
-        ("stewards", "tab-council", "Stewards"),
     ];
 
     private void LoadSettings()
@@ -180,31 +179,7 @@ public partial class Main
             case "keys":
                 RenderKeys();
                 break;
-            case "stewards":
-                RenderStewards();
-                break;
         }
-    }
-
-    /// <summary>Who runs each area of this town's business: you, a steward, or a steward who asks you first.</summary>
-    private void RenderStewards()
-    {
-        SettingsHeading("THIS TOWN · WHO HANDLES IT");
-        foreach (var area in Stewards.Areas)
-        {
-            string id = area.Id;
-            var now = Stewards.Mode(_sim.Town, _sim.Options, id);
-            (int, string)[] options = area.CanAsk
-                ? [((int)StewardMode.Player, "You"), ((int)StewardMode.Ask, "Asks you"), ((int)StewardMode.Steward, "Steward")]
-                : [((int)StewardMode.Player, "You"), ((int)StewardMode.Steward, "Steward")];
-            SettingRow(area.Name, area.Blurb, Choice(options, (int)now, m =>
-            {
-                _sim.SetSteward(id, (StewardMode)m);
-                _dirty = true;
-                GuideEvent("steward");
-            }), area.Icon);
-        }
-        SettingsFoot("Asks you: a small ✔ / ✖ card under the alerts · hover its title for why");
     }
 
     private void RenderKeys()

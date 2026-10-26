@@ -536,7 +536,11 @@ public static class Wilds
     }
 
     /// <summary>Paint a patrol along the road to a settlement, cell by cell.</summary>
-    public static WildZone? PatrolRoad(Town town, Settlement s) => Paint(town, Patrol, RoadCells(town, Systems.Explore.SettlementSpot(town, s)));
+    public static WildZone? PatrolRoad(Town town, Settlement s)
+    {
+        if (Stewards.Intercept(town, "realm", new StewardAsk { Area = "realm", Kind = "roadpatrol", Title = $"Patrol the road to {s.Name}", Why = "• A friend's road\n• Riders keep the raiders off it", I1 = s.Id })) return null;
+        return Paint(town, Patrol, RoadCells(town, Systems.Explore.SettlementSpot(town, s)));
+    }
 
     /// <summary>The cells of the wilds a straight road from the town to a spot (days from the town) runs through.</summary>
     public static List<(int X, int Y)> RoadCells(Town town, (double X, double Y) to)

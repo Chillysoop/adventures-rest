@@ -499,7 +499,7 @@ public static class Armory
     {
         var o = town.Armory.Offers.FirstOrDefault(x => x.Id == offerId);
         if (o == null || town.Treasury < o.Price) return false;
-        if (Stewards.Intercept(town, "armory", new StewardAsk { Area = "armory", Kind = "buy", Title = $"Buy {o.Item.Name} · {Js.Str(o.Price)}g", Why = "• A hero in town would use it\n• The treasury can spare it", I1 = offerId })) return false;
+        if (Stewards.Intercept(town, "armory", new StewardAsk { Area = "armory", Kind = "buy", Title = $"Buy {o.Item.Name} · {Js.Str(o.Price)}g", Why = "• A hero in town would use it\n• The treasury can spare it", I1 = offerId, Cost = o.Price })) return false;
         town.Armory.Offers.Remove(o);
         town.Book(TreasuryAccount.Armory, -o.Price);
         town.Armory.Bought++;

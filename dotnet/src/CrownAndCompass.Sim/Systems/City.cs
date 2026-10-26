@@ -793,7 +793,7 @@ public static class City
                 sum += CoverageOf(town, s);
                 needs++;
             }
-            house.Contentment = Math.Clamp((needs == 0 ? 1 : sum / needs) + Decor.Comfort(town, house) + Paving.Comfort(town, house) + Wards.Comfort(town, house) + grand, 0, 1);
+            house.Contentment = Math.Clamp((needs == 0 ? 1 : sum / needs) + Decor.Comfort(town, house) + Paving.Comfort(town, house) + Wards.Comfort(town, house) + Frontier.Comfort(town, house) + grand, 0, 1);
         }
         town.City.Wanted = wanted;
         town.City.Supplied = supplied;
@@ -886,7 +886,7 @@ public static class City
             sum += CoverageOf(town, s);
             needs++;
         }
-        return Math.Clamp((needs == 0 ? 1 : sum / needs) + Decor.Comfort(town, house) + Paving.Comfort(town, house) + Wards.Comfort(town, house) + GrandWorks.Comfort(town), 0, 1);
+        return Math.Clamp((needs == 0 ? 1 : sum / needs) + Decor.Comfort(town, house) + Paving.Comfort(town, house) + Wards.Comfort(town, house) + Frontier.Comfort(town, house) + GrandWorks.Comfort(town), 0, 1);
     }
 
     /// <summary>Why this house can't grow now, or null when it can.</summary>

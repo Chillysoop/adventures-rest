@@ -50,6 +50,12 @@ public sealed record FrontierRules
     /// <summary>People above which an open town draws footpads, cutpurses and worse.</summary>
     public int StrangersFrom { get; init; } = 100000;
 
+    /// <summary>How fast builders raise anything beyond the outermost standing wall: the town grows out slowly until it walls the next ring.</summary>
+    public double OutsideBuild { get; init; } = 1;
+
+    /// <summary>Contentment a home beyond the outermost standing wall loses: its folk sleep with the raiders' road at the door.</summary>
+    public double OutsideComfort { get; init; }
+
     /// <summary>One incident a day for this many people, with the gates wide.</summary>
     public double StrangerPeople { get; init; } = 400;
 
@@ -82,6 +88,13 @@ public sealed class FrontierState
     /// <summary>Strangers who did harm in town yesterday, and those the gate turned away.</summary>
     public int Strangers { get; set; }
     public int Turned { get; set; }
+
+    /// <summary>Buildings beyond the outermost standing wall, by id, worked out once a day (<see cref="Frontier.Outside(Town, Building)"/>).</summary>
+    [NotSaved]
+    internal Dictionary<int, bool> Outside = [];
+
+    [NotSaved]
+    internal int OutsideDay = -1;
 }
 
 /// <summary>
@@ -111,6 +124,25 @@ public static class Frontier
 
     public static bool Within(Town town, Building b) => Within(town, town.Lot(b.LotId).X, town.Lot(b.LotId).Y);
 
+    /// <summary>Whether a building stands beyond the outermost standing wall; false while the town has none.</summary>
+    public static bool Outside(Town town, Building b)
+    {
+        var s = town.Frontier;
+        if (s.OutsideDay != town.Day)
+        {
+            s.Outside.Clear();
+            s.OutsideDay = town.Day;
+        }
+        if (!s.Outside.TryGetValue(b.Id, out bool outside)) s.Outside[b.Id] = outside = Walled(town) && !Within(town, b);
+        return outside;
+    }
+
+    /// <summary>Builders' pace on a site: slower beyond the outermost wall.</summary>
+    public static double Build(Town town, Building b) => Outside(town, b) ? Rules(town).OutsideBuild : 1;
+
+    /// <summary>What a home beyond the outermost wall loses in contentment.</summary>
+    public static double Comfort(Town town, Building house) => Outside(town, house) ? Rules(town).OutsideComfort : 0;
+
     /// <summary>How the gate is kept now; open whatever the order while there is no wall to keep it in.</summary>
     public static GateDef Gate(Town town) => Rules(town).Gate(Walled(town) ? town.Frontier.Gate : "open");
 
@@ -125,6 +157,7 @@ public static class Frontier
     public static bool SetGate(Town town, string id)
     {
         if (GateBlocked(town, id) != null || town.Frontier.Gate == id) return false;
+        if (Stewards.Intercept(town, "frontier", new StewardAsk { Area = "frontier", Kind = "gate", Title = $"Set the gate law: {id}", Why = "• Strangers robbed the shops\n• A watched gate turns most away", S1 = id })) return false;
         town.Frontier.Gate = id;
         var g = Rules(town).Gate(id);
         town.Log(LedgerCategory.Council, Importance.Notable, id switch

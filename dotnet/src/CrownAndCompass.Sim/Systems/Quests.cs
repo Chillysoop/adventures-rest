@@ -338,6 +338,7 @@ public static class Quests
                 S2 = terms,
                 I1 = lootToTown ? 1 : 0,
                 D1 = reward,
+                Cost = reward,
             })) return null;
         var term = town.Content.Bounties.Term(terms);
         if (term.Id != terms || Systems.Terms.Blocked(town, s, term) != null) return null;

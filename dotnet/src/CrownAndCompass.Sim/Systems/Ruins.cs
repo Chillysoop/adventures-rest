@@ -74,6 +74,7 @@ public static class Ruins
     {
         var s = Quests.Site(town, siteId);
         if (s == null || !s.Cleared || s.Restored || Of(town, s) is not { } k || town.Treasury < k.Cost) return false;
+        if (Stewards.Intercept(town, "realm", new StewardAsk { Area = "realm", Kind = "ruin", Title = $"Restore {s.Def.Name} · {Js.Str(k.Cost)}g", Why = "• Cleared and standing empty\n• Restored, it serves the town", S1 = siteId, Cost = k.Cost })) return false;
         town.Book(TreasuryAccount.Works, -k.Cost);
         s.Restored = true;
         s.ResettleTick = null;

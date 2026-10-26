@@ -637,7 +637,8 @@ public static class Bastions
             open++;
             string what = empty != null ? $"to take on the empty {empty.Name}" : "for leave to raise a bastion of their own on the edge of town";
             town.Log(LedgerCategory.Council, Importance.Notable, $"The {company}, led by {members[0].Name}, ask the council {what}. They would hire townsfolk to staff it.", members.Select(m => m.Id).ToList());
-            if (auto) Answer(town, req.Id, BastionAnswer.Grant);
+            if (auto && !Stewards.Intercept(town, "honours", new StewardAsk { Area = "honours", Kind = "bastion", Title = $"Let the {company} {(empty != null ? $"take on {empty.Name}" : "raise a bastion")}", Why = "• A company that wants to stay\n• Townsfolk find work there", I1 = req.Id }))
+                Answer(town, req.Id, BastionAnswer.Grant);
         }
     }
 

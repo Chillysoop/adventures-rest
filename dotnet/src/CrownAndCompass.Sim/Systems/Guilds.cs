@@ -64,6 +64,9 @@ public sealed record GuildRules
     /// <summary>Households before any guild forms.</summary>
     public int Population { get; init; } = 45;
 
+    /// <summary>Gold a guildreeve keeps in the treasury beyond what a demand or a pay-off costs.</summary>
+    public double StewardReserve { get; init; } = 300;
+
     /// <summary>Standing a new guild starts at, the one it eases back toward and the share of the gap it closes a day.</summary>
     public double Start { get; init; } = 60;
     public double Rest { get; init; } = 55;
@@ -250,6 +253,7 @@ public static class Guilds
         if (Find(town, id) is not { } g || MeetBlocked(town, g) != null) return false;
         var w = Want(town, g)!;
         double cost = MeetCost(town, g)!.Value;
+        if (Stewards.Intercept(town, "guilds", new StewardAsk { Area = "guilds", Kind = "meet", Title = $"Give {Name(town, g)} what it asks · {Js.Str(cost)}g", Why = "• The guild's demand stands\n• Met, it stays sweet", S1 = id, Cost = cost })) return false;
         double share = w.Kind is "festival" or "part" ? Share(town, g, w) : 0;
         g.Purse -= share;
         var c = town.Content.Council;
@@ -301,6 +305,7 @@ public static class Guilds
         var r = Rules(town);
         if (Find(town, id) is not { } g || PayBlocked(town, g) != null) return false;
         double cost = PayCost(town, g);
+        if (Stewards.Intercept(town, "guilds", new StewardAsk { Area = "guilds", Kind = "payoff", Title = $"Buy off {Name(town, g)} · {Js.Str(cost)}g", Why = "• The guild is on strike\n• Paid, it goes back to work", S1 = id, Cost = cost })) return false;
         town.Book(TreasuryAccount.Guilds, -cost);
         g.Purse += cost;
         Log(town, g, r.Lines.Paid, Importance.Notable, ("gold", Js.Str(cost)));
@@ -406,9 +411,17 @@ public static class Guilds
     // ---------- the day ----------
 
     /// <summary>Daily: guilds form, pay dues, ease toward their usual temper, press their demands and strike when crossed too far.</summary>
-    public static void Daily(Town town, bool auto)
+    /// <param name="auto">A game whose council the stand-in runs from the start has no guilds at all.</param>
+    /// <param name="steward">A guildreeve meets the guilds' demands, or buys off a strike, when the treasury can bear it.</param>
+    public static void Daily(Town town, bool auto, bool steward = false)
     {
         if (auto) return;
+        Days(town);
+        if (steward) StandIn(town);
+    }
+
+    private static void Days(Town town)
+    {
         var r = Rules(town);
         if (town.Population >= r.Population) Form(town);
         foreach (var g in town.Guilds)
@@ -439,6 +452,25 @@ public static class Guilds
             }
             Press(town, g, members.Count);
             if (g.Standing <= r.StrikeAt && members.Count > 0) Strike(town, g);
+        }
+    }
+
+    /// <summary>The guildreeve: the oldest demand met if the treasury can bear it, else a strike bought off.</summary>
+    private static void StandIn(Town town)
+    {
+        var r = Rules(town);
+        foreach (var g in town.Guilds.OrderBy(x => x.FoundedDay).ThenBy(x => x.Id, StringComparer.Ordinal))
+        {
+            if (g.Want != "" && MeetBlocked(town, g) == null && MeetCost(town, g) is double cost && town.Treasury >= cost + r.StewardReserve)
+            {
+                Meet(town, g.Id);
+                return;
+            }
+            if (OnStrike(town, g) && PayBlocked(town, g) == null && town.Treasury >= PayCost(town, g) + r.StewardReserve)
+            {
+                PayOff(town, g.Id);
+                return;
+            }
         }
     }
 

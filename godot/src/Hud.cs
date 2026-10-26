@@ -39,6 +39,7 @@ public partial class Main
         [Tab.Institutions] = "The town's institutions",
         [Tab.Notables] = "People worth knowing",
         [Tab.Faith] = "Faith and factions",
+        [Tab.Automate] = "The lesser council",
         [Tab.Campaign] = "The campaign",
         [Tab.Chronicles] = "Chronicles",
         [Tab.Mayor] = "The mayor",

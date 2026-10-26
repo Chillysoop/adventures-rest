@@ -872,6 +872,7 @@ public static class World
         if (settlementId < 0 || settlementId >= town.Settlements.Count) return false;
         var s = town.Settlements[settlementId];
         if (!Neighbours.Known(town, s) || s.Razed || town.Treasury < rules.EnvoyCost || Reaches.Unreached(town, s) != null) return false;
+        if (Stewards.Intercept(town, "realm", new StewardAsk { Area = "realm", Kind = "envoy", Title = $"Send an envoy to {s.Name} · {Js.Str(rules.EnvoyCost)}g", Why = "• Gifts win standing\n• The friendliest people not yet allied", I1 = settlementId, Cost = rules.EnvoyCost })) return false;
         town.Book(TreasuryAccount.Envoys, -rules.EnvoyCost);
         town.LastEnvoyDay = town.Day;
         // Gifts please less each time.

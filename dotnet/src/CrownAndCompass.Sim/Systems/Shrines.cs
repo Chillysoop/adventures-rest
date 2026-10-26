@@ -58,6 +58,7 @@ public static class Shrines
     public static Building? BuildTemple(Town town, Lot? at = null)
     {
         if (TempleBlocked(town) != null) return null;
+        if (at == null && Stewards.Intercept(town, "planning", new StewardAsk { Area = "planning", Kind = "temple", Title = $"Raise the temple · {Js.Str(TempleCost(town))}g", Cost = TempleCost(town) })) return null;
         var def = town.Content.Building(Rules(town).Temple);
         var lot = at ?? CivicLot(town, def);
         if (lot == null) return null;

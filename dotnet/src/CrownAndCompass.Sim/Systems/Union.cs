@@ -227,6 +227,7 @@ public static class Union
         if (side is not ("union" or "mages") || HearBlocked(town) != null) return false;
         var r = Rules(town);
         double cost = HearCost(town);
+        if (Stewards.Intercept(town, "guilds", new StewardAsk { Area = "guilds", Kind = "hear", Title = $"Hear out the {(side == "mages" ? "mages" : "guilds")} · {Js.Str(cost)}g", Why = "• The movement leans the other way\n• Heard, it eases back", S1 = side, Cost = cost })) return false;
         town.Book(TreasuryAccount.Guilds, -cost);
         town.Union.Heard += side == "mages" ? r.HearShift : -r.HearShift;
         Log(town, side == "mages" ? r.Lines.HearMages : r.Lines.HearGuilds, Importance.Notable, ("cost", Js.Str(cost)));
@@ -268,9 +269,26 @@ public static class Union
     // ---------- the day ----------
 
     /// <summary>Daily: the union forms, the bar drifts toward where the town's doings pull it, and each side reacts to where it stands.</summary>
-    public static void Daily(Town town, bool auto)
+    /// <param name="auto">A game whose council the stand-in runs from the start has no movement at all.</param>
+    /// <param name="steward">A guildreeve hears out whichever side the bar has swung away from.</param>
+    public static void Daily(Town town, bool auto, bool steward = false)
     {
         if (auto) return;
+        Days(town);
+        if (steward) StandIn(town);
+    }
+
+    /// <summary>The guildreeve: when the bar swings past the concord, hear the other side out, if the treasury can bear it.</summary>
+    private static void StandIn(Town town)
+    {
+        var u = town.Union;
+        if (!u.Formed || Sided(town) || Math.Abs(u.Heard) >= Rules(town).HearShift / 2 || HearBlocked(town) != null) return;
+        if (Math.Abs(u.Bar) <= Concord(town) || town.Treasury < HearCost(town) + town.Content.Guilds.StewardReserve) return;
+        Hear(town, u.Bar > 0 ? "union" : "mages");
+    }
+
+    private static void Days(Town town)
+    {
         var r = Rules(town);
         var u = town.Union;
         if (!u.Formed)
