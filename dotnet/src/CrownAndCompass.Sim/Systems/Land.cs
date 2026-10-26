@@ -235,12 +235,14 @@ public static class Land
         var plan = town.Plan;
         // Decorations are the player's: builders leave them standing.
         var decor = Decor.Cells(town);
+        // Woods and rock reaching in from the wilds stay standing (Workings.Cells).
+        var wild = Workings.Cells(town);
         // Most spots fail at the middle: try that first.
         int cx = (int)(x * Res), cy = (int)(y * Res), mid = cy * Size + cx;
         if (cx < 0 || cy < 0 || cx >= Size || cy >= Size || plan.Taken[mid] != 0 || plan.Paved[mid] != 0 || (zone is Zone zm && plan.Zones[mid] != (byte)zm)) return false;
         foreach (int i in Cells(x, y, w, d, yaw))
         {
-            if (i < 0 || plan.Taken[i] != 0 || plan.Paved[i] != 0 || (decor != null && decor[i])) return false;
+            if (i < 0 || plan.Taken[i] != 0 || plan.Paved[i] != 0 || (decor != null && decor[i]) || wild[i] != 0) return false;
             if (plan.Grounds[i] != 0 && plan.Grounds[i] != ground) return false;
             if (zone is Zone z && plan.Zones[i] != (byte)z) return false;
             if (crop != 0 && plan.Crops[i] != 0 && plan.Crops[i] != crop) return false;
@@ -512,7 +514,7 @@ public static class Land
     private static bool[]? Gardens(Town town) => Decor.Cells(town);
 
     /// <summary>Whether a cell lies in a ring the town's charter reaches (<see cref="City.IsOpen(Town, double, double)"/> at its middle).</summary>
-    public static bool Open(Town town, int i) => City.RingOpen(town, WardAt(town, i).Ring);
+    public static bool Open(Town town, int i) => City.RingOpen(town, WardAt(town, i).Ring) && Workings.Cells(town)[i] == 0;
 
     /// <summary>
     /// Zone a round patch of open ground, centred on the open cell in a ring the charter reaches with the lowest

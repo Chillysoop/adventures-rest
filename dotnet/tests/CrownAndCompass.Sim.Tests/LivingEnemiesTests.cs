@@ -31,7 +31,8 @@ public class LivingEnemiesTests
             if (seen != null) break;
         }
         Assert.NotNull(seen);
-        Assert.Contains(t.Ledger.Entries, e => e.Text.Contains("runs in with news", StringComparison.Ordinal));
+        // A runner, a sky rider or a patrol brings the word.
+        Assert.Contains(t.Ledger.Entries, e => e.Text.Contains(" news: about", StringComparison.Ordinal));
         Assert.Contains(Alerts.Standing(t), a => a.Kind == Alerts.Sighted && a.BuildingId == seen!.TargetId);
         var lair = t.Sites.First(s => Lairs.Key(s) == seen!.Key);
         Assert.Equal(seen!.TargetId, lair.BandTarget);

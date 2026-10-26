@@ -418,6 +418,60 @@ public static class Country
         }
     }
 
+    /// <summary>
+    /// Woods and rock close to the world's heart, where a town is founded by default: when the country laid round it leaves
+    /// none of a working's kinds within <see cref="WorkingsRules.Near"/> days, a wood or a ridge is laid there, on its own
+    /// dice so nothing else in the world shifts. Its region is the nearest one on its bearing.
+    /// </summary>
+    internal static void Home(Town town, List<(double X, double Y)> spots)
+    {
+        var rules = town.Content.Roads;
+        var r = rules.Country;
+        var w = town.Content.Workings;
+        var rng = new Rng(town.Seed * 6151 + 2909);
+        foreach (var g in w.Goods)
+        {
+            var kinds = rules.Kinds.Where(k => g.Features.Contains(k.Id) && k.Barrier == "" && k.Wonder == null).ToList();
+            if (kinds.Count == 0) continue;
+            bool near = town.Terrain.Any(f => g.Features.Contains(f.Kind.Id) && Within(f, w.Near));
+            for (int tries = 0; tries < 80 && !near; tries++)
+            {
+                var kind = rng.Pick(kinds);
+                double rr = r.TownClear + 0.05 + rng.Next() * 0.15;
+                // Not across the road south out of the gate.
+                double bearing = 30 + rng.Next() * 300;
+                var (cx, cy) = Polar(bearing, rr);
+                var shape = kind.Shape == "chain" ? Chain(r, rng, cx, cy, 0.35) : Blob(r, rng, cx, cy, 0.35);
+                // Pushed out along its bearing till it clears the town's own ground.
+                double push = r.TownClear + 0.03 - shape.Min(p => Js.Hypot(p.X, p.Y));
+                if (push > 0)
+                {
+                    var (ux, uy) = Polar(bearing, 1);
+                    shape = shape.Select(p => Round2((p.X + ux * push, p.Y + uy * push))).ToList();
+                }
+                if (shape.Min(p => Js.Hypot(p.X, p.Y)) > w.Near - 0.1) continue;
+                var region = Explore.RegionAt(town, cx, cy);
+                var f = Shaped(town, town.Terrain.Count, Roads.Name(rng, kind), kind, region?.Id ?? 0, shape);
+                if (spots.Any(p => Roads.Contains(f, p.X, p.Y, r.SiteClear))) continue;
+                if (town.Terrain.Any(o => Crowds(o, f, r.Gap * 0.5))) continue;
+                town.Terrain.Add(f);
+                near = true;
+            }
+        }
+    }
+
+    /// <summary>Whether a feature comes within this many days of the heart.</summary>
+    private static bool Within(Feature f, double days)
+    {
+        for (int i = 0; i < 48; i++)
+        {
+            double a = (i + 0.5) * Math.PI / 24;
+            for (double d = 0.05; d <= days + 1e-9; d += 0.05)
+                if (Roads.Contains(f, d * Math.Sin(a), -d * Math.Cos(a))) return true;
+        }
+        return false;
+    }
+
     // ---- Old towns ----
 
     /// <summary>Daily: a town from before the land had shapes gets them, and old trails fade.</summary>

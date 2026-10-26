@@ -932,6 +932,10 @@ public partial class Main
             var (timber, stone) = Construction.Wanting(b);
             string what = timber > 0 && stone > 0 ? "timber and stone" : stone > 0 ? "stone" : "timber";
             p.Text(Ui.C(Ui.Bad, $"Stalled: the builders wait for {what}, and the market has none."));
+            if (b.OwnerId != null)
+                p.Note(b.ImportDue >= 0
+                    ? $"The owner's carts arrive in {Js.Str(Math.Ceiling((b.ImportDue - t.Tick) / 24.0))} days."
+                    : $"The owner sends away for it after {Js.Str(Construction.Rules(t).ImportWait)} days, for {Js.Str(Construction.ImportCost(t, b))}g, if they can pay.");
             double cost = Construction.CaravanCost(t, b);
             p.Buttons(($"Send for it by caravan, {Js.Str(cost)}g", Construction.CaravanBlocked(t, b) == null, true, () => Act(() => _sim.SendCaravan(id))));
         }

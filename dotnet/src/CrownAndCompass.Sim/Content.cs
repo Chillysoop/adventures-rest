@@ -1721,6 +1721,9 @@ public sealed class Content
     /// <summary>Exploring companies and what they find (content/game/explore.json).</summary>
     public ExploreRules Explore { get; init; } = new();
     public Systems.WildsRules Wilds { get; init; } = new();
+
+    /// <summary>Where the town's timber and stone are cut: woods and rock near it, or afar down a cart road.</summary>
+    public Systems.WorkingsRules Workings { get; init; } = new();
     /// <summary>The town guard's posts and the wall works past the stone walls (content/game/garrison.json).</summary>
     public GarrisonRules Garrison { get; init; } = new();
 
@@ -2049,6 +2052,7 @@ public sealed class Content
             Voices = Parse<VoiceRules>("voices.json"),
             Explore = Parse<ExploreRules>("explore.json"),
             Wilds = Parse<Systems.WildsRules>("wilds.json"),
+            Workings = Parse<Systems.WorkingsRules>("workings.json"),
             Garrison = Parse<GarrisonRules>("garrison.json"),
             Bounties = Parse<BountyRules>("bounties.json"),
             Broadsheet = Parse<BroadsheetRules>("broadsheet.json"),

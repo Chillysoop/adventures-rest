@@ -314,6 +314,7 @@ public static class Founding
             g.Known = true;
         Passage.Forget(town);
         Cliffs.Forget(town);
+        Workings.Forget(town);
         Country.Forget(town);
     }
 

@@ -124,6 +124,7 @@ public static class Alerts
     public static readonly AlertKind Scry = new("scry", "Scry the fight", "compass", AlertLevel.Decision, AlertWindow.None);
     public static readonly AlertKind Ride = new("ride", "The last ride", "ui-renown", AlertLevel.Decision, AlertWindow.War, "Ride");
     public static readonly AlertKind Fields = new("fields", "Fields stripped", "food", AlertLevel.Decision, AlertWindow.Defence, "Gate");
+    public static readonly AlertKind Carts = new("carts", "Cart taken", "warband", AlertLevel.Decision, AlertWindow.Bounties, "Patrols");
     public static readonly AlertKind Unmanned = new("unmanned", "Walls unmanned", "defence", AlertLevel.Decision, AlertWindow.Defence, "Gate");
     public static readonly AlertKind Strangers = new("strangers", "Strangers at work", "suspicion", AlertLevel.Decision, AlertWindow.Defence, "Gate");
     public static readonly AlertKind Notable = new("notable", "Notables", "np-shaking-hands", AlertLevel.Decision, AlertWindow.Notables);
@@ -131,7 +132,7 @@ public static class Alerts
 
     /// <summary>Every kind, in the order their icons sit on the strip within a level.</summary>
     public static readonly IReadOnlyList<AlertKind> Kinds =
-        [Siege, Sighted, Lurker, Captives, Overdue, Ride, Doom, Crisis, Sick, Fear, Hunger, Coffers, Underfunded, Unrest, Strike, Hostile, Motion, Guild, Balance, Fealty, Gathering, DarkQuest, Road, Clash, Traitor, Plot, Dark, Spent, Fields, Unmanned, Strangers, Stores, Story, Scry, Explorers, Fallen, LevelUp, Charter, GrandWork, Tourney, Bastion, Institution, Notable, Heroes, Honours, Courted, Envoy, Neighbour, Shadow, Treasure, Loot, Stalled, Bridge, Ruin, Work, Settlers, Below, Scholars, Trade, Wager, RareFind, Gifts, Tower, Patrol, Outpost, Housing, Rooms, Camp, Crowded, WarAsk];
+        [Siege, Sighted, Lurker, Captives, Overdue, Ride, Doom, Crisis, Sick, Fear, Hunger, Coffers, Underfunded, Unrest, Strike, Hostile, Motion, Guild, Balance, Fealty, Gathering, DarkQuest, Road, Clash, Traitor, Plot, Dark, Spent, Fields, Carts, Unmanned, Strangers, Stores, Story, Scry, Explorers, Fallen, LevelUp, Charter, GrandWork, Tourney, Bastion, Institution, Notable, Heroes, Honours, Courted, Envoy, Neighbour, Shadow, Treasure, Loot, Stalled, Bridge, Ruin, Work, Settlers, Below, Scholars, Trade, Wager, RareFind, Gifts, Tower, Patrol, Outpost, Housing, Rooms, Camp, Crowded, WarAsk];
 
     /// <summary>The standing rules, each naming what needs the player now. No rng and no writes: the client calls them often.</summary>
     public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Trades, Hostility, Winter, Growth, Routes, Region, Courting, Undercity, Study, Loyalty, Armoury, Homes, Sites, Allies, Word, Crowds, Keepers, Notables, Outposts, Lists, Brought, Missing, Frontiers, Treasures];
@@ -548,7 +549,8 @@ public static class Alerts
                 "The masons on the walls stand idle half the day: the market is short of timber and stone. Zone industry for a quarry and a lumber camp, or wait for the market to fill.");
         foreach (var b in t.Buildings)
         {
-            if (!Construction.Stalled(t, b)) continue;
+            // Townsfolk's sites wait on the market or send away for their own; the build bar says why zones sit idle.
+            if (b.OwnerId != null || !Construction.Stalled(t, b)) continue;
             var (timber, stone) = Construction.Wanting(b);
             string what = timber > 0 && stone > 0 ? "timber and stone" : stone > 0 ? "stone" : "timber";
             string from = stone > 0 && !t.Buildings.Any(q => q.Complete && q.Def.Id == "quarry") ? "There is no quarry: zone industry for one, or" :
@@ -568,6 +570,13 @@ public static class Alerts
         if (f.FieldsLost > 0)
             yield return new("fields", Fields, $"{f.FieldsLost} {(f.FieldsLost == 1 ? "field" : "fields")} stripped",
                 $"Raiders and beasts took {Js.Str(Js.Round(f.FoodLost))} food from fields beyond the walls last night. Plant a guard flag over the fields (G on the map): a field with a guard by it is left alone.");
+        var cart = t.Workings;
+        if (t.Day - cart.RaidedDay <= Workings.Rules(t).Raid.AlertDays && Workings.Nearest(t, cart.RaidedGood) is { } road)
+        {
+            string what = cart.RaidedGood == Good.Timber ? "timber" : "stone";
+            yield return new($"carts:{what}", Carts, $"A {what} cart taken",
+                $"Raiders took {Js.Str(Js.Round(cart.RaidedLoad))} loads of {what} on the road from the {(cart.RaidedGood == Good.Timber ? "woods" : "quarry")}, {Js.Str(Js.Round(road.Days * 10) / 10)} days out ({Js.Str(Js.Round(Workings.RaidChance(t, road) * 100))}% of carts lost). Paint patrols over the road, or clear the lairs beside it.");
+        }
         if (Frontier.Walled(t) && Frontier.Manned(t) < t.Content.Frontier.WantManned)
             yield return new("unmanned", Unmanned, $"Walls {Js.Str(Js.Round(Frontier.Manned(t) * 100))}% manned",
                 $"The wall wants {Frontier.Wanted(t)} watchmen at night and has {Js.Str(Js.Round(Frontier.OnWalls(t)))}. An unmanned wall gives a third of its strength. Hire the watch in the council.");

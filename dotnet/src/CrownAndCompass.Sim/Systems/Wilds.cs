@@ -536,9 +536,11 @@ public static class Wilds
     }
 
     /// <summary>Paint a patrol along the road to a settlement, cell by cell.</summary>
-    public static WildZone? PatrolRoad(Town town, Settlement s)
+    public static WildZone? PatrolRoad(Town town, Settlement s) => Paint(town, Patrol, RoadCells(town, Systems.Explore.SettlementSpot(town, s)));
+
+    /// <summary>The cells of the wilds a straight road from the town to a spot (days from the town) runs through.</summary>
+    public static List<(int X, int Y)> RoadCells(Town town, (double X, double Y) to)
     {
-        var to = Systems.Explore.SettlementSpot(town, s);
         double len = Js.Hypot(to.X, to.Y);
         int steps = Math.Max(1, (int)Math.Ceiling(len / (Rules(town).Cell * 0.5)));
         var cells = new List<(int X, int Y)>();
@@ -548,7 +550,7 @@ public static class Wilds
             var c = CellOf(town, to.X * t, to.Y * t);
             if (!cells.Contains(c)) cells.Add(c);
         }
-        return Paint(town, Patrol, cells);
+        return cells;
     }
 
     /// <summary>The stand-in mayor puts riders on its best friend's road once it can spare what a caravan patrol once cost.</summary>
@@ -556,6 +558,14 @@ public static class Wilds
     {
         var p = Rules(town).Patrol.StandIn;
         if (Threat.IsActive(town) || town.Treasury < p.Cost + p.Reserve) return;
+        // A far working's road that lost its carts lately comes first.
+        var cart = town.Workings;
+        if (town.Day - cart.RaidedDay <= Systems.Workings.Rules(town).Raid.AlertDays && Systems.Workings.Nearest(town, cart.RaidedGood) is { } road
+            && Systems.Workings.Patrolled(town, road) < 0.5)
+        {
+            Paint(town, Patrol, RoadCells(town, (road.X, road.Y)));
+            return;
+        }
         var s = town.Settlements
             .Where(x => !x.Razed && Neighbours.Known(town, x) && (x.Allied || x.Standing >= 30) && Road(town, x) < 0.5)
             .OrderByDescending(x => x.Standing)
