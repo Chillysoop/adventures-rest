@@ -94,6 +94,8 @@ public partial class Main
         if (why is "built" or "dug") p.Row($"{head}  {Tag(Ui.Cap(why), Ui.Good)}");
         else if (why == "under way") p.Row($"{head}  {Tag("Rising", Ui.Gold)}");
         else if (why != null && why != "not enough gold") p.Row($"{head}{count}  {Tag(Ui.Cap(why))}");
+        else if (w is DefenseWork.Tower or DefenseWork.Barracks)
+            p.Row($"{head}{count}", ($"Place {Math.Round(cost)}g", why == null, true, () => _map.Planner.Pick(new Planner.PlanTool(null, null) { OnWall = w })));
         else p.Row($"{head}{count}", ($"Build {Math.Round(cost)}g", why == null, true, () => Act(() => _sim.BuildDefense(w))));
     }
 

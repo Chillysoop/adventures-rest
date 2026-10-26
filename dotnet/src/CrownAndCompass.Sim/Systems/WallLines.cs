@@ -140,6 +140,7 @@ public static class WallLines
         var p = Own(town, ring);
         p.Radii = Trace(town, ring, pts).Radii!;
         Changed(town);
+        Unzone(town);
         town.Log(LedgerCategory.War, Importance.Routine, $"The council marks out where {WallName(town, ring)} will run{(p.Gates.Count == 0 ? ". It needs a gate before the masons can start" : "")}.");
         return null;
     }
@@ -198,9 +199,33 @@ public static class WallLines
     /// <summary>A gate on the south road for a wall that has none: the stand-in mayor's way, and old saves' walls.</summary>
     public static void EnsureGate(Town town, int ring)
     {
+        // The stand-in mayor draws the line where it would have run by default.
+        if (Plan(town, ring) is not { Radii.Length: > 0 })
+        {
+            var line = Enumerable.Range(0, N).Select(i => City.Wall(town, ring, Heading(i))).ToArray();
+            Own(town, ring).Radii = line;
+            Changed(town);
+        }
         if (Gates(town, ring).Count > 0) return;
         Own(town, ring).Gates.Add(Math.PI / 2);
         Changed(town);
+    }
+
+    /// <summary>Takes the paint off open ground under the drawn walls: nothing is zoned under a wall.</summary>
+    private static void Unzone(Town town)
+    {
+        var plan = town.Plan;
+        bool any = false;
+        for (int i = 0; i < plan.Zones.Length; i++)
+        {
+            if (plan.Zones[i] == (byte)Zone.None || plan.Taken[i] != 0) continue;
+            if (!City.OnDrawnWall(town, (i % Land.Size + 0.5) / Land.Res, (i / Land.Size + 0.5) / Land.Res)) continue;
+            plan.Zones[i] = (byte)Zone.None;
+            plan.Density[i] = 0;
+            plan.Crops[i] = 0;
+            any = true;
+        }
+        if (any) plan.Changed();
     }
 
     private static string Named(Building b) => b.Name.StartsWith("The ", StringComparison.Ordinal) ? "the " + b.Name[4..] : b.Name;

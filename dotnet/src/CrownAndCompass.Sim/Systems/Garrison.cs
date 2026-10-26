@@ -232,8 +232,22 @@ public static class Garrison
     /// <summary>The section a tower stands on.</summary>
     public static int TowerSection(Town town, int tower)
     {
-        var order = Rules(town).TowerOrder;
-        return tower < order.Count ? order[tower] : tower % Sections(town);
+        var at = town.Defenses.TowerAt;
+        if (tower < at.Count) return at[tower];
+        // Past the ones placed by hand, the old order, skipping stretches already taken.
+        var order = Rules(town).TowerOrder.Concat(Enumerable.Range(0, Sections(town))).Where(s => !at.Contains(s)).Distinct().ToList();
+        int k = tower - at.Count;
+        return k < order.Count ? order[k] : tower % Sections(town);
+    }
+
+    /// <summary>The section a wall barracks stands on: where the player put it, else west then east.</summary>
+    public static int BarracksSection(Town town, int barracks)
+    {
+        var at = town.Defenses.BarracksAt;
+        if (barracks < at.Count) return at[barracks];
+        var order = new[] { 2, 6 }.Concat(Enumerable.Range(0, Sections(town))).Where(s => !at.Contains(s)).Distinct().ToList();
+        int k = barracks - at.Count;
+        return k < order.Count ? order[k] : barracks % Sections(town);
     }
 
     public static bool TowerOn(Town town, int section)

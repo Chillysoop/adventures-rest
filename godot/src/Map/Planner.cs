@@ -21,6 +21,9 @@ public partial class Planner(MapView map) : Control
         public int? Wall { get; init; }
         public int? Gate { get; init; }
         public DefenseWork? Work { get; init; }
+
+        /// <summary>A tower or wall barracks to put on the stretch of wall clicked.</summary>
+        public DefenseWork? OnWall { get; init; }
     }
 
     public PlanTool? Tool { get; private set; }
@@ -40,7 +43,7 @@ public partial class Planner(MapView map) : Control
     /// <summary>The stroke being painted, in town tiles, not yet sent to the sim.</summary>
     private readonly List<Vector2> _stroke = [];
 
-    private Vector2? _hover, _press;
+    private Vector2? _hover, _press, _pressedAt;
 
     /// <summary>The corners of the wall being drawn, in town tiles.</summary>
     private readonly List<Vector2> _corners = [];
@@ -58,6 +61,8 @@ public partial class Planner(MapView map) : Control
         Tool = tool;
         _stroke.Clear();
         _corners.Clear();
+        _strokeStarts.Clear();
+        _held = false;
         _press = null;
         _yaw = null;
         QueueRedraw();
@@ -97,9 +102,21 @@ public partial class Planner(MapView map) : Control
 
     // ---------- Input, routed here by the map while a tool is picked ----------
 
+    /// <summary>Whether the wall tool's button is held: dragging lays a curve, a point every <see cref="CurveStep"/> tiles.</summary>
+    private bool _held;
+    private const float CurveStep = 0.6f;
+
+    /// <summary>Where each press began in the corners, so Backspace takes back a whole curve.</summary>
+    private readonly List<int> _strokeStarts = [];
+
     public void Hover(Vector2 w)
     {
         _hover = ToTown(w);
+        if (Tool is { Wall: int } && _held && (_corners.Count == 0 || _corners[^1].DistanceTo(_hover.Value) >= CurveStep))
+        {
+            // Back on the first point after a long curve: close it on release instead of piling up points there.
+            if (!(_corners.Count >= 6 && _hover.Value.DistanceTo(_corners[0]) < 0.9f)) _corners.Add(_hover.Value);
+        }
         if (Tool?.Zone != null && _stroke.Count > 0) Dab(_hover.Value);
         if (Tool?.Building != null && _press is Vector2 p && p.DistanceTo(_hover.Value) > 0.3f)
             _yaw = Mathf.Atan2(-(_hover.Value.X - p.X), _hover.Value.Y - p.Y);
@@ -109,7 +126,14 @@ public partial class Planner(MapView map) : Control
     public void Press(Vector2 w)
     {
         _hover = ToTown(w);
-        if (Tool?.Zone != null)
+        if (Tool is { Wall: int })
+        {
+            _held = true;
+            _pressedAt = _hover;
+            _strokeStarts.Add(_corners.Count);
+            if (_corners.Count == 0 || _corners[^1].DistanceTo(_hover.Value) >= CurveStep) _corners.Add(_hover.Value);
+        }
+        else if (Tool?.Zone != null)
         {
             _stroke.Clear();
             _stroke.Add(_hover.Value);
@@ -137,9 +161,25 @@ public partial class Planner(MapView map) : Control
         if (Tool is { Wall: int ring })
         {
             var at = ToTown(w);
+            _held = false;
+            // A click sets a corner (straight runs between clicks); a drag has laid a curve as it went.
             // Back on the first corner closes the loop.
             if (_corners.Count >= 3 && at.DistanceTo(_corners[0]) < 0.9f) CloseWall(ring);
-            else _corners.Add(at);
+            else if (_corners.Count == 0 || _corners[^1].DistanceTo(at) > 0.05f) _corners.Add(at);
+            _pressedAt = null;
+            QueueRedraw();
+            return;
+        }
+        if (Tool is { OnWall: DefenseWork piece })
+        {
+            var at = ToTown(w);
+            if (map.Sim.BuildOnWall(piece, at.X, at.Y) is { } no) Said?.Invoke($"It can't go there: {no}.");
+            else
+            {
+                Said?.Invoke(piece == DefenseWork.Tower ? "Builders start on a tower there." : "Masons start on barracks in that stretch of wall.");
+                if (!Input.IsKeyPressed(Key.Shift)) Pick(null);
+            }
+            Changed?.Invoke();
             QueueRedraw();
             return;
         }
@@ -214,7 +254,10 @@ public partial class Planner(MapView map) : Control
         }
         if (k == Godot.Key.Backspace && _corners.Count > 0)
         {
-            _corners.RemoveAt(_corners.Count - 1);
+            // The last curve or corner, as it was laid.
+            int from = _strokeStarts.Count > 0 ? _strokeStarts[^1] : _corners.Count - 1;
+            if (_strokeStarts.Count > 0) _strokeStarts.RemoveAt(_strokeStarts.Count - 1);
+            _corners.RemoveRange(Math.Min(from, _corners.Count - 1), _corners.Count - Math.Min(from, _corners.Count - 1));
             QueueRedraw();
             return true;
         }
@@ -248,6 +291,11 @@ public partial class Planner(MapView map) : Control
         if (Tool.Wall is int wr || Tool.Gate is int)
         {
             WallTool(town, h);
+            return;
+        }
+        if (Tool.OnWall is DefenseWork piece)
+        {
+            OnWallTool(town, piece, h);
             return;
         }
         if (Tool.Zone is Zone z)
@@ -309,9 +357,9 @@ public partial class Planner(MapView map) : Control
             if (pts.Count >= 2) DrawPolyline([.. pts], c, 3, true);
             foreach (var p in _corners) DrawCircle(Screen(p), 5, c);
             if (_corners.Count > 0) DrawArc(Screen(_corners[0]), 10, 0, Mathf.Tau, 24, new Color("f6eedb"), 2, true);
-            string hint = _corners.Count == 0 ? "Click round the town to draw the wall · Enter keeps the line shown"
-                : _corners.Count < 3 ? "Keep clicking corners · Backspace takes one back"
-                : "Click the first corner (or Enter) to close the wall";
+            string hint = _corners.Count == 0 ? "Drag round the town for curves, click for corners · Enter keeps the line shown"
+                : _corners.Count < 3 ? "Keep dragging or clicking · Backspace takes a point back"
+                : "Back to the first point (or Enter) to close the wall";
             Label(map.ToScreen(FromTown(h.X, h.Y), 0.7f) + new Vector2(0, -16), hint, 12, new Color("f6eedb"));
             return;
         }
@@ -320,6 +368,30 @@ public partial class Planner(MapView map) : Control
         GateMark(town, ring, a, why == null ? new Color(0.45f, 0.9f, 0.4f) : new Color(0.9f, 0.3f, 0.25f));
         double cost = WallLines.GateCost(town, ring);
         Label(map.ToScreen(FromTown(h.X, h.Y), 0.7f) + new Vector2(0, -16), why == null ? cost > 0 ? $"Gate · {Js.Str(cost)}g" : "Gate" : Ui.Cap(why), 12, new Color("f6eedb"));
+    }
+
+    /// <summary>The wall's line, the stretches already built on, and the spot a click would put the tower or barracks.</summary>
+    private void OnWallTool(Town town, DefenseWork piece, Vector2 h)
+    {
+        int ring = town.Defenses.CityWall == PalisadeState.Built ? 1 : 0;
+        var stone = new Color("e8dcc0");
+        const int Steps = 96;
+        var line = new Vector2[Steps + 1];
+        for (int i = 0; i <= Steps; i++)
+        {
+            var (x, y) = WallLines.Point(town, ring, WallLines.Heading(i % Steps));
+            line[i] = Screen(new Vector2((float)x, (float)y));
+        }
+        DrawPolyline(line, new Color(stone, 0.8f), 3, true);
+        double a = Math.Atan2(h.Y - Town.Center, h.X - Town.Center);
+        var (px, py) = WallLines.Point(town, ring, a);
+        string? why = Threat.OnWallBlocked(town, piece, h.X, h.Y);
+        var c = why == null ? new Color(0.45f, 0.9f, 0.4f) : new Color(0.9f, 0.3f, 0.25f);
+        var at = Screen(new Vector2((float)px, (float)py));
+        if (piece == DefenseWork.Tower) DrawCircle(at, 9, new Color(c, 0.6f));
+        else DrawRect(new Rect2(at - new Vector2(14, 6), new Vector2(28, 12)), new Color(c, 0.6f));
+        string name = piece == DefenseWork.Tower ? "Tower" : "Barracks";
+        Label(map.ToScreen(FromTown(h.X, h.Y), 0.7f) + new Vector2(0, -16), why == null ? $"{name} · {Js.Str(Threat.BuildCost(town, piece))}g" : Ui.Cap(why), 12, new Color("f6eedb"));
     }
 
     private void GateMark(Town town, int ring, double angle, Color c)

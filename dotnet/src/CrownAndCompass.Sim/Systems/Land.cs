@@ -100,8 +100,9 @@ public static class Land
                         n++;
                         continue;
                     }
-                    // A company's bastion grounds take no paint.
+                    // A company's bastion grounds take no paint, nor the ground under a drawn wall.
                     if (zone != Zone.None && plan.Grounds[i] != 0) continue;
+                    if (zone != Zone.None && City.OnDrawnWall(town, (cx + 0.5) / Res, (cy + 0.5) / Res)) continue;
                     if (!overwrite && plan.Zones[i] != (byte)Zone.None) continue;
                     // Only ground in a ring the town's charter reaches takes paint.
                     if (zone != Zone.None && !Open(town, i)) continue;

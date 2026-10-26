@@ -85,7 +85,10 @@ public class ThreatTests
         var sim = new Simulation(new SimulationOptions { Seed = 2, StartingTreasury = 0, Enemy = false });
         Assert.False(sim.BuildDefense(DefenseWork.Palisade));
         sim.Town.Treasury = 2000;
-        // Every wall needs a gate before the masons start.
+        // Every wall is drawn by hand, and needs a gate, before the masons start.
+        Assert.Equal("draw its line first", Threat.BuildBlocked(sim.Town, DefenseWork.Palisade));
+        var t = sim.Town;
+        Assert.Null(sim.DrawWall(0, Enumerable.Range(0, 24).Select(i => (Town.Center + Math.Cos(i * Math.PI / 12) * City.Wall(t, 0, i * Math.PI / 12), Town.Center + Math.Sin(i * Math.PI / 12) * City.Wall(t, 0, i * Math.PI / 12)))));
         Assert.False(sim.BuildDefense(DefenseWork.Palisade));
         Assert.Null(sim.PlaceGate(0, Town.Center, Town.Center + City.Wall(sim.Town, 0, Math.PI / 2)));
         Assert.True(sim.BuildDefense(DefenseWork.Palisade));

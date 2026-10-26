@@ -4,7 +4,7 @@ namespace CrownAndCompass.Sim.Tests;
 
 public class FrontierTests
 {
-    private static Simulation Town(bool walled, int watch = 0)
+    private static Simulation Make(bool walled, int watch = 0)
     {
         var sim = new Simulation(new SimulationOptions { Seed = 2, AutoDefense = false, Enemy = false });
         sim.RunDays(10);
@@ -19,12 +19,12 @@ public class FrontierTests
     [Fact]
     public void TheGateLawNeedsAWallAndTurnsAgentsAway()
     {
-        var open = Town(walled: false).Town;
+        var open = Make(walled: false).Town;
         Assert.NotNull(Frontier.GateBlocked(open, "watched"));
         Assert.False(Frontier.SetGate(open, "shut"));
         Assert.Equal(0, Frontier.Turned(open));
 
-        var sim = Town(walled: true, watch: 6);
+        var sim = Make(walled: true, watch: 6);
         var t = sim.Town;
         Assert.True(Frontier.Walled(t));
         Assert.True(sim.SetGate("shut"));
@@ -36,7 +36,7 @@ public class FrontierTests
     [Fact]
     public void AWallIsOnlyAsStrongAsTheWatchOnIt()
     {
-        var t = Town(walled: true, watch: 0).Town;
+        var t = Make(walled: true, watch: 0).Town;
         Assert.True(Frontier.Wanted(t) > 0);
         double bare = Threat.Fortification(t);
         Assert.Equal(0, Frontier.Manned(t));
@@ -49,7 +49,7 @@ public class FrontierTests
     [Fact]
     public void FieldsWithinTheWallsYieldLessAndWealthDrawsRaiders()
     {
-        var t = Town(walled: true).Town;
+        var t = Make(walled: true).Town;
         var farm = t.Buildings.FirstOrDefault(b => b.Def.Zone == Zone.Farmland);
         if (farm != null) Assert.Equal(Frontier.Within(t, farm) ? t.Content.Frontier.InsideFarm : 1, Frontier.FarmYield(t, farm));
         t.Treasury = 0;
@@ -61,7 +61,7 @@ public class FrontierTests
     [Fact]
     public void TheNewsDietSendsABusyDaysRestToTheDigest()
     {
-        var t = Town(walled: false).Town;
+        var t = Make(walled: false).Town;
         t.News.Day = t.Day;
         t.News.Admitted = 0;
         t.News.Held.Clear();
@@ -80,5 +80,26 @@ public class FrontierTests
         // No big bad yet: there is no one to ride for.
         Assert.False(sim.CallLastRide());
         Assert.Null(Saga.Champions(sim.Town, out _, out _));
+    }
+
+    [Fact]
+    public void TowersAndBarracksGoWhereTheyArePutAndNothingIsZonedUnderAWall()
+    {
+        var sim = new Simulation(new SimulationOptions { Seed = 2, Enemy = false, AutoDefense = false });
+        sim.RunDays(5);
+        var t = sim.Town;
+        t.Treasury = 50000;
+        var loop = Enumerable.Range(0, 24).Select(i => (Town.Center + Math.Cos(i * Math.PI / 12) * City.Wall(t, 0, i * Math.PI / 12), Town.Center + Math.Sin(i * Math.PI / 12) * City.Wall(t, 0, i * Math.PI / 12))).ToList();
+        Assert.Null(sim.DrawWall(0, loop));
+        // Paint across the wall's line takes nowhere on it.
+        var (wx, wy) = WallLines.Point(t, 0, 0);
+        sim.PaintZone([(wx, wy)], 1.5, Zone.Residential);
+        Assert.False(City.OnDrawnWall(t, wx, wy) && t.Plan.Zones[(int)(wy * Land.Res) * Land.Size + (int)(wx * Land.Res)] != (byte)Zone.None);
+        t.Defenses.Palisade = PalisadeState.Built;
+        Assert.NotNull(Threat.OnWallBlocked(t, DefenseWork.Tower, Town.Center, Town.Center));
+        // East, on the line.
+        Assert.Null(sim.BuildOnWall(DefenseWork.Tower, wx, wy));
+        Assert.Equal(Garrison.SectionAt(t, wx, wy), Garrison.TowerSection(t, 0));
+        Assert.Equal("a tower stands on that stretch", Threat.OnWallBlocked(t, DefenseWork.Tower, wx, wy));
     }
 }
