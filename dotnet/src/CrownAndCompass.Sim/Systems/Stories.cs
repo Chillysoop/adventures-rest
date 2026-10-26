@@ -1696,6 +1696,7 @@ public static class Stories
                         if (pool.Count > 0)
                         {
                             var won = pool[town.Rng.Range(0, pool.Count)];
+                            Spoils.Found(town, won, ma.GivenName, false, ma.Id, null, [ma]);
                             Gear.Claim(town, ma, won);
                             said.Add($"{ma.GivenName} gains the {won.Name}");
                         }
