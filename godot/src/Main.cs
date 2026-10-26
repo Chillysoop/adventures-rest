@@ -928,7 +928,7 @@ public partial class Main : Control
         var season = Seasons.Current(t);
         _clock.Text = $"Day {t.Day} · {season.Name} · {t.Hour:00}:00";
         _clock.TooltipText = $"{season.Name} of year {Seasons.Year(t)}, day {Seasons.DayOf(t)} of {Seasons.Rules(t).Days}. {Seasons.Next(t).Name} comes in {Ui.Days(Seasons.DaysLeft(t))}.\n{season.Blurb}";
-        _tierLabel.Text = $"{City.Tier(t).Name} · about {City.Souls(t):N0} souls";
+        _tierLabel.Text = City.Tier(t).Name;
         _standing = StandingAlerts();
         var stage = Stages[SeenStage(t)];
         _threat.Text = (SeenStage(t) == ThreatStage.Marching && t.Enemy.ArrivalTick is int at ? $"Siege in {Math.Ceiling((at - t.Tick) / 24.0)}d" : stage.Label).ToUpperInvariant();

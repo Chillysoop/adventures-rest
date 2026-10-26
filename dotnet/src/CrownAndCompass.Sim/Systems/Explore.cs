@@ -1416,13 +1416,14 @@ public static class Explore
             .ThenBy(x => x.Def.Id, StringComparer.Ordinal)
             .Take(n)
             .ToList();
-        if (sites.Count == 0) return $"{Cap(who)} have nothing the town does not know already.";
+        bool one = f.Kind != "company";
+        if (sites.Count == 0) return $"{Cap(who)} {(one ? "has" : "have")} nothing the town does not know already.";
         foreach (var x in sites)
         {
             World.Tell(town, x, Rules(town).Rewards.MapsTrust, who);
             if (town.Regions[x.RegionId!.Value] is { Known: false } r) r.Known = true;
         }
-        return $"{Cap(who)} tell of {Expedition.ListNames(sites.Select(x => $"{x.Def.Name} ({x.Believed})").ToList())}.";
+        return $"{Cap(who)} {(one ? "tells" : "tell")} of {Expedition.ListNames(sites.Select(x => x.Believed == "" ? x.Def.Name : $"{x.Def.Name} ({x.Believed})").ToList())}.";
     }
 
     private static string Invite(Town town, Find f)

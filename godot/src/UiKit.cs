@@ -54,7 +54,7 @@ public static partial class Ui
 
     /// <summary>Prose as bullets, a sentence a point: for text written as sentences (alert tips, content blurbs).</summary>
     public static string Points(string prose, string? icon = null, Color? color = null) =>
-        Bullets(System.Text.RegularExpressions.Regex.Split(prose.Trim(), @"(?<=[.!?;])\s+(?=[A-Z""])").Select(x => x.Trim().TrimEnd(';')), icon, color);
+        Bullets(System.Text.RegularExpressions.Regex.Split(prose.Trim(), @"(?<=[.!?;])\s+(?=[A-Z""])|\n").Select(x => x.Trim().TrimStart('•').Trim().TrimEnd(';')), icon, color);
 
     /// <summary>
     /// Long prose cut to its first sentence, the rest in a hover behind an info mark. Use it for explanations that

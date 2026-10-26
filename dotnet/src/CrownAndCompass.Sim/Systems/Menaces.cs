@@ -345,9 +345,19 @@ public sealed class Menace
         get
         {
             if (FixedName != null && Stage != MenaceStage.Overlord) return FixedName;
-            string t = Def.Titles.Count > (int)Stage ? Def.Titles[(int)Stage] : "{leader}";
-            return t.Replace("{leader}", Leader).Replace("{seat}", SeatName).Replace("{region}", Region);
+            return TitleAt(Stage);
         }
+    }
+
+    /// <summary>
+    /// What it is called at a stage. A leader who came from another people's lineage (a gnoll chief at the head of a
+    /// wyrm's brood) takes no title made for the kind's own leaders, which would make a kobold "the Last Wyrm".
+    /// </summary>
+    public string TitleAt(MenaceStage stage)
+    {
+        string t = Def.Titles.Count > (int)stage ? Def.Titles[(int)stage] : "{leader}";
+        if (stage == MenaceStage.Overlord && Def.Leaders.Count > 0 && !Def.Leaders.Contains(Leader)) t = "{leader}, Dread Lord of {region}";
+        return t.Replace("{leader}", Leader).Replace("{seat}", SeatName).Replace("{region}", Region);
     }
 }
 
@@ -907,7 +917,7 @@ public static class Menaces
     private static void PowerGrows(Town town, Menace m, MenaceStage before)
     {
         var r = Rules(town);
-        string old = m.Def.Titles.Count > (int)before ? m.Def.Titles[(int)before].Replace("{leader}", m.Leader).Replace("{seat}", m.SeatName).Replace("{region}", m.Region) : m.Name;
+        string old = m.Def.Titles.Count > (int)before ? m.TitleAt(before) : m.Name;
         string holdings = m.Holdings.Count == 0 ? "nothing else" : Expedition.ListNames(m.Holdings.Select(id => Quests.Site(town, id)!.Def.Name).ToList());
         m.Named = true;
         town.Log(LedgerCategory.War, Importance.Major, Saga.Cap(Saga.Fill(town, r.PowerText, m).Replace("{oldname}", old).Replace("{holdings}", holdings)));

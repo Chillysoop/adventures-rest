@@ -144,7 +144,7 @@
           "{leader}'s horde",
           "the Host of {leader}",
           "the Dominion of {leader}",
-          "{leader}, the Red King"
+          "{leader}, Warlord of {region}"
         ],
         "people": "warriors",
         "rise": "Hunters coming down from {region} say {leader} has taken {seat} and is calling every warband in the hills to it.",
