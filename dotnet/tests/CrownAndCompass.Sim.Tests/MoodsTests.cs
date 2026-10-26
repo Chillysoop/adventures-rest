@@ -109,6 +109,9 @@ public class MoodsTests
         x[0].JobId = x[1].JobId = t.Buildings[0].Id;
         t.Moods.NotedInspired = -99;
         t.Moods.NotedKind = "";
+        // With today's news budget fresh (the news diet sends the rest of a busy day to the digest).
+        t.News.Day = t.Day;
+        t.News.Admitted = 0;
         Assert.True(Moods.Inspire(t, x[0], "forge"));
         Assert.Equal(Importance.Notable, t.Ledger.About(x[0].Id).Last().Importance);
         Assert.True(Moods.Inspire(t, x[1], "feast"));
@@ -134,7 +137,7 @@ public class MoodsTests
     public void EveryStorytellerHasANameACharacterAndRisingChangesNothing()
     {
         var c = Content.Default();
-        Assert.Equal(["steady", "rising", "chaotic", "relentless"], c.Storytellers.Storytellers.Select(s => s.Id));
+        Assert.Equal(["steady", "rising", "chaotic", "relentless", "merciless"], c.Storytellers.Storytellers.Select(s => s.Id));
         Assert.All(c.Storytellers.Storytellers, s => Assert.True(s.Name != "" && s.Character != "" && s.Text != "" && s.Title != ""));
         var rising = Storyteller.Def(c, "rising")!;
         Assert.Equal(new StorytellerDef { Id = rising.Id, Title = rising.Title, Name = rising.Name, Character = rising.Character, Text = rising.Text }, rising);

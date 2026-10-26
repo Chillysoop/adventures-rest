@@ -120,15 +120,19 @@ public static class Alerts
     public static readonly AlertKind Spent = new("spent", "Traps spent", "trap-pitch", AlertLevel.Decision, AlertWindow.Defence, "Traps");
     public static readonly AlertKind Dark = new("dark", "The dark company rides", "dark-company", AlertLevel.Decision, AlertWindow.Campaign, "Foes>");
     public static readonly AlertKind Scry = new("scry", "Scry the fight", "compass", AlertLevel.Decision, AlertWindow.None);
+    public static readonly AlertKind Ride = new("ride", "The last ride", "ui-renown", AlertLevel.Decision, AlertWindow.War, "Ride");
+    public static readonly AlertKind Fields = new("fields", "Fields stripped", "food", AlertLevel.Decision, AlertWindow.Defence, "Gate");
+    public static readonly AlertKind Unmanned = new("unmanned", "Walls unmanned", "defence", AlertLevel.Decision, AlertWindow.Defence, "Gate");
+    public static readonly AlertKind Strangers = new("strangers", "Strangers at work", "suspicion", AlertLevel.Decision, AlertWindow.Defence, "Gate");
     public static readonly AlertKind Notable = new("notable", "Notables", "np-shaking-hands", AlertLevel.Decision, AlertWindow.Notables);
 
 
     /// <summary>Every kind, in the order their icons sit on the strip within a level.</summary>
     public static readonly IReadOnlyList<AlertKind> Kinds =
-        [Siege, Sighted, Lurker, Captives, Overdue, Doom, Crisis, Sick, Fear, Hunger, Coffers, Underfunded, Unrest, Strike, Hostile, Motion, Guild, Balance, Fealty, Gathering, DarkQuest, Road, Clash, Traitor, Plot, Dark, Spent, Stores, Story, Scry, Explorers, Fallen, LevelUp, Charter, GrandWork, Tourney, Bastion, Institution, Notable, Heroes, Honours, Courted, Envoy, Neighbour, Shadow, Loot, Stalled, Bridge, Ruin, Work, Settlers, Below, Scholars, Trade, Wager, Gifts, Tower, Patrol, Outpost, Housing, Rooms, Camp, Crowded, WarAsk];
+        [Siege, Sighted, Lurker, Captives, Overdue, Ride, Doom, Crisis, Sick, Fear, Hunger, Coffers, Underfunded, Unrest, Strike, Hostile, Motion, Guild, Balance, Fealty, Gathering, DarkQuest, Road, Clash, Traitor, Plot, Dark, Spent, Fields, Unmanned, Strangers, Stores, Story, Scry, Explorers, Fallen, LevelUp, Charter, GrandWork, Tourney, Bastion, Institution, Notable, Heroes, Honours, Courted, Envoy, Neighbour, Shadow, Loot, Stalled, Bridge, Ruin, Work, Settlers, Below, Scholars, Trade, Wager, Gifts, Tower, Patrol, Outpost, Housing, Rooms, Camp, Crowded, WarAsk];
 
     /// <summary>The standing rules, each naming what needs the player now. No rng and no writes: the client calls them often.</summary>
-    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Trades, Hostility, Winter, Growth, Routes, Region, Courting, Undercity, Study, Loyalty, Armoury, Homes, Sites, Allies, Word, Crowds, Keepers, Notables, Outposts, Lists, Brought, Missing];
+    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Trades, Hostility, Winter, Growth, Routes, Region, Courting, Undercity, Study, Loyalty, Armoury, Homes, Sites, Allies, Word, Crowds, Keepers, Notables, Outposts, Lists, Brought, Missing, Frontiers];
 
     public static List<Alert> Standing(Town town) => Rules.SelectMany(r => r(town)).ToList();
 
@@ -550,6 +554,26 @@ public static class Alerts
             yield return new($"stalled:{b.Id}", Stalled, $"{Cap(b.Name)} waits for {what}",
                 $"The builders stand idle: the market has no {what} left. {from} send for it by caravan from the site ({Js.Str(Construction.CaravanCost(t, b))}g).", BuildingId: b.Id);
         }
+    }
+
+    /// <summary>The frontier: fields stripped beyond the walls, a wall with too few on it, strangers robbing an open town.</summary>
+    private static IEnumerable<Alert> Frontiers(Town t)
+    {
+        if (Saga.Champions(t, out var foe, out var seat) is { } champions)
+            yield return new("ride", Ride, $"Ride for {seat!.Def.Name}",
+                $"{Expedition.ListNames(champions.Select(h => h.GivenName).ToList())} are strong enough to face {foe!.Leader} at {seat.Def.Name}. Send them from the War window: the killing blow is yours to order.", SiteId: seat.Def.Id);
+        var f = t.Frontier;
+        if (f.FieldsLost > 0)
+            yield return new("fields", Fields, $"{f.FieldsLost} {(f.FieldsLost == 1 ? "field" : "fields")} stripped",
+                $"Raiders and beasts took {Js.Str(Js.Round(f.FoodLost))} food from fields beyond the walls last night. Plant a guard flag over the fields (G on the map): a field with a guard by it is left alone.");
+        if (Frontier.Walled(t) && Frontier.Manned(t) < t.Content.Frontier.WantManned)
+            yield return new("unmanned", Unmanned, $"Walls {Js.Str(Js.Round(Frontier.Manned(t) * 100))}% manned",
+                $"The wall wants {Frontier.Wanted(t)} watchmen at night and has {Js.Str(Js.Round(Frontier.OnWalls(t)))}. An unmanned wall gives a third of its strength. Hire the watch in the council.");
+        if (f.Strangers > 0)
+            yield return new("strangers", Strangers, "Strangers robbing shops",
+                Frontier.Walled(t)
+                    ? "Footpads come and go through the open gate. Set the gate to Watched and the watch asks every stranger their business."
+                    : "With no wall, anyone walks in, footpads too. A wall with a gate lets the watch turn them away.");
     }
 
     /// <summary>Companies long past the day the town looked for them home, with no word: where they went is all the town knows.</summary>

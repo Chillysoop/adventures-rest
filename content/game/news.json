@@ -1,0 +1,20 @@
+{
+  "budget": 2,
+  "always": ["War", "Story", "Council", "Hardship"],
+  "digestMin": 3,
+  "phrases": {
+    "Arrival": "arrivals",
+    "Departure": "departures",
+    "Property": "sales of property",
+    "Construction": "buildings",
+    "Business": "from the shops",
+    "Social": "among the townsfolk",
+    "Brawl": "brawls",
+    "Romance": "romances",
+    "Quest": "from the roads",
+    "Town": "about the town",
+    "Rumor": "rumours",
+    "Faith": "at the shrines",
+    "Faction": "among the factions"
+  }
+}

@@ -205,6 +205,8 @@ public static partial class Ui
         ["The town remembers"] = "ui-renown",
         ["Threats in the land"] = "threat",
         ["Town guard"] = "order-guard",
+        ["Gate"] = "ui-lock",
+        ["The last ride"] = "ui-renown",
         ["Trade routes"] = "ui-trade",
         ["Under the streets"] = "ui-skull",
         ["Waiting on you"] = "ui-warn",

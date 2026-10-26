@@ -106,6 +106,11 @@ public sealed record StakesDef
     public string Name { get; init; } = "";
     public int DueDays { get; init; } = 3;
     public int Xp { get; init; } = 20;
+    /// <summary>
+    /// The least a check at these stakes needs on the die after every bonus (0 for none): a high-stakes DC rises with
+    /// the mayor's own bonus and helpers, so a seasoned mayor with good friends still fails a third of the time.
+    /// </summary>
+    public int Floor { get; init; }
 }
 
 /// <summary>A way of running the town well that earns inspiration: every <see cref="Every"/> of its kind (charters, bounties, raids thrown back, menaces ended, days at or above <see cref="Threshold"/> Mandate).</summary>
@@ -1252,8 +1257,14 @@ public static class Stories
     }
 
     /// <summary>An option's DC on this story: a first meeting is harder or easier by the manners of whoever it is with.</summary>
-    public static int DcOf(Town town, Story s, StoryOption o) =>
-        DcOf(town, o) + (DefOf(town, s).Source == Powers.ContactSource ? Manners.Lean(town, Manners.KeyOf(s), o.Skill) : 0);
+    public static int DcOf(Town town, Story s, StoryOption o)
+    {
+        int dc = DcOf(town, o) + (DefOf(town, s).Source == Powers.ContactSource ? Manners.Lean(town, Manners.KeyOf(s), o.Skill) : 0);
+        int floor = StakesOf(town, s).Floor;
+        if (floor <= 0 || !o.Rolls) return dc;
+        var (mod, prof, _) = Bonus(town, o.Skill, o.Ability);
+        return Math.Max(dc, mod + prof + Sendings.HelpTotal(town, s, o) + floor);
+    }
 
     public static double Chance(Town town, Story s, StoryOption o, bool inspired = false) =>
         !o.Rolls ? 1 : Sheet.Chance(town, o.Skill, o.Ability, DcOf(town, s, o), Advantage(town, s, o) != "", inspired, Sendings.HelpTotal(town, s, o));

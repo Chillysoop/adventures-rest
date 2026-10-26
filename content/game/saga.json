@@ -1118,7 +1118,7 @@
     "massing": "Word from {spotter}: the bands of {name} are leaving its holdings for {seat}. The host is about to march.",
     "thinned": "The fighting at {camp} has cost {name} dear: the camp there is thinner by a fifth.",
     "scattered": "With {camp} cleared, the bands that gathered there for {name} have scattered.",
-    "thin": "{leader} has waited for a host that will not come: raids on its camps have left {name} too thin to march. It gathers still.",
+    "thin": "{leader} will wait no longer for a host that will not come. Thin as raids on its camps have left it, {name} musters to march.",
     "march": "{name} is on the march! {leader} leads the whole host out of {seat}, and it is coming for the {where}.",
     "breach": "{name} breaks into the lower town of {town} and puts it to the torch, but the keep and the high streets hold. {leader} draws off to gather the host again. The next time the walls break, {town} falls."
   },

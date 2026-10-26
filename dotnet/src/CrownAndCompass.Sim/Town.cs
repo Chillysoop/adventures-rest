@@ -619,6 +619,10 @@ public sealed class Town
     /// <summary>Which areas of the town's business the player has handed to stewards, and what they ask (<see cref="Systems.Stewards"/>).</summary>
     public Systems.StewardState Stewards { get; } = new();
 
+    /// <summary>Today's news diet: what has reached the Notable Ledger, and what waits for the digest.</summary>
+    public Systems.NewsState News { get; } = new();
+    public Systems.FrontierState Frontier { get; } = new();
+
     /// <summary>The mayor's regalia: what they wear in each slot, and the banner's boons on companies out (<see cref="Systems.Regalia"/>).</summary>
     public RegaliaState Regalia { get; } = new();
 
@@ -847,5 +851,5 @@ public sealed class Town
     public string OwnerName(int? ownerId) => ownerId == null ? "the town" : Agent(ownerId.Value).Name;
 
     public LedgerEntry Log(LedgerCategory cat, Importance imp, string text, IReadOnlyList<int>? agents = null) =>
-        Ledger.Write(Tick, cat, imp, text, agents);
+        Ledger.Write(Tick, cat, imp == Importance.Notable ? Systems.News.Admit(this, cat) : imp, text, agents);
 }

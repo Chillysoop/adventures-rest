@@ -123,6 +123,7 @@ public partial class Main
             Ui.Chip("stone", $"×{fort:0.00}", Ui.Gold, $"Walls and towers multiply it{(Threat.IsActive(t) ? ". The warband grows while dungeons go uncleared" : "")}")), 12);
         p.Page("Guard", "defence");
         RenderGuard(p, t);
+        RenderGate(p, t);
         p.Page("Walls", "stone");
         RenderWorks(p, t);
         RenderTraps(p, t);
@@ -171,6 +172,29 @@ public partial class Main
         }
         if (Garrison.Walled(t)) p.Note("Click a wall, tower or gate to call the watch to arms there. When a host marches, the scouts say which side it comes at.");
         else p.Note("Once the palisade stands, the watch walks it, and you can call them to arms on any stretch of it.");
+    }
+
+    /// <summary>The frontier: how well the wall is manned, the gate law, and what the fields and the streets lost yesterday.</summary>
+    private void RenderGate(Pane p, Town t)
+    {
+        var f = t.Frontier;
+        bool walled = Frontier.Walled(t);
+        p.Heading("Gate");
+        if (walled)
+        {
+            double manned = Frontier.Manned(t);
+            p.Meter("Wall manned", 100 * manned, $"{Js.Str(Math.Round(Frontier.OnWalls(t)))}/{Frontier.Wanted(t)}", manned < t.Content.Frontier.WantManned);
+            var current = Frontier.Gate(t);
+            var rows = t.Content.Frontier.Gates.Select(g => (g.Name, Frontier.GateBlocked(t, g.Id) == null && g.Id != current.Id, g.Id == current.Id, (Action)(() => Act(() => _sim.SetGate(g.Id))))).ToArray();
+            p.Row(Ui.Tip($"{Ui.Img("ui-lock", 16)} [b]Gate law[/b]", "Who the watch lets in. Watched and shut turn away footpads and the foe's agents, but put settlers off."), rows);
+        }
+        p.Text(Ui.Chips(
+            Ui.Chip("food", $"{t.Buildings.Count(b => b.Complete && b.Def.Zone == Zone.Farmland && Frontier.Within(t, b))}", Ui.Ink, $"Fields within the walls: they yield {Js.Str(Math.Round(t.Content.Frontier.InsideFarm * 100))}%"),
+            Ui.Chip("order-guard", $"{Frontier.OpenFields(t).Count}", Frontier.OpenFields(t).Count > 0 ? Ui.Gold : Ui.Good, "Fields beyond the walls with no guard flag over them"),
+            f.FieldsLost > 0 ? Ui.Chip("food", $"−{Js.Str(Js.Round(f.FoodLost))}", Ui.Bad, $"{f.FieldsLost} fields stripped last night") : "",
+            f.Strangers > 0 ? Ui.Chip("suspicion", $"{f.Strangers}", Ui.Bad, "Shops robbed by strangers yesterday") : "",
+            f.Turned > 0 ? Ui.Chip("ui-no", $"{f.Turned}", Ui.Good, "The foe's agents turned away at the gate") : ""), 12);
+        p.Help("Fields want open land: within the walls they yield half. Beyond them, raiders strip any field no guard flag stands over. A wall gives its full strength only with a watchman for every few paces of it at night. With no wall, anyone walks in.");
     }
 
     /// <summary>Heroes posted to guard the town: who stands where, what they add, and a drop-down to post more.</summary>

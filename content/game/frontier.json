@@ -1,0 +1,49 @@
+{
+  "insideFarm": 0.5,
+  "tilesPerGuard": 6,
+  "unmanned": 0.35,
+  "wantManned": 0.8,
+  "fieldChance": 0.12,
+  "fieldDays": 1,
+  "dangerPerStage": 0.3,
+  "dangerPerMenace": 0.2,
+  "strangersFrom": 150,
+  "strangerPeople": 300,
+  "strangerTake": 0.15,
+  "strangerMandate": 0.6,
+  "lure": 0.25,
+  "lureGold": 1500,
+  "expectPeople": 30,
+  "expectMost": 30,
+  "dangerPerThousand": 0.35,
+  "dangerMost": 0.5,
+  "gates": [
+    {
+      "id": "open",
+      "name": "Open",
+      "icon": "ui-road",
+      "blurb": "Anyone comes in. Settlers flock, and so do footpads and the foe's agents.",
+      "turned": 0,
+      "draw": 0,
+      "guards": 0
+    },
+    {
+      "id": "watched",
+      "name": "Watched",
+      "icon": "ui-eye",
+      "blurb": "The watch asks every stranger their business. Turns most trouble away, puts a few settlers off, keeps two watchmen at the gate.",
+      "turned": 0.6,
+      "draw": -0.1,
+      "guards": 2
+    },
+    {
+      "id": "shut",
+      "name": "Shut",
+      "icon": "ui-lock",
+      "blurb": "Nobody comes in but on the town's business. Turns nearly all trouble away, but few settlers come.",
+      "turned": 0.9,
+      "draw": -0.6,
+      "guards": 1
+    }
+  ]
+}

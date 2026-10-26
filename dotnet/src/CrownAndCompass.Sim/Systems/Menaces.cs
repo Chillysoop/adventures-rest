@@ -1232,7 +1232,7 @@ public static class Menaces
         // Turned back on one side last time, it tries another.
         if (m.RepulsedAt is int side && target.Any(b => Side(town, b) != side)) target = target.Where(b => Side(town, b) != side).ToList();
         var where = target.Count > 0 ? target[rng.Range(0, target.Count)] : null;
-        double raiders = (strength ?? m.Power * r.StrikeShare) * (0.7 + rng.Next() * 0.6) * (1 + town.Content.Lairs.RebuffBand * Math.Min(town.Content.Lairs.MaxRebuffs, m.Repulsed));
+        double raiders = (strength ?? m.Power * r.StrikeShare) * (0.7 + rng.Next() * 0.6) * (1 + town.Content.Lairs.RebuffBand * Math.Min(town.Content.Lairs.MaxRebuffs, m.Repulsed)) * Frontier.Lure(town);
         // Nothing beyond the walls it could take tonight: it does not waste its warriors.
         if (!Threat.WorthRaiding(town, where, raiders)) return false;
         string place = where!.Name;
@@ -1677,7 +1677,7 @@ public static class Menaces
     private static bool MayEscape(Town town)
     {
         var f = town.Content.Saga.Finale;
-        return town.Saga.BigBadEscapes < f.Escapes + town.Saga.DarkQuests.Escapes || town.Day < town.Saga.CrownDay + f.MinDays;
+        return town.Saga.BigBadEscapes < f.Escapes + town.Saga.DarkQuests.Escapes + Storyteller.Of(town).Escapes || town.Day < town.Saga.CrownDay + f.MinDays;
     }
 
     /// <summary>The menace is finished. Its holdings go back to being ordinary lairs.</summary>

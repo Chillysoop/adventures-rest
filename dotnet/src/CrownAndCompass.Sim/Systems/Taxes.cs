@@ -39,6 +39,10 @@ public sealed record TaxRules
 
     /// <summary>Unrest at which the town grumbles, protests and strikes, for the Ledger.</summary>
     public IReadOnlyList<double> Stages { get; init; } = [25, 50, 75];
+
+    /// <summary>Above this rate taxes are a burden in themselves: each point over it adds <see cref="HeavyUnrest"/> unrest, funded services or not.</summary>
+    public double HeavyFrom { get; init; } = 1;
+    public double HeavyUnrest { get; init; }
 }
 
 public sealed class TaxState
@@ -108,6 +112,13 @@ public static class Taxes
         return burden - r.Mood * town.Taxes.Unrest / 100;
     }
 
+    /// <summary>The unrest a heavy tax stirs by itself: a war chest can be filled quickly, but not for long.</summary>
+    public static double Heavy(Town town)
+    {
+        var r = Rules(town);
+        return Math.Max(0, (town.TaxRate - r.HeavyFrom) * 100 * r.HeavyUnrest);
+    }
+
     /// <summary>Settlers' attraction lost to unrest.</summary>
     public static double Attraction(Town town) => -Rules(town).Attraction * town.Taxes.Unrest / 100;
 
@@ -142,7 +153,7 @@ public static class Taxes
         if (s.Services.Count > r.Days) s.Services.RemoveAt(0);
 
         double funding = Funding(town);
-        double target = funding >= 1 ? 0 : Math.Min(100, (1 - funding) * r.Scale);
+        double target = Math.Min(100, Math.Max(funding >= 1 ? 0 : (1 - funding) * r.Scale, Heavy(town)));
         s.Unrest = s.Unrest < target ? Math.Min(target, s.Unrest + r.Rise) : Math.Max(target, s.Unrest - r.Ease);
         if (s.Unrest > 0) town.Mandate = Math.Clamp(town.Mandate - r.Mandate * s.Unrest / 100, 0, 100);
         Report(town, funding);

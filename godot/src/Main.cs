@@ -255,6 +255,7 @@ public partial class Main : Control
             Select(Selection.Agent(folk.Id));
         if (_opts.Episode is string episode) StageEpisode(episode);
         if (_opts.Intro is string intro) StageIntro(intro);
+        if (_opts.LastBattle is string moment) StageLastBattle(moment);
         if (_opts.Claim is string road && !_sim.ClaimRoad(road)) GD.Print($"Cannot claim {road}: {Victory.ClaimBlocked(_sim.Town, road)}");
         if (_opts.Befriend) StageNotables();
         if (_opts.House && _sim.Town.Buildings.Where(b => b.Complete && b.Def.Housing > 0).OrderByDescending(b => Decor.Comfort(_sim.Town, b)).ThenBy(b => b.Id).FirstOrDefault() is Building house)
@@ -855,6 +856,7 @@ public partial class Main : Control
         }
         // A first meeting's picture comes before any scene or report it brought.
         SyncIntros();
+        SyncLastBattle();
         SyncStories(delta);
         SyncFinds();
         SyncClockStops();

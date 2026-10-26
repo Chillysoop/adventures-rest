@@ -89,6 +89,8 @@ public static class Campaigns
             if (!Passage.CanReach(town, members, site)) continue;
             // Nobody goes down under the town for glory until it stirs.
             if (Undercity.IsUnder(town, site) && !Undercity.Stirring(town, site)) continue;
+            // The big bad's seat is the town's to call: no company rides there on its own account.
+            if (Menaces.At(town, site.Def.Id) is { BigBad: true } bb && bb.SeatId == site.Def.Id && !town.Bounties.Any(b => b.SiteId == site.Def.Id && b.Status == BountyStatus.Open)) continue;
             int level = Math.Max(1, site.BelievedTier);
             if (level > cap || (war && site.Def.Distance > rules.WarDays)) continue;
             var region = World.RegionOf(town, site);

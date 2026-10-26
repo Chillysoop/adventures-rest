@@ -316,7 +316,7 @@ public static class Saga
         return s.YokeId is int id && !s.Defied && s.Menaces[id - 1].Origin == Menaces.FromWarband;
     }
 
-    public static void Daily(Town town, bool autoMayor)
+    public static void Daily(Town town, bool autoMayor, bool ride = true)
     {
         var s = town.Saga;
         if (!s.Enabled || town.Outcome != null || Rules(town).Acts.Count == 0) return;
@@ -325,8 +325,36 @@ public static class Saga
         AdvanceAct(town);
         Lull(town);
         Tribute(town);
-        LastRide(town);
+        if (ride) LastRide(town);
         Dread(town);
+    }
+
+    /// <summary>
+    /// The champions who would ride for the big bad's seat (or to break the yoke) today, or null while they can't:
+    /// the town's four best heroes at home, once they are strong enough for it. The ride is the mayor's call
+    /// (<see cref="CallLastRide"/>); a stand-in mayor makes it as soon as they are ready.
+    /// </summary>
+    public static List<Agent>? Champions(Town town, out Menace? foe, out SiteState? seat)
+    {
+        var s = town.Saga;
+        var f = Rules(town).Finale;
+        foe = BigBad(town) ?? (s.YokeId is int y ? s.Menaces[y - 1] : null);
+        seat = foe != null ? Quests.Site(town, foe.SeatId) : null;
+        if (foe == null || !foe.Alive || town.Day < s.NextRideDay || town.Outcome != null) return null;
+        var at = seat;
+        if (at == null || at.Cleared || town.Parties.Any(p => !p.Returned && p.SiteId == at.Def.Id)) return null;
+        var champions = town.Heroes.Where(Quests.Available).OrderByDescending(h => h.Hero!.Level).ThenBy(h => h.Id).Take(4).ToList();
+        int under = (foe.BigBad ? f.RideUnder : f.YokeRideUnder) - Storyteller.Of(town).RideOver;
+        if (champions.Count < 3 || champions.Average(h => h.Hero!.Level) < Math.Max(1, at.Def.Tier) - under) return null;
+        return champions;
+    }
+
+    /// <summary>The mayor sends the champions for the big bad's seat: the last battle. False when they can't ride.</summary>
+    public static bool CallLastRide(Town town)
+    {
+        if (Champions(town, out _, out _) == null) return false;
+        LastRide(town);
+        return true;
     }
 
     /// <summary>The town's four best heroes ride for the big bad's seat, or to break the yoke the town is under.</summary>
@@ -334,13 +362,7 @@ public static class Saga
     {
         var s = town.Saga;
         var f = Rules(town).Finale;
-        var b = BigBad(town) ?? (s.YokeId is int y ? s.Menaces[y - 1] : null);
-        if (b == null || !b.Alive || town.Day < s.NextRideDay) return;
-        var seat = Quests.Site(town, b.SeatId);
-        if (seat == null || seat.Cleared || town.Parties.Any(p => !p.Returned && p.SiteId == seat.Def.Id)) return;
-        var champions = town.Heroes.Where(Quests.Available).OrderByDescending(h => h.Hero!.Level).ThenBy(h => h.Id).Take(4).ToList();
-        int under = b.BigBad ? f.RideUnder : f.YokeRideUnder;
-        if (champions.Count < 3 || champions.Average(h => h.Hero!.Level) < Math.Max(1, seat.Def.Tier) - under) return;
+        if (Champions(town, out var b, out var seat) is not { } champions || b == null || seat == null) return;
         s.NextRideDay = town.Day + f.RideEveryDays;
         var bounty = town.Bounties.FirstOrDefault(x => x.SiteId == seat.Def.Id && x.Status == BountyStatus.Open);
         Quests.Launch(town, champions, seat, bounty);

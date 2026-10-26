@@ -199,6 +199,7 @@ public sealed class Simulation
         {
             Threat.Daily(t, pace, Hand("defence"), Options.Enemy);
             Garrison.Daily(t, Hand("defence"));
+            Frontier.Daily(t, Hand("defence"));
         }
         Army.Daily(t);
         AllyCalls.Daily(t);
@@ -238,7 +239,7 @@ public sealed class Simulation
         Regalia.Daily(t, Options.AutoMayor && Options.AutoArmory);
         Mayoralty.Daily(t, Options.AutoMayor && Options.AutoStories);
         Factions.Daily(t, Options.AutoMayor);
-        Saga.Daily(t, Options.AutoMayor);
+        Saga.Daily(t, Options.AutoMayor, Hand("bounties"));
         DarkQuests.Daily(t);
         DarkCompany.Daily(t);
         Endless.Daily(t);
@@ -629,6 +630,12 @@ public sealed class Simulation
 
     /// <summary>How damage from storms, fires and enemies is mended: "crews", "first" or "hire".</summary>
     public bool SetRepairs(string way) => Construction.SetRepairs(Town, way);
+
+    /// <summary>Send the champions for the big bad's seat: the last battle (<see cref="Saga.Champions"/>).</summary>
+    public bool CallLastRide() => Saga.CallLastRide(Town);
+
+    /// <summary>The gate law: "open", "watched" or "shut" (<see cref="Frontier"/>). Needs a standing wall.</summary>
+    public bool SetGate(string id) => Frontier.SetGate(Town, id);
 
     /// <summary>Rebuild a rope bridge raiders cut, in stone that can't be cut again.</summary>
     public bool RebuildBridge(int featureId) => Bridges.Rebuild(Town, featureId);

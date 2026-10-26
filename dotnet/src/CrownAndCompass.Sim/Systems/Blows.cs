@@ -48,6 +48,7 @@ public static class Blows
     /// </summary>
     public static bool? Strike(Town town, string kind, Culprit by, double raiders, double cunning, Agent? mark = null, int? crisis = null, string? foe = null)
     {
+        if (Lurkers.Covert(kind) && Frontier.StopsAgent(town, by)) return false;
         if (Lurkers.Covert(kind) && Lurkers.Slip(town, kind, by, raiders, cunning, mark, crisis, foe)) return null;
         return Resolve(town, kind, by, raiders, cunning, mark, null);
     }
