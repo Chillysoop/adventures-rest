@@ -91,6 +91,9 @@ public sealed record DeepsRules
     public double Loot { get; init; } = 1.5;
     public List<string> Habitats { get; init; } = [];
     public List<string> Names { get; init; } = [];
+
+    /// <summary>Names for a level below a level, filled with the top site's name.</summary>
+    public List<string> Deeper { get; init; } = [];
     public string Found { get; init; } = "";
 }
 
@@ -426,7 +429,10 @@ public static class Dungeons
             Habitats = s.Def.Habitats.Concat(r.Habitats).Distinct().ToList(),
             Deck = s.Def.Encounters.Select(e => e.Kind).ToList(),
         };
-        string name = dice.Pick(r.Names).Replace("{site}", Unthe(s.Def.Name), StringComparison.Ordinal);
+        var top = s;
+        while (top.Def.Under != "" && Quests.Site(town, top.Def.Under) is { } up) top = up;
+        var names = top != s && r.Deeper.Count > 0 ? r.Deeper : r.Names;
+        string name = dice.Pick(names).Replace("{site}", Unthe(top.Def.Name), StringComparison.Ordinal);
         var def = World.BuildSite(town.Content, dice, region, kind, tier, s.Def.Id + "-deeps", name);
         def = def with
         {

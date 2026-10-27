@@ -10,7 +10,10 @@
   "trainMaxLevel": 19,
   "stake": 120,
   "dividend": 0.01,
-  "patron": { "spare": 800, "renown": 10, "share": 0.5, "every": 60, "fame": 2, "favourPerGold": 0.01 },
+  "patron": { "spare": 800, "renown": 10, "share": 0.5, "every": 30, "fame": 2, "favourPerGold": 0.01 },
+  "_fortunes": "Before the rest, once a week: a hero with retireGold spare, retireLevel and a veteran's record (no fief, no bastion) retires to teach and leaves retireShare of it to the treasury; one with a house and manorCost (plus manorPerLevel a level) buys a manor (a land sale; manorLoyalty once); one with feastSpare spare throws a feast at a tavern every feastEvery days, feastShare of it up to feastMost into the tavern's till.",
+  "fortunes": { "feastSpare": 400, "feastShare": 0.15, "feastMost": 400, "feastEvery": 14, "manorCost": 1200, "manorPerLevel": 80, "manorLoyalty": 10, "retireGold": 8000, "retireLevel": 10, "retireShare": 0.5,
+    "manors": ["a manor on the hill with a walled orchard", "a fortified manor by the river", "a great house off the market square", "a stone manor with a tower of its own"] },
   "holdings": ["a farmstead past the mill", "a narrow house on the hill", "an old tower by the river", "a cottage with a walled garden", "a hunting lodge at the forest's edge", "a house over the bakery"],
   "lines": {
     "land": "{hero} buys {holding} for {cost} gold, and sleeps under their own roof between jobs.",
@@ -19,7 +22,10 @@
     "forge": "{hero} pays {cost} gold for the {shop} to make them {item} from the town's spoils.",
     "monument": "{hero} pays {cost} gold out of their own fortune for the {part} of {monument}.",
     "shrine": "{hero} gives {cost} gold toward a shrine to {god}.",
-    "endow": "{hero} endows the shrine of {god} with {cost} gold."
+    "endow": "{hero} endows the shrine of {god} with {cost} gold.",
+    "feast": "{hero} stands the whole of {tavern} a feast, {cost} gold of roast and ale.",
+    "manor": "{hero} buys {holding} for {cost} gold, and means to grow old in it.",
+    "retire": "{hero} hangs up their sword, rich past needing another job, and stays on to teach. They leave {cost} gold to the town."
   },
   "trainers": ["an old sword-master", "the watch's drill sergeant", "a retired duelist", "a scholar of the arcane", "a priest who once marched with the crusades"]
 }

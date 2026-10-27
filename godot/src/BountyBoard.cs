@@ -312,7 +312,11 @@ public partial class Main
         double scryCost = offer?.Gold ?? 0;
         bool scouting = Watch.ScoutAt(t, sid) != null;
 
-        string sig = $"S{text}|{Foes.CreatureFace(s.Believed, s.Def.Kind)}{danger.Id}|{string.Join(",", pills.Select(x => x.Crew.Name + x.Band.Id + x.Crew.Offerable))}|{canPost}{blocked}{reward}{withLoot}{t.Treasury >= reward}{t.Treasury >= withLoot}|{scryable}{freeScry}{offer?.Caster.Id}{offer?.Price}{Math.Round(scryCost)}{t.Treasury >= scryCost}|{scouting}{watchers.Count}|{chosen.Id}{compact}";
+        // A village's plea nobody has answered: the council can put its gold behind it.
+        var backable = t.Pleas.FirstOrDefault(x => x.SiteId == sid && x.Status == PleaStatus.Open && x.Backed == 0);
+        double backing = backable != null ? World.BackingFor(t, backable) : 0;
+        string? backBlocked = backable != null ? World.BackBlocked(t, backable) : null;
+        string sig = $"S{text}|{backable?.Id}{backBlocked}{backing}|{Foes.CreatureFace(s.Believed, s.Def.Kind)}{danger.Id}|{string.Join(",", pills.Select(x => x.Crew.Name + x.Band.Id + x.Crew.Offerable))}|{canPost}{blocked}{reward}{withLoot}{t.Treasury >= reward}{t.Treasury >= withLoot}|{scryable}{freeScry}{offer?.Caster.Id}{offer?.Price}{Math.Round(scryCost)}{t.Treasury >= scryCost}|{scouting}{watchers.Count}|{chosen.Id}{compact}";
         p.Add(sig, () =>
         {
             var v = new VBoxContainer();
@@ -375,6 +379,14 @@ public partial class Main
                         : "Scout: watch a site from cover\n• Needs a ranger, rogue, monk or cartographer in town and rested";
                     buttons.AddChild(IconButton("act-scout", "", scoutTip, watchers.Count > 0, false, () => Act(() => _sim.PostScout(sid))));
                 }
+            }
+            if (backable != null && !compact)
+            {
+                int pleaId = backable.Id;
+                string from = t.Settlements[backable.SettlementId].Name;
+                buttons.AddChild(IconButton("standing", $"+{Js.Str(backing)}g",
+                    $"Back the plea from {from}: +{Js.Str(backing)}g\n• Added to their {Js.Str(Math.Round(backable.Reward))}g, held until someone answers\n• Back to you if nobody does\n• Answering it pleases {from}{(backBlocked != null ? $"\nCan't: {Ui.Cap(backBlocked)}." : "")}",
+                    backBlocked == null, false, () => Act(() => _sim.BackPlea(pleaId))));
             }
             row.AddChild(buttons);
             v.AddChild(row);

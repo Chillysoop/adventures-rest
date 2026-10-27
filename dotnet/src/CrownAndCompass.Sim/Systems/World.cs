@@ -107,8 +107,11 @@ public sealed class Plea
     public int Id { get; init; }
     public int SettlementId { get; init; }
     public required string SiteId { get; init; }
-    public double Reward { get; init; }
-    public int ExpiresDay { get; init; }
+    public double Reward { get; set; }
+    public int ExpiresDay { get; set; }
+
+    /// <summary>Gold the council added to it (<see cref="World.BackPlea"/>), held in escrow and handed back if nobody answers.</summary>
+    public double Backed { get; set; }
     public PleaStatus Status { get; set; } = PleaStatus.Open;
     public int? PartyId { get; set; }
 }
@@ -784,6 +787,7 @@ public static class World
         {
             if (p.Status != PleaStatus.Open || town.Day < p.ExpiresDay) continue;
             p.Status = PleaStatus.Lapsed;
+            if (p.Backed > 0) town.Book(TreasuryAccount.Bounties, p.Backed);
             var s = town.Settlements[p.SettlementId];
             Shift(town, s, town.Content.World.Standing.PleaIgnored);
             town.Log(LedgerCategory.Quest, Importance.Routine, $"No one answers the plea from {s.Name} about {Quests.Site(town, p.SiteId)!.Def.Name}. {Cap(s.Kin.People)} will remember it.");
@@ -823,7 +827,9 @@ public static class World
         var rules = town.Content.World.Standing;
         if (!exiles && (s.Razed || !Neighbours.Known(town, s) || Reigns.Plea(town, s) <= 0)) return null;
         if (town.Pleas.Any(p => p.SiteId == site.Def.Id && p.Status is PleaStatus.Open or PleaStatus.Taken)) return null;
-        double reward = Js.Round(rules.PleaRewardPerLevel * LevelOf(site) * (s.Allied ? 1.5 : 1) * bonus * (exiles ? 1 : Reigns.Plea(town, s)));
+        // A village pays what the danger is worth, as the council would, not a token: companies weigh it like a bounty.
+        double worth = Math.Max(rules.PleaRewardPerLevel * LevelOf(site), rules.PleaShare * Quests.SuggestedReward(LevelOf(site)));
+        double reward = Js.Round(worth * (s.Allied ? 1.5 : 1) * bonus * (exiles ? 1 : Reigns.Plea(town, s)));
         Tell(town, site, rules.PleaTrust, exiles ? $"the refugees from {s.Name}" : $"a runner from {s.Name}");
         var plea = new Plea
         {
@@ -949,7 +955,8 @@ public static class World
                 plea.Status = PleaStatus.Answered;
                 var s = town.Settlements[plea.SettlementId];
                 paid = plea.Reward;
-                town.Log(LedgerCategory.Quest, Importance.Notable, $"{Cap(s.People)} pay the {party.Name} {Js.Str(plea.Reward)} gold for {site.Def.Name}, and toast {town.Name}'s heroes.");
+                string backed = plea.Backed > 0 ? $" ({Js.Str(plea.Backed)} of it the council's)" : "";
+                town.Log(LedgerCategory.Quest, Importance.Notable, $"{Cap(s.People)} pay the {party.Name} {Js.Str(plea.Reward)} gold{backed} for {site.Def.Name}, and toast {town.Name}'s heroes.");
                 Shift(town, s, rules.Plea + rules.Cleared);
             }
         }
@@ -968,6 +975,36 @@ public static class World
             foreach (var id in region.SiteIds) Tell(town, Quests.Site(town, id)!, town.Content.World.Standing.VisitTrust, home.People);
         if (first) Annals.Visited(town, party, region);
         if (first) Reveal(town, region, $"The {party.Name} bring back word of the lands beyond {region.Name}", 0);
+    }
+
+    /// <summary>What the council would add to a plea to make it worth a company's while: half what heroes ask of this town for the site.</summary>
+    public static double BackingFor(Town town, Plea plea) =>
+        Js.Round(town.Content.World.Standing.BackShare * Quests.Asking(town, LevelOf(Quests.Site(town, plea.SiteId)!)));
+
+    public static string? BackBlocked(Town town, Plea plea)
+    {
+        if (plea.Status != PleaStatus.Open) return "nobody is asking any more";
+        if (plea.Backed > 0) return "the council has backed it already";
+        if (town.Treasury < BackingFor(town, plea)) return $"needs {Js.Str(BackingFor(town, plea))} gold";
+        return null;
+    }
+
+    /// <summary>
+    /// The council adds its gold to a settlement's plea, held in escrow: the company that answers takes it with the village's
+    /// reward, and it comes back if nobody does. The plea stands a while longer for it.
+    /// </summary>
+    public static bool BackPlea(Town town, int pleaId)
+    {
+        var plea = town.Pleas.FirstOrDefault(p => p.Id == pleaId);
+        if (plea == null || BackBlocked(town, plea) != null) return false;
+        double gold = BackingFor(town, plea);
+        town.Book(TreasuryAccount.Bounties, -gold);
+        plea.Backed = gold;
+        plea.Reward += gold;
+        plea.ExpiresDay = Math.Max(plea.ExpiresDay, town.Day + town.Content.World.Standing.BackDays);
+        var s = town.Settlements[plea.SettlementId];
+        town.Log(LedgerCategory.Quest, Importance.Notable, $"The council puts {Js.Str(gold)} gold behind the plea from {s.Name} about {Quests.Site(town, plea.SiteId)!.Def.Name}: {Js.Str(plea.Reward)} gold now waits for whoever answers it.");
+        return true;
     }
 
     /// <summary>The party that took a plea came back without clearing the site: it stands open again.</summary>

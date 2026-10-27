@@ -46,6 +46,9 @@ public sealed record StorytellerDef
     public double Inspire { get; init; } = 1;
     public double Breaks { get; init; } = 1;
 
+    /// <summary>On how deadly a delve is: parting blows on a retreat, the fallen left behind, loot dropped at a run, foes in an overreached site.</summary>
+    public double Peril { get; init; } = 1;
+
     /// <summary>On how fast the big bad's host gathers at its camps and how big a full host is (<see cref="Horde"/>).</summary>
     public double HordeGrowth { get; init; } = 1;
     public double HordeSize { get; init; } = 1;
@@ -99,6 +102,8 @@ public static class Storyteller
     public static double StrikeEvery(Town town) => Swung(town, Of(town).StrikeEvery);
 
     public static double MenaceGrowth(Town town) => Of(town).MenaceGrowth;
+
+    public static double Peril(Town town) => Of(town).Peril;
 
     public static double HordeGrowth(Town town) => Of(town).HordeGrowth;
 
