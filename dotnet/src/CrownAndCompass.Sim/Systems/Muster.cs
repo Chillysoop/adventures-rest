@@ -28,11 +28,32 @@ public static class Muster
         return mine == null || Intel.Members(town, mine).Count + recruited < Rules(town).MaxMembers;
     }
 
-    /// <summary>The part a class plays in a party: front line, healer, caster or scout (or none of the four).</summary>
+    /// <summary>The part a class plays in a party: front line (monks too), healer, caster, scout or face (the talker).</summary>
     public static string Role(ClassDef c) =>
-        c.Card == "tank" ? "front" : c.Card == "healer" ? "healer" : c.Card == "scout" ? "scout" : c.Spell ? "caster" : "";
+        c.Card == "tank" ? "front" : c.Card == "healer" ? "healer" : c.Card == "scout" ? "scout" : c.Spell ? "caster" : c.Card == "face" ? "face" : c.Card == "striker" ? "front" : "";
 
-    private static readonly string[] Roles = ["front", "healer", "caster", "scout"];
+    private static readonly string[] Roles = ["front", "healer", "caster", "scout", "face"];
+
+    /// <summary>Training in a skill (classes.json) at which a hero is the party's specialist for it (dungeons.json checks).</summary>
+    private static int Specialism(Town town) => town.Content.Dungeons.Checks.Specialist;
+
+    /// <summary>
+    /// A site full of traps and locks wants a hand who knows them: when nobody in the party is a specialist at traps and it
+    /// has room, the best-trained free hero who fits rides along.
+    /// </summary>
+    public static void Specialist(Town town, List<Agent> members, IEnumerable<Agent> candidates, SiteState site, Func<Agent, bool> fits)
+    {
+        if (members.Count >= Rules(town).MaxMembers || !site.Def.Encounters.Any(e => e.Kind == "trap")) return;
+        int need = Specialism(town);
+        if (members.Any(m => m.Hero!.Cls.Skills.GetValueOrDefault("trap") >= need)) return;
+        var hand = candidates
+            .Where(h => !members.Contains(h) && h.Hero!.Cls.Skills.GetValueOrDefault("trap") >= need)
+            .OrderByDescending(h => h.Hero!.Cls.Skills.GetValueOrDefault("trap"))
+            .ThenByDescending(h => h.Hero!.Level)
+            .ThenBy(h => h.Id)
+            .FirstOrDefault(fits);
+        if (hand != null) members.Add(hand);
+    }
 
     /// <summary>
     /// Fill a party from candidates in the order given: its own company first, then whoever covers a part nobody plays

@@ -18,6 +18,9 @@ public sealed class SiteState(SiteDef def)
     public bool Cleared { get; set; }
     public int Attempts { get; set; }
 
+    /// <summary>Times it has been cleared: each leaves the country quieter (<see cref="Lairs.AfterDelve"/>).</summary>
+    public int Clearings { get; set; }
+
     /// <summary>Its map of rooms, drawn when a company first goes in (<see cref="Dungeons"/>).</summary>
     public DungeonState? Dungeon { get; set; }
 
@@ -161,7 +164,7 @@ public sealed class Party
     public required string Name { get; init; }
     public required IReadOnlyList<int> Members { get; init; }
     /// <summary>The bounty it took, or null for a company out on its own account.</summary>
-    public int? BountyId { get; init; }
+    public int? BountyId { get; set; }
 
     /// <summary>The settlement's plea it is answering, if any.</summary>
     public int? PleaId { get; set; }
@@ -449,6 +452,7 @@ public static class Quests
         Captives.Daily(town);
         if (autoMayor) Captives.AutoPost(town);
         if (autoMayor) AutoPost(town);
+        if (autoMayor) AutoBack(town);
         Muster.Daily(town);
         FormParties(town);
         if (companies) Campaigns.Daily(town);
@@ -509,6 +513,15 @@ public static class Quests
         double reward = Asking(town, target.BelievedTier) + 20 * target.Attempts;
         if (town.Treasury < reward + 100) return;
         PostBounty(town, target.Def.Id, reward);
+    }
+
+    /// <summary>Stand-in mayor: put spare gold behind the oldest plea nobody has answered, one a day.</summary>
+    private static void AutoBack(Town town)
+    {
+        var plea = town.Pleas.Where(p => p.Status == PleaStatus.Open && p.Backed == 0 && World.BackBlocked(town, p) == null)
+            .OrderBy(p => p.Id).FirstOrDefault();
+        if (plea == null || town.Treasury < World.BackingFor(town, plea) + 600) return;
+        World.BackPlea(town, plea.Id);
     }
 
     private static double Interest(Town town, Agent a, Bounty bounty, int partySize) =>
@@ -577,6 +590,10 @@ public static class Quests
                     && Muster.Rides(town, leader, r, members.Count(m => m.Hero!.PartyName == null))
                     && Interest(town, r, bounty, members.Count + 1) >= 0.5,
                 () => members.Count >= 3 && members.Sum(m => m.Hero!.Level) >= 3 * tier + 2);
+            Muster.Specialist(town, members, recruits, s,
+                r => leader.OpinionOf(r.Id) >= -10 && r.OpinionOf(leader.Id) >= -10
+                    && Muster.Rides(town, leader, r, members.Count(m => m.Hero!.PartyName == null))
+                    && Interest(town, r, bounty, members.Count + 1) >= 0.5);
             int levels = members.Sum(m => m.Hero!.Level);
             // Heroes won't walk into a site they can't handle; the bounty waits for a stronger company.
             if (levels < 3 * tier || members.Count < 3) continue;
@@ -670,6 +687,12 @@ public static class Quests
                 party.Returned = false;
                 continue;
             }
+            // Coin put up while they were inside goes to whoever cleared the place, so nobody walks back to an empty site.
+            if (!party.Empty && party.Result is { Outcome: ExpeditionOutcome.Cleared })
+            {
+                bounty = Claim(town, party, s, bounty);
+                party.Withheld = !Intel.Commissioned(town, party) && !Retainers.Held(town, party.Name);
+            }
             if (party.Empty)
             {
                 // The rumour that sent them was false: the place stands empty.
@@ -691,7 +714,7 @@ public static class Quests
                 town.Log(
                     LedgerCategory.Quest,
                     Importance.Notable,
-                    $"The {party.Name} find {s.Def.Name} empty, as cold as the day it was cleared. The tavern was wrong" + (bounty != null ? "; the bounty goes back to the treasury." : ".") + (party.Withheld ? Intel.Keeping : ""),
+                    $"The {party.Name} find {s.Def.Name} empty, as cold as the day it was cleared. The tavern was wrong" + (bounty == null ? "." : bounty.FunderId == null && bounty.PatronId == null && bounty.NotableId == null ? "; the bounty goes back to the treasury." : "; the bounty goes back to whoever put it up.") + (party.Withheld ? Intel.KeepingFor(party) : ""),
                     members.Select(m => m.Id).ToList());
                 continue;
             }
@@ -841,7 +864,7 @@ public static class Quests
                 text = $"The {party.Name} limp back from {s.Def.Name} empty-handed" +
                        (result.Dead.Count > 0 ? $", carrying {(result.Dead.Count == 1 ? $"{deadNames}'s body" : $"the bodies of {deadNames}")}." : ".");
             }
-            if (party.Withheld) text += Intel.Keeping;
+            if (party.Withheld) text += Intel.KeepingFor(party);
             town.Chronicles[^1] = chronicle with { Gold = (int)Js.Round(pay) };
             town.Log(LedgerCategory.Quest, Importance.Major, $"{text} (Chronicle {chronicle.Id})", members.Select(m => m.Id).ToList());
             // The fallen are buried (or mourned, with nobody to carry them home), a friend may swear to finish
@@ -867,6 +890,39 @@ public static class Quests
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// A company home from clearing a site collects the bounties and the plea posted on it while it was away: the first
+    /// bounty becomes its own, the rest go into its take.
+    /// </summary>
+    private static Bounty? Claim(Town town, Party party, SiteState s, Bounty? bounty)
+    {
+        var open = town.Bounties.Where(b => b.SiteId == s.Def.Id && b.Status == BountyStatus.Open).ToList();
+        foreach (var b in open)
+        {
+            if (bounty == null)
+            {
+                bounty = b;
+                party.BountyId = b.Id;
+                b.Status = BountyStatus.Taken;
+                b.PartyId = party.Id;
+                continue;
+            }
+            b.Status = BountyStatus.Completed;
+            b.PartyId = party.Id;
+            party.Bonus += b.Reward;
+            if (b.NotableId != null) Notables.QuestHome(town, b, party, true);
+        }
+        if (open.Count > 0)
+            town.Log(LedgerCategory.Quest, Importance.Routine, $"The {party.Name} cleared {s.Def.Name} before word of the bounty reached them, and collect it all the same.", party.Members.ToList());
+        if (party.PleaId == null && town.Pleas.FirstOrDefault(p => p.SiteId == s.Def.Id && p.Status == PleaStatus.Open) is { } plea)
+        {
+            plea.Status = PleaStatus.Taken;
+            plea.PartyId = party.Id;
+            party.PleaId = plea.Id;
+        }
+        return bounty;
     }
 
     internal static void GainXp(Town town, Agent a, int xp)

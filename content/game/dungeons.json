@@ -105,6 +105,8 @@
     "loot": 1.5,
     "habitats": ["underworld", "caves"],
     "names": ["the Deeps of {site}", "the Vaults under {site}", "the Lower Halls of {site}"],
+    "_deeper": "Names for a level below a level, of the top site's name, so no name doubles (\"Lower Halls of Lower Halls\").",
+    "deeper": ["the Bottom of {site}", "the Lowest Deeps of {site}", "the Pit under {site}"],
     "found": "Below {site}, the {party} find a stair going down into the dark. Something older lives there."
   }
 }
