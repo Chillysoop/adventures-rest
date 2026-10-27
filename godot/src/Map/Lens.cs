@@ -178,7 +178,7 @@ public partial class Lens(MapView map) : Control
             var color = Red.Lerp(Grey, Math.Min(1, k * 2)).Lerp(new Color("ffd75e"), Math.Max(0, k * 2 - 1));
             var why = Neighbourhood.Why(town, lot.X, lot.Y);
             string place = Neighbourhood.Of(town, b) is { } q ? $" · {q.Name}" : "";
-            marks.Add(new Mark(lot, color, $"{b.Name}{place}: rent ×{Neighbourhood.Rent(town, lot):0.00}, mood {(mood >= 0 ? "+" : "−")}{Math.Abs(mood):0.0}{(why.Count > 0 ? " · " + string.Join(", ", why) : "")}"));
+            marks.Add(new Mark(lot, color, $"{b.Name}{place}: rent ×{Neighbourhood.Rent(town, lot):0.00}, mood {(mood >= -0.05 ? "+" : "−")}{Math.Abs(mood):0.0}{(why.Count > 0 ? " · " + string.Join(", ", why) : "")}"));
         }
         int n = town.City.Quarters.Count;
         return n == 0 ? "No neighbourhoods yet: they form where buildings cluster."
@@ -255,7 +255,7 @@ public partial class Lens(MapView map) : Control
             DrawPolyline([.. screen, screen[0]], border, 2.5f, true);
             var mid = map.ToScreen(Planner.FromTown(hull.Average(p => p.X), hull.Average(p => p.Y)), 0.6f);
             var st = Neighbourhood.Stats(town, q);
-            string figures = $"{CrownAndCompass.Client.Main.CharacterName(st.Character)} · {st.Residents} living · rent ×{st.Rent:0.00} · mood {(st.Mood >= 0 ? "+" : "−")}{Math.Abs(st.Mood):0.0}";
+            string figures = $"{CrownAndCompass.Client.Main.CharacterName(st.Character)} · {st.Residents} living · rent ×{st.Rent:0.00} · mood {(st.Mood >= -0.05 ? "+" : "−")}{Math.Abs(st.Mood):0.0}";
             Label(mid, q.Name.ToUpperInvariant(), 15, new Color("f6eedb"));
             Label(mid + new Vector2(0, 17), figures, 12, new Color("e8dcc4"));
         }
@@ -276,6 +276,8 @@ public partial class Lens(MapView map) : Control
         var u = new Vector2(co, s) * (w / 2);
         var v = new Vector2(-s, co) * (d / 2);
         Vector2[] p = [Screen(c - u - v), Screen(c + u - v), Screen(c + u + v), Screen(c - u + v)];
+        // Off the edge of the view a footprint can fold flat; there is nothing to fill.
+        if (p.Any(q => !q.IsFinite()) || Mathf.Abs((p[2] - p[0]).Cross(p[3] - p[1])) < 1) return;
         DrawColoredPolygon(p, fill);
         DrawPolyline([.. p, p[0]], edge, 1.5f, true);
     }

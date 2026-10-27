@@ -373,7 +373,7 @@ public partial class Main
             Ui.Chip(CharacterIcon(st.Character), Ui.Cap(CharacterName(st.Character)), Ui.Ink2, "What it is now"),
             st.Residents > 0 ? Ui.Chip("ui-person", $"{st.Residents}", null, "Living here") : "",
             Ui.Chip("gold", $"×{st.Rent:0.00}", lc, "Rent, by what stands round the homes"),
-            Ui.Chip("ui-heart", $"{(st.Mood >= 0 ? "+" : "−")}{Math.Abs(st.Mood):0.0}", mc, "Mood its homes carry"));
+            Ui.Chip("ui-heart", $"{(st.Mood >= -0.05 ? "+" : "−")}{Math.Abs(st.Mood):0.0}", mc, "Mood its homes carry"));
     }
 
     /// <summary>The hover on a neighbourhood: when it formed, what's there and what the ground is worth.</summary>

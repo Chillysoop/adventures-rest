@@ -454,7 +454,7 @@ public static class Neighbourhood
                 case Zone.Residential: Add("homes", 1); break;
             }
         }
-        var top = score.OrderByDescending(x => x.Value).ThenBy(x => x.Key, StringComparer.Ordinal).First().Key;
+        var top = score.OrderByDescending(x => x.Value).ThenBy(x => x.Key, StringComparer.Ordinal).Select(x => x.Key).FirstOrDefault() ?? "homes";
         if (top != "homes") return top;
         var homes = here.Where(b => b.Def.Housing > 0).ToList();
         double land = homes.Count == 0 ? 1 : homes.Average(b => Land(town, town.Lot(b.LotId)));
