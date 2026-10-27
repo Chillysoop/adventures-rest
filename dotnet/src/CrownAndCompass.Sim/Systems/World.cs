@@ -733,7 +733,7 @@ public static class World
             Count = [1, 1],
             Escort = escorts.Count > 0 ? rng.Pick(escorts).Id : null,
             EscortCount = escorts.Count > 0 ? [1, 1 + level / 3] : null,
-            Text = Text("boss"),
+            Text = group?.LinesFor("boss", boss.Id) is { Count: > 0 } fit ? rng.Pick(fit) : group != null ? $"the master of {name}" : Text("boss"),
         };
 
         return new SiteDef

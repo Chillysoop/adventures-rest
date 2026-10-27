@@ -970,6 +970,17 @@ public sealed record GroupDef
     /// <summary>Encounter lines by deck kind ("wander", "boss"...), used before the theme's own.</summary>
     public Dictionary<string, List<string>> Texts { get; init; } = [];
 
+    /// <summary>The foes (library ids) each of its lines describes; a line with no entry fits any foe.</summary>
+    public Dictionary<string, List<string>> Fit { get; init; } = [];
+
+    /// <summary>Whether a line suits a creature met (a boss's "@boss" id counts as its library id).</summary>
+    public bool Fits(string line, string monster) =>
+        !Fit.TryGetValue(line, out var foes) || foes.Contains(monster.EndsWith("@boss", StringComparison.Ordinal) ? monster[..^5] : monster);
+
+    /// <summary>Its lines of a kind that suit the creature, in content order.</summary>
+    public List<string> LinesFor(string kind, string monster) =>
+        Texts.TryGetValue(kind, out var lines) ? lines.Where(l => Fits(l, monster)).ToList() : [];
+
     /// <summary>Heights of the sky it holds isles in (world.json isles bands) instead of sites on the ground.</summary>
     public IReadOnlyList<string> Bands { get; init; } = [];
 

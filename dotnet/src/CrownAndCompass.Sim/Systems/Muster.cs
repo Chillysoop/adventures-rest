@@ -28,7 +28,7 @@ public static class Muster
         return mine == null || Intel.Members(town, mine).Count + recruited < Rules(town).MaxMembers;
     }
 
-    /// <summary>A name no company has worn, sharing no word with a company that still rides.</summary>
+    /// <summary>A name no company has worn, sharing no word with a company that still rides, and never one word twice ("Lantern Lanterns").</summary>
     public static string Name(Town town)
     {
         var r = Rules(town);
@@ -38,7 +38,7 @@ public static class Muster
         {
             string adj = town.Rng.Pick(r.Adjectives), noun = town.Rng.Pick(r.Nouns);
             string name = $"{adj} {noun}";
-            if (!used.Contains(name) && !words.Contains(adj) && !words.Contains(noun)) return name;
+            if (!used.Contains(name) && !words.Contains(adj) && !words.Contains(noun) && !noun.StartsWith(adj, StringComparison.Ordinal)) return name;
         }
         return $"Company No. {town.Companies.Count + 1}";
     }

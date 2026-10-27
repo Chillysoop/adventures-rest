@@ -444,8 +444,23 @@ public static partial class Expedition
             return false;
         }
 
+        /// <summary>The last <see cref="Encounter"/> ended in a fight the party broke off from.</summary>
+        public bool EncounterLost;
+
+        /// <summary>
+        /// The line a wandering fight opens with: the room's own when it suits the creature met, else one of its
+        /// group's that does (chosen on the tale's own dice), else none.
+        /// </summary>
+        private string WanderText(EncounterDef e, MonsterDef def)
+        {
+            if (_site == null || _content.Group(_site.Group) is not { } g || g.Fits(e.Text, def.Id)) return e.Text;
+            var fit = g.LinesFor("wander", def.Id);
+            return fit.Count == 0 ? "" : fit[(int)(Seed % (uint)fit.Count)];
+        }
+
         public void Encounter(EncounterDef e)
         {
+            EncounterLost = false;
             if (e.Kind is "hazard" or "trap" or "puzzle" or "parley" && Way(e)) return;
             switch (e.Kind)
             {
@@ -465,7 +480,7 @@ public static partial class Expedition
                     if (pool.Count == 0) return;
                     var def = _rng.Pick(pool);
                     int n = Math.Clamp(e.Budget / Math.Max(1, def.Xp), 1, 6);
-                    Combat(new EncounterDef { Kind = "combat", Monster = def.Id, Count = [n, n], Text = e.Text }, false);
+                    if (!Combat(new EncounterDef { Kind = "combat", Monster = def.Id, Count = [n, n], Text = WanderText(e, def) }, false)) EncounterLost = true;
                     return;
                 }
                 case "trap":
@@ -541,7 +556,7 @@ public static partial class Expedition
                         Log(spotted
                             ? $"{Cap(e.Text)}. {check.Name} notices the lid breathing (d20 {check.Roll}, {check.Total} vs DC 13). It's a mimic."
                             : $"{Cap(e.Text)}. Nobody notices the lid breathing (d20 {check.Roll}, {check.Total} vs DC 13) until it bites. It's a mimic!");
-                        Combat(new EncounterDef { Kind = "combat", Monster = "mimic", Count = [1, 1], Text = "the mimic" }, !spotted);
+                        if (!Combat(new EncounterDef { Kind = "combat", Monster = "mimic", Count = [1, 1], Text = "the mimic" }, !spotted)) EncounterLost = true;
                         if (Standing.Count == 0) return;
                     }
                     int gold = _rng.Range(e.Gold[0], e.Gold[1] + 1);
@@ -574,7 +589,8 @@ public static partial class Expedition
                 for (int i = 0; i < en; i++) foes.Add(NewFoe(ed));
             }
             string label = n == 1 ? (def.Named ? def.Name : $"{Article(def.Name)} {def.Name}") : $"{n} {def.Plural}";
-            if (def.Id != "mimic") Log($"{Cap(e.Text)}: {label}{(foes.Count > n ? $", with {foes.Count - n} more at its side" : "")}.");
+            string escorted = foes.Count > n ? $", with {foes.Count - n} more at its side" : "";
+            if (def.Id != "mimic") Log(e.Text == "" ? $"{Cap(label)} bar the way{escorted}." : $"{Cap(e.Text)}: {label}{escorted}.");
             Mark(def.Boss ? "boss" : "fight");
             if (def.Boss) Speak("boss");
 
@@ -1720,7 +1736,11 @@ public static partial class Expedition
                     won = Combat(e, feat.First);
                     _strikeFirst = false;
                 }
-                else Encounter(e);
+                else
+                {
+                    Encounter(e);
+                    won = !EncounterLost;
+                }
                 Unfeature(feat);
                 MarkLost();
                 if (room != null)

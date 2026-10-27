@@ -155,7 +155,11 @@ public static partial class Expedition
                 var feat = Feature(site, side);
                 bool won = true;
                 if (e.Kind == "combat") won = Combat(e, feat.First);
-                else Encounter(e);
+                else
+                {
+                    Encounter(e);
+                    won = !EncounterLost;
+                }
                 Unfeature(feat);
                 MarkLost();
                 if (side.Enc == Dungeons.Cache && won && Standing.Count > 0 && _rng.Chance(Dungeon.CacheItem))
