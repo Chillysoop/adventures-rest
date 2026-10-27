@@ -424,8 +424,11 @@ public static class Manners
     /// <summary>Open a menace's first meeting now: its herald, or its signs. Returns the story, or null.</summary>
     public static Story? Herald(Town town, Menace m)
     {
-        if (LineageOf(town, m) is not { } l) return null;
-        if (town.Content.Stories.Story((Mindless(m) ? SignsPrefix : MenacePrefix) + l.Id) is not { } d) return null;
+        string prefix = Mindless(m) ? SignsPrefix : MenacePrefix;
+        // A lineage with no meeting of its own (one borrowed from another kind) meets the town as its kind does.
+        var d = LineageOf(town, m) is { } l ? town.Content.Stories.Story(prefix + l.Id) : null;
+        if (d == null && Annals.LineageOf(town.Content.History, "menace:" + m.Kind) is { } kl) d = town.Content.Stories.Story(prefix + kl.Id);
+        if (d == null) return null;
         return Stories.Contact(town, d, new Story { MenaceId = m.Id, SiteId = m.SeatId != "" ? m.SeatId : null });
     }
 

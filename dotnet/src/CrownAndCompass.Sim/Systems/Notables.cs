@@ -409,6 +409,9 @@ public static class Notables
 
     private static int[] Agents(Notable n) => n.AgentId is int a ? [a] : [];
 
+    /// <summary>A notable's regard moved by something the mayor did outside a visit (a feud mediated).</summary>
+    public static void Sway(Notable n, double v) => Shift(n, v);
+
     private static void Shift(Notable n, double v) => n.Regard = Math.Clamp(n.Regard + v, -100, 100);
 
     private static void Remember(Town town, Notable n, string line)

@@ -26,6 +26,9 @@ public class StoriesTests
         {
             Assert.Contains(d.Stakes, r.Stakes.Select(s => s.Id));
             Assert.All(d.Needs, n => Assert.True(Stories.KnownNeed(c, n), $"{d.Id} needs {n}"));
+            Assert.All(d.Odds.Keys, o => Assert.True(Odds.Known(c, o), $"{d.Id} reads {o}"));
+            Assert.True(d.FromTier == "" || c.City.Tiers.Any(x => x.Id == d.FromTier), $"{d.Id} from tier {d.FromTier}");
+            Assert.True(d.UntilTier == "" || c.City.Tiers.Any(x => x.Id == d.UntilTier), $"{d.Id} until tier {d.UntilTier}");
             var stages = d.Stages.Select(s => s.Id).ToHashSet();
             foreach (var stage in d.Stages)
             {
@@ -256,5 +259,65 @@ public class StoriesTests
         Assert.True(t.Stories.Mayor.Level >= 2);
         Assert.Equal(0, Sheet.Pending(t));
         Assert.True(t.Stories.All.Select(s => s.Def).Distinct().Count() >= 6);
+    }
+
+    [Fact]
+    public void TheTownSetsTheOdds()
+    {
+        var sim = Player(3);
+        sim.RunDays(20);
+        var t = sim.Town;
+        foreach (string reading in Odds.Readings) Assert.True(Odds.Read(t, reading) >= 0, reading);
+        var brawl = t.Content.Stories.Story("tavern-brawl")!;
+        double before = Stories.WeightOf(t, brawl);
+        // A full house makes a brawl likelier, more watchmen rarer; neither past the cap.
+        foreach (var b in t.Buildings) { b.VisitsLast = 10; b.TurnedAwayLast = 10; }
+        Assert.True(Stories.WeightOf(t, brawl) > before);
+        t.Watch += 40;
+        Assert.True(Odds.Factor(t, brawl) >= 0 && Odds.Factor(t, brawl) <= t.Content.Stories.OddsCap);
+
+        // Tiers gate the ladder: a well feud is for small places, a rift in the market only for a great city.
+        Assert.True(Odds.InTier(t, t.Content.Stories.Story("well-feud")!));
+        Assert.False(Odds.InTier(t, t.Content.Stories.Story("market-rift")!));
+        t.City.Tier = t.Content.City.Tiers.Count - 1;
+        Assert.False(Odds.InTier(t, t.Content.Stories.Story("well-feud")!));
+        Assert.True(Odds.InTier(t, t.Content.Stories.Story("market-rift")!));
+    }
+
+    [Fact]
+    public void ASignReadInTimeCatchesTheAgent()
+    {
+        var sim = Player(4);
+        sim.RunDays(20);
+        var t = sim.Town;
+        Assert.Null(Stories.Open(t, "stranger-watching"));
+        t.Watch = Math.Max(1, t.Watch);
+        t.Lurkers.Add(new Lurker { Id = ++t.LurkerCount, Kind = Blows.Burn, Disguise = "a tinker who never mends a pot", By = "the Ash Court", StrikeTick = t.Tick + 48 });
+        var s = Stories.Open(t, "stranger-watching")!;
+        Assert.Contains("a tinker who never mends a pot", Stories.Fill(t, s, Stories.StageOf(t, s).Text));
+        // Take them yourself until a roll lands; a success seizes the agent before its night.
+        for (int i = 0; i < 40 && t.Lurkers.Count > 0; i++)
+        {
+            var b = Stories.Resolve(t, s.Id, 1);
+            if (s.Done && t.Lurkers.Count > 0) s = Stories.Open(t, "stranger-watching")!;
+        }
+        Assert.Empty(t.Lurkers);
+    }
+
+    [Fact]
+    public void TheMayorMediatesBetweenNotables()
+    {
+        var sim = Player(5);
+        sim.RunDays(20);
+        var t = sim.Town;
+        t.Notables.Add(new Notable { Id = 901, Kind = "innkeeper", Name = "Mags Orrin" });
+        t.Notables.Add(new Notable { Id = 902, Kind = "master-smith", Name = "Dunstan Vale" });
+        var s = Stories.Open(t, "notables-corner")!;
+        var a = t.Notables.First(n => n.Id == s.NotableId);
+        var b = t.Notables.First(n => n.Id == s.Notable2Id);
+        Assert.NotEqual(a.Id, b.Id);
+        Stories.Resolve(t, s.Id, 2);
+        // Siding with one costs the other.
+        Assert.True(a.Regard > 0 && b.Regard < 0);
     }
 }
