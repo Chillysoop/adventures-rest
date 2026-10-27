@@ -247,6 +247,13 @@
   home, `tamed` research for harvests, `glass` research for the forecast. Bump `WeatherState.Version` when you change either list.
   Client: `Map/WeatherView.cs` (sky, rain, snow, lightning, shader `gale_wind`/`wet_ground`/`snow`), the campaign-map layer
   `Map/WeatherLayer.cs` (off by default, a toggle by the corner map), the top-bar chip `WeatherHud.cs`; clock stop `storm`.
+- The fleet (`Systems/Fleet.cs`, `Voyages.cs`, `content/game/sea.json`, client `godot/src/FleetWindow.cs`, War › Fleet): the open sea
+  (roads.json ocean `barrier: "sea"`, `Ways.Sea`) takes a ship, an airship or real flight; Water Walk crosses rivers and lakes only.
+  Trade routes to sea settlements need a harbour reaching the sea or a Sky Dock (`Fleet.Overseas`); ports are on a shore
+  (`Fleet.OnCoast`). Ships take standing runs (`Simulation.SetShipRoute`), crews are townsfolk sailors at the harbour
+  (`Building.Crew`, `Fleet.Manned`) and captains are residents who can drown (`Fleet.Sink`). Corsair raids come from the living
+  `corsair-fleet` group holds (`Fleet.Holds`, `FleetState.Wrath`, a named lord). Steward area `fleet`; alerts `ship`, `corsairs`,
+  `idle`. Island foundings start with a harbour and a tidal causeway (`Founding.Flooded`) raiders wait out.
 - Cliffs (`Systems/Cliffs.cs`, passage.json `cliffs`): plateaus in the near wilds past the plan, a pure function of the seed. Passage
   treats each as a barrier opened only at its ramps (`Passage.Obstacles`, `RoundCliffs` for roads); the client raises them
   (`WorldGen`) and faces them with rock (`WorldView.BuildCliffs`).

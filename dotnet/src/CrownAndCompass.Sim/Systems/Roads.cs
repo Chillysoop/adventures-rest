@@ -546,8 +546,8 @@ public static class Roads
                 }
                 bool flies = (mind.Ways & needs) == needs;
                 // The bone ferryman takes anyone over his water, for a toll; the town's own boats take them over its sea.
-                // Aboard the harbour's ship they sail even where they could fly; the open sea takes nobody else but fliers.
-                bool boats = next.Kind.Boats && (!flies || next.Kind.Ship && mind.Sail > 0);
+                // Aboard the harbour's ship they sail even where they could fly; the open sea takes nobody else but fliers and vessels of their own.
+                bool boats = next.Kind.Ship ? mind.Sail > 0 : next.Kind.Boats && !flies;
                 bool ferry = !flies && (boats || next.Kind.Wonder?.Kind == "ferry");
                 bool over = flies || ferry || around.Count == 0;
                 if (!ferry && Passage.Rules(town).Texts.TryGetValue(over ? "over" : "round", out var told) && told.Count > 0)

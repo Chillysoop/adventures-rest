@@ -36,6 +36,7 @@ public partial class Main : Control
         Library,
         Notables,
         Automate,
+        Fleet,
         Inspect,
     }
 
@@ -817,6 +818,7 @@ public partial class Main : Control
             case Tab.War: RenderWar(); break;
             case Tab.Army: RenderArmy(); break;
             case Tab.Defence: RenderDefence(); break;
+            case Tab.Fleet: RenderFleet(); break;
             case Tab.Council: RenderCouncil(); break;
             case Tab.Bounties: RenderBounties(); break;
             case Tab.Companies: RenderCompanies(); break;

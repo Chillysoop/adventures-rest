@@ -234,6 +234,7 @@ const icons: [name: string, glyph: string, tint: string][] = [
   ["item-stone", "rune-stone", mono],
   // The army (godot/src/ArmyWindow.cs): white so the window tints each unit in its colours
   ["tab-army", "rally-the-troops", mono],
+  ["tab-fleet", "galleon", mono],
   ["unit-levy", "pitchfork", mono],
   ["unit-swordsmen", "broadsword", mono],
   ["unit-spearmen", "spears", mono],
