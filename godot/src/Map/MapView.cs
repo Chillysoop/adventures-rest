@@ -293,6 +293,16 @@ public partial class MapView : Control
         _goalYaw += yaw;
     }
 
+    /// <summary>For clips: hold the camera at this pitch in degrees above the ground instead of leaning with the zoom.</summary>
+    public static float? Pitch;
+
+    /// <summary>Slide what the camera looks at by this many tiles (for clips).</summary>
+    public void Slide(Vector2 by)
+    {
+        _manual = true;
+        _target += by;
+    }
+
     public void LookAt(Vector2 p, float? dist = null)
     {
         _manual = true;
@@ -401,6 +411,7 @@ public partial class MapView : Control
         // Close in, the camera leans in like Northgard's; pulled out, it flattens toward a map.
         float s = Mathf.InverseLerp(Mathf.Log(HeroCam), Mathf.Log(MaxDist), Mathf.Log(_dist));
         float pitch = Mathf.DegToRad(s >= 0 ? Mathf.Lerp(50, 72, s) : Mathf.Lerp(32, 50, Mathf.Clamp(Mathf.InverseLerp(Mathf.Log(MinDist), Mathf.Log(HeroCam), Mathf.Log(_dist)), 0, 1)));
+        if (Pitch is float fixedPitch) pitch = Mathf.DegToRad(fixedPitch);
         var dir = new Vector3(Mathf.Sin(_yaw) * Mathf.Cos(pitch), Mathf.Sin(pitch), Mathf.Cos(_yaw) * Mathf.Cos(pitch));
         var focus = new Vector3(_target.X, _ground, _target.Y);
         _camera.Position = focus + dir * _dist;

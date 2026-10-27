@@ -904,6 +904,8 @@ public partial class Main : Control
         if (_opts.Bench) Bench(delta);
         Smoke();
         if (_opts.Flyout) _map.Drift(1 + (float)delta * 0.16f, (float)delta * 0.05f);
+        if (_opts.Orbit != 0 || _opts.Dolly != 0) _map.Drift(1 + (float)delta * _opts.Dolly, (float)delta * _opts.Orbit);
+        if (_opts.Pan != Vector2.Zero) _map.Slide(_opts.Pan * (float)delta);
         _opts.Capture(this, ref _frames);
     }
 

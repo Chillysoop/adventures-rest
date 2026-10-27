@@ -68,6 +68,9 @@ public sealed class Options
 
     /// <summary>For clips: the camera pulls slowly back from the town to the whole map, turning as it goes.</summary>
     public bool Flyout;
+    /// <summary>For clips: --orbit R turns the camera R radians a second round what it looks at; --dolly F pulls it back by F of its distance a second (negative pushes in); --pan x,y slides what it looks at, in tiles a second.</summary>
+    public float Orbit, Dolly;
+    public Godot.Vector2 Pan;
     public bool Autoplay;
 
     /// <summary>--load a save file instead of starting a town; --menu opens the game menu (for screenshots).</summary>
@@ -299,6 +302,13 @@ public sealed class Options
                 case "--screenshot": o.Screenshot = Next(); break;
                 case "--frames": o.Frames = int.Parse(Next()); break;
                 case "--flyout": o.Flyout = true; break;
+                case "--pitch": Client.Map.MapView.Pitch = float.Parse(Next(), System.Globalization.CultureInfo.InvariantCulture); break;
+                case "--orbit": o.Orbit = float.Parse(Next(), System.Globalization.CultureInfo.InvariantCulture); break;
+                case "--dolly": o.Dolly = float.Parse(Next(), System.Globalization.CultureInfo.InvariantCulture); break;
+                case "--pan":
+                    var pan = Next().Split(',');
+                    o.Pan = new Godot.Vector2(float.Parse(pan[0], System.Globalization.CultureInfo.InvariantCulture), float.Parse(pan[1], System.Globalization.CultureInfo.InvariantCulture));
+                    break;
                 case "--autoplay": o.Autoplay = true; break;
                 case "--load": o.Load = Next(); break;
                 case "--menu": o.Menu = true; break;
@@ -709,6 +719,7 @@ public sealed class Options
         static void Bubbles(Node n)
         {
             if (n is Label3D l) l.Layers = 1 << 19;
+            if (n is Camera3D cam) cam.CullMask &= ~(1u << 19);
             foreach (var c in n.GetChildren()) Bubbles(c);
         }
         static Node? Find(Node n)
@@ -726,7 +737,7 @@ public sealed class Options
     public void Capture(Node node, ref int frames)
     {
         // A clip being recorded (--write-movie) with --clean hides the HUD from the start, not just for the last frame.
-        if (Screenshot != null && Clean && frames == 5 && Engine.GetWriteMoviePath() != "") HideHud(node.GetTree().Root);
+        if (Screenshot != null && Clean && frames >= 5 && Engine.GetWriteMoviePath() != "") HideHud(node.GetTree().Root);
         if (Screenshot == null || ++frames < Frames) return;
         if (Clean && frames == Frames) { HideHud(node.GetTree().Root); return; }
         var img = node.GetViewport().GetTexture().GetImage();
