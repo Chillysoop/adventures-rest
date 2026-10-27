@@ -197,22 +197,22 @@ public class DecorTests
     }
 
     [Fact]
-    public void PleasantStreetsHelpHousesGrowAndMakeAWardDearer()
+    public void PleasantStreetsHelpHousesGrowAndMakeTheirLandDearer()
     {
         var sim = Planned(days: 60);
         var t = sim.Town;
         var house = t.Buildings.Where(b => b.Complete && b.Def.Housing > 0 && City.Housing(t, b.Def.Id)?.Next is { Length: > 0 }).OrderBy(b => b.Id).First();
         var next = City.Housing(t, City.Housing(t, house.Def.Id)!.Next)!;
-        var ward = City.WardOf(t, t.Lot(house.LotId));
+        var lot = t.Lot(house.LotId);
         double prospect = City.Prospect(t, house, next), land = t.LotPrice(t.Lot(house.LotId));
-        Assert.Equal(1, Decor.Prestige(t, ward.Id));
+        Assert.Equal(1, Decor.Prestige(t, lot));
         foreach (var id in new[] { "flowers", "bench", "oak", "fountain", "flowers", "column" })
             if (Decor.Rules(t).Piece(id).Population <= t.Population) Near(sim, id, house, within: 1.6);
         Assert.True(Decor.Comfort(t, house) > 0);
         Assert.True(Decor.Comfort(t, house) <= Decor.Rules(t).ContentCap);
         Assert.True(City.Prospect(t, house, next) > prospect || prospect >= 1);
-        Assert.True(Decor.Prestige(t, ward.Id) > 1);
-        Assert.True(Decor.Prestige(t, ward.Id) <= 1 + Decor.Rules(t).WardCap);
+        Assert.True(Decor.Prestige(t, lot) > 1);
+        Assert.True(Decor.Prestige(t, lot) <= 1 + Decor.Rules(t).PrestigeCap);
         Assert.True(t.LotPrice(t.Lot(house.LotId)) > land);
         // The stocks next door make a household less content.
         var stocks = Near(sim, "stocks", house, within: 1.6);

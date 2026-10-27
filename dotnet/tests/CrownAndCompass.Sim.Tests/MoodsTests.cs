@@ -46,15 +46,17 @@ public class MoodsTests
     }
 
     [Fact]
-    public void AFeastCheersItsWardAndAHarvestGoesToMarket()
+    public void AFeastCheersItsNeighbourhoodAndAHarvestGoesToMarket()
     {
         var (_, t) = NewTown();
         var a = Worker(t, t.Buildings[0]);
+        Neighbourhood.Daily(t);
+        var quarter = Neighbourhood.Of(t, t.Building(a.HomeId ?? a.JobId!.Value));
+        Assert.NotNull(quarter);
         Assert.True(Moods.Inspire(t, a, "feast"));
-        string ward = City.WardOf(t, t.Lot(t.Building(a.HomeId ?? a.JobId!.Value).LotId)).Id;
-        Assert.True(Moods.Feast(t, ward) > 0);
+        Assert.True(Moods.Feast(t, quarter) > 0);
         t.Tick += 4 * SimTime.HoursPerDay;
-        Assert.Equal(0, Moods.Feast(t, ward));
+        Assert.Equal(0, Moods.Feast(t, quarter));
 
         var b = t.Workers.Where(x => x.Age >= 18 && x.Id != a.Id).OrderBy(x => x.Id).First();
         b.JobId = t.Buildings[0].Id;

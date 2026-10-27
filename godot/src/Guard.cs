@@ -64,7 +64,7 @@ public partial class Main
             DefenseWork.Gatehouse => $"A portcullis over the south road: the gate holds ×{g.Gatehouse} when a siege tries it.",
             DefenseWork.Moat => $"Filled from the river: every wave wades it, and the walls count ×{g.Moat}.",
             DefenseWork.Barracks => $"Bunks in the walls for {g.BarracksHouses} of the watch: half their wage, quick to the horn, and stronger against raiders by night.",
-            _ => $"Round the four inner wards. Multiplies your defence by {e.CityWall}, and carries {g.CityTowers} towers.",
+            _ => $"Round the old town and the streets about it. Multiplies your defence by {e.CityWall}, and carries {g.CityTowers} towers.",
         };
     }
 

@@ -70,7 +70,7 @@ public sealed record MoodDef
     public string Item { get; init; } = "";
     public string Master { get; init; } = "";
 
-    /// <summary>A feast: mood to its ward for its days. A song or good cheer: mandate, and a song's loyalty to the hero it is of.</summary>
+    /// <summary>A feast: mood to its neighbourhood for its days. A song or good cheer: mandate, and a song's loyalty to the hero it is of.</summary>
     public double Mood { get; init; }
     public double Mandate { get; init; }
     public double Loyalty { get; init; }
@@ -115,7 +115,7 @@ public sealed class MoodState
     public int Inspirations { get; set; }
     public int Breaks { get; set; }
 
-    /// <summary>Wards feasting, and the tick each feast's cheer runs out.</summary>
+    /// <summary>Neighbourhoods feasting ("q:id"), and the tick each feast's cheer runs out.</summary>
     public OrderedMap<string, int> Feasts { get; } = new();
 
     /// <summary>Names given to forged blades, so no two share one.</summary>
@@ -125,7 +125,7 @@ public sealed class MoodState
 /// <summary>
 /// Inspirations and breaks, after the way colonists in RimWorld snap one way or the other. A townsperson whose mood
 /// has stayed high for days may be struck by an inspiration that fits their trade: a smith forges a named blade for the
-/// armory, a barkeep throws a feast for the ward, a mason carves a column, a herald's song lifts the mayor and a hero,
+/// armory, a barkeep throws a feast for the neighbourhood, a mason carves a column, a herald's song lifts the mayor and a hero,
 /// a scholar's insight speeds the research, a farmer brings in a bumper harvest. One whose mood stays low may break: a
 /// bender at the tavern, a tantrum at work, a brawl, sulking at home, or after a long low walking out of town for good.
 /// A well-run town (high mandate, no unrest) sees more of the first and fewer of the second. None of them stops the clock.
@@ -147,10 +147,10 @@ public static class Moods
     /// </summary>
     private static Rng Dice(Town town, Agent a) => new(unchecked(town.Seed * 7919 + town.Tick * 104729 + a.Id * 31 + a.Moments.Count * 7 + 13));
 
-    /// <summary>Mood a ward's feast gives its households this hour.</summary>
-    public static double Feast(Town town, string wardId)
+    /// <summary>Mood a neighbourhood's feast gives its households this hour.</summary>
+    public static double Feast(Town town, Quarter? quarter)
     {
-        if (town.Moods.Feasts.Count == 0 || !town.Moods.Feasts.TryGetValue(wardId, out int until) || town.Tick >= until) return 0;
+        if (quarter == null || town.Moods.Feasts.Count == 0 || !town.Moods.Feasts.TryGetValue(FeastKey(quarter), out int until) || town.Tick >= until) return 0;
         return Rules(town).Inspirations.FirstOrDefault(d => d.Effect == "feast")?.Mood ?? 0;
     }
 
@@ -248,8 +248,8 @@ public static class Moods
     private static (string Moment, string Text)? Apply(Town town, Agent a, MoodDef d, Rng dice)
     {
         var work = a.JobId is int j ? town.Building(j) : null;
-        string ward = Ward(town, a) is { } w ? City.Ward(town, w).Name : town.Name;
-        var vars = new List<(string, string)> { ("{work}", work?.Name ?? "the workshop"), ("{ward}", ward) };
+        string quarter = Quarter(town, a)?.Name ?? town.Name;
+        var vars = new List<(string, string)> { ("{work}", work?.Name ?? "the workshop"), ("{neighbourhood}", quarter) };
         switch (d.Effect)
         {
             case "blade":
@@ -265,8 +265,8 @@ public static class Moods
             }
             case "feast":
             {
-                if (Ward(town, a) is not string w2) return null;
-                town.Moods.Feasts[w2] = town.Tick + Math.Max(1, d.Days) * SimTime.HoursPerDay;
+                if (Quarter(town, a) is not { } q) return null;
+                town.Moods.Feasts[FeastKey(q)] = town.Tick + Math.Max(1, d.Days) * SimTime.HoursPerDay;
                 break;
             }
             case "decor":
@@ -457,12 +457,14 @@ public static class Moods
 
     // Shared -------------------------------------------------------------------------------------
 
-    /// <summary>The ward they live in (or work in), or null.</summary>
-    private static string? Ward(Town town, Agent a)
+    /// <summary>The neighbourhood they live in (or work in), or null.</summary>
+    private static Quarter? Quarter(Town town, Agent a)
     {
         int? at = a.HomeId ?? a.JobId;
-        return at is int b ? City.WardOf(town, town.Lot(town.Building(b).LotId)).Id : null;
+        return at is int b ? Neighbourhood.Of(town, town.Building(b)) : null;
     }
+
+    private static string FeastKey(Quarter q) => "q:" + q.Id;
 
     private static void Begin(Town town, Agent a, MoodDef d, string moment)
     {

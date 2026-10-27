@@ -249,7 +249,5 @@ public class PlanningTests
         // And no two towns are laid out alike.
         var other = Planned(2).Town;
         Assert.NotEqual(City.Edge(t, 1, 1), City.Edge(other, 1, 1));
-        // A side's border isn't a ruled diagonal either.
-        Assert.NotEqual(City.Split(t, 0, 9), City.Split(t, 0, 15));
     }
 }

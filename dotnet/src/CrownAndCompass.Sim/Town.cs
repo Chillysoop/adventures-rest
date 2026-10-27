@@ -313,7 +313,6 @@ public static class TreasuryAccount
     public const string Honours = "Honours";
     public const string Charters = "Charters";
     public const string HearthTax = "Hearth tax";
-    public const string Wards = "Wards";
     public const string Decorations = "Decorations";
     public const string Broadsheet = "Broadsheet";
     public const string Clockwork = "Clockwork";
@@ -354,7 +353,7 @@ public enum Outcome
 
 public sealed class Town
 {
-    /// <summary>Tiles on a side: the old town in the middle, then the walled ring, then the outer wards (<see cref="Systems.City"/>).</summary>
+    /// <summary>Tiles on a side: the old town in the middle, then the walled ring, then the outskirts (<see cref="Systems.City"/>).</summary>
     public const int Grid = 96;
 
     /// <summary>What the player named the town on New game (<see cref="SimulationOptions.TownName"/>), Briarford by default.</summary>
@@ -598,8 +597,12 @@ public sealed class Town
     /// <summary>The campaign arc: its acts, the menaces abroad, and the town's dread (<see cref="Systems.Saga"/>).</summary>
     public SagaState Saga { get; } = new();
 
-    /// <summary>The town's tier, its wards and what its households want (<see cref="Systems.City"/>).</summary>
+    /// <summary>The town's tier, its zones' voices and what its households want (<see cref="Systems.City"/>).</summary>
     public CityState City { get; } = new();
+
+    /// <summary>What the buildings round each spot make of it, drawn again from them (<see cref="Systems.Neighbourhood"/>).</summary>
+    [field: NotSaved]
+    public Systems.NeighbourhoodState Neighbourhood { get; } = new();
 
     /// <summary>Last night's guests at the inns and those camped outside town (<see cref="Systems.Lodging"/>).</summary>
     public LodgingState Lodging { get; } = new();
@@ -814,11 +817,10 @@ public sealed class Town
 
     public double LotPrice(Lot lot)
     {
-        var ward = Systems.City.WardOf(this, lot);
-        return LotPrice(DistanceFromCenter(lot)) * ward.Land * Systems.Density.LandFactor(this, lot) * Systems.Decor.Prestige(this, ward.Id) + Systems.Decor.LandValue(this, lot);
+        return LotPrice(DistanceFromCenter(lot)) * Systems.Neighbourhood.Land(this, lot) * Systems.Density.LandFactor(this, lot) * Systems.Decor.Prestige(this, lot) + Systems.Decor.LandValue(this, lot);
     }
 
-    /// <summary>Land is dearer near the hall (before the ward's own price and the beauty round it).</summary>
+    /// <summary>Land is dearer near the hall (before what stands round it and the beauty there).</summary>
     public double LotPrice(double distance) =>
         15 + Math.Min(Population, 300) * 0.4 + Math.Max(0, Population - 300) * 0.1 + Math.Max(0, 8 - distance) * 2;
 

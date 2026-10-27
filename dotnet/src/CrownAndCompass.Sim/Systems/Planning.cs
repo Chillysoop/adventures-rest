@@ -204,12 +204,11 @@ public static class Planning
     /// <summary>Why the building can't stand at this point and heading (null faces the nearest lane), or null when it can (<see cref="Spot"/> may move it a little).</summary>
     public static string? SpotBlocked(Town town, BuildingDef d, double x, double y, double? yaw = null)
     {
-        var ward = City.WardOf(town, x, y);
         const string wall = "the town wall runs there: its line is kept clear for the stone, towers and moat it will grow into";
         // The wall line sits just past a ring's edge, so a click on it would otherwise read as unopened land.
         if (City.OnWallStrip(town, x, y) && Spot(town, d, x, y, yaw) == null) return wall;
-        if (!City.IsOpen(town, x, y)) return $"{City.The(ward)} has not been laid out";
-        if (!City.AllowsWard(town, d, x, y)) return $"it can't stand in {City.The(ward)}";
+        if (!City.IsOpen(town, x, y)) return $"the charter does not reach this far until the town is a {City.TierName(town, City.RingTier(town, City.Ring(town, x, y))).ToLowerInvariant()}";
+        if (Neighbourhood.Sited(town, d, x, y) is { } site) return $"it {site}";
         if (!Density.Allows(town, d, x, y)) return $"it needs land zoned {Density.Name(town, d.Density).ToLowerInvariant()} density";
         if (!Sky.SitsHigh(town, d, x, y)) return "it needs high ground: a hilltop or beside the keep's high tower";
         if (Spot(town, d, x, y, yaw) != null) return null;

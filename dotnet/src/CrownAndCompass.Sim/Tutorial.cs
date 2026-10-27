@@ -65,7 +65,7 @@ public static class Tutorial
     /// <summary>
     /// A number read off the town for steps to watch: "count:Bounties" is the size of that list on
     /// <see cref="Town"/> (any public list works, so a new system needs no code here); "zoned" is the painted
-    /// ground not yet built on, "decorated" the decorations set down, "airships" the sky dock's ships at the mast, "skyships" all of them, "relics" the Skywright relics held, "lofted" 1 once the Lofted City flies, "seas" the sea lands the town knows, "goals" the charter goals still open, "damaged" the buildings waiting on repair, "refugees" those camped outside town. Null for a name that means nothing.
+    /// ground not yet built on, "decorated" the decorations set down, "airships" the sky dock's ships at the mast, "skyships" all of them, "relics" the Skywright relics held, "lofted" 1 once the Lofted City flies, "seas" the sea lands the town knows, "goals" the charter goals still open, "damaged" the buildings waiting on repair, "refugees" those camped outside town, "neighbourhoods" those formed, "scholarly" the arcane works standing. Null for a name that means nothing.
     /// </summary>
     public static int? Measure(Town t, string token)
     {
@@ -96,6 +96,9 @@ public static class Tutorial
         if (token == "parts") return t.Spoils.Trophies.Sum(x => x.Value);
         // Buildings a storm, fire or enemy has wrecked and that are not mended yet.
         if (token == "damaged") return t.Buildings.Count(b => b.Damaged);
+        // Neighbourhoods formed, and arcane works standing (Systems.Neighbourhood).
+        if (token == "neighbourhoods") return t.City.Quarters.Count;
+        if (token == "scholarly") return t.Buildings.Count(b => b.Complete && Systems.Neighbourhood.Rules(t).Scholars.Ids.Contains(b.Def.Id));
         if (!token.StartsWith("count:", StringComparison.Ordinal)) return null;
         var prop = typeof(Town).GetProperty(token[6..], BindingFlags.Public | BindingFlags.Instance);
         return prop?.GetValue(t) is IEnumerable items and not string ? items.Cast<object>().Count() : null;

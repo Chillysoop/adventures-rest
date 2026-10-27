@@ -7,7 +7,7 @@ namespace CrownAndCompass.Client;
 
 /// <summary>
 /// The city window: what the town is (thorp to great city), what the next charter asks for, the
-/// wards the town has grown, and how the houses fare (the goods and services that let them grow
+/// neighbourhoods and blocs the town has grown, and how the houses fare (the goods and services that let them grow
 /// a storey). Charters are the player's to claim; everything else here is read-only.
 /// </summary>
 public partial class Main
@@ -58,41 +58,9 @@ public partial class Main
         else p.Note("The greatest charter there is. From here the city only grows richer and its houses grander.");
         RenderGrandWorks(p, t);
 
-        p.Page("Wards", "ui-house");
-        p.Heading("Wards");
-        p.Note("Wards aren't laid out ahead. Once a few buildings stand in a quarter round the old town, it grows into the ward that suits what was built there first.");
-        foreach (var id0 in t.City.OpenWards)
-        {
-            var w = City.Ward(t, id0);
-            string where = w.Ring == 0 ? "the heart of town" : City.SectorOf(t, w.Id) is var (_, side) ? $"{(w.Outer ? "outside the walls" : "round the old town")}, {side}" : "";
-            string about = w.Blurb;
-            var chips = new List<string> { Ui.Chip("ui-house", Ui.Cap(where), Ui.Ink2, "Where") };
-            if (w.Favours != Zone.None) chips.Add(Ui.Chip("ui-star", Ui.Cap(Planning.ZoneName(w.Favours)), Ui.Gold, "Favours"));
-            if (t.Content.Wards.Of(w.Id) is { } temper)
-            {
-                // Who speaks for the ward, what it cares about, and how it feels about the mayor now.
-                double f = Wards.Feeling(t, w.Id);
-                var fc = f >= 15 ? Ui.Good : f <= -15 ? Ui.Bad : Ui.Ink2;
-                string cares = Regard.Describe(t, new TemperDef { Likes = temper.Likes, Dislikes = temper.Dislikes });
-                about += $"\n{Ui.Cap(temper.Voice)} {cares.Replace("; dislikes ", "; they dislike ").Replace("likes ", "like ")}.";
-                chips.Add(Ui.Chip("standing", $"{Ui.Cap(Wards.Describe(f))} {(f >= 0 ? "+" : "−")}{Math.Abs(Math.Round(f))}", fc, "How the ward feels about you"));
-            }
-            string text = $"{Ui.Tip($"[b]{Ui.Esc(w.Name)}[/b] {Ui.Img("ui-info", 13)}", about)}\n[font_size=12]{Ui.Chips(chips.ToArray())}[/font_size]";
-            var id = w.Id;
-            p.Row(text, ("Show", true, false, () => LookAtWard(id)));
-        }
-        var yet = t.Content.City.Wards.Where(w => !t.City.OpenWards.Contains(w.Id)).ToList();
-        if (yet.Count > 0)
-        {
-            p.Text(Ui.Dim("[b]Could still grow[/b]"), 13);
-            p.Text(string.Join("\n", yet.Select(w =>
-            {
-                string draws = string.Join(", ", w.Draws.OrderByDescending(d => d.Value).ThenBy(d => d.Key, StringComparer.Ordinal).Select(d => DrawName(t, d.Key)));
-                bool now = City.Reached(t, w.Tier) && City.RingOpen(t, w.Ring);
-                string when = !City.Reached(t, w.Tier) ? City.TierName(t, w.Tier) : !City.RingOpen(t, w.Ring) ? $"land {(w.Outer ? "beyond the walls" : "round the old town")} opens" : "now";
-                return Ui.Bullet(Ui.Tip($"{Ui.Esc(w.Name)}  {Ui.Dim($"[font_size=12]{Ui.Esc(when)}[/font_size]")}", $"{(w.Outer ? "Outside the walls" : "Round the old town")}, where you build mostly {draws}."), now ? "ui-yes" : "ui-lock");
-            })), 13);
-        }
+        p.Page("Neighbourhoods", "ui-house");
+        RenderNeighbourhoods(p, t);
+        RenderBlocs(p, t);
 
         RenderDensity(p, t);
         RenderUnder(p, t);
@@ -370,24 +338,99 @@ public partial class Main
         _dirty = true;
     }
 
-    /// <summary>What a ward draws on, as the City window names it.</summary>
-    private static string DrawName(Town t, string key) => key switch
+    /// <summary>Neighbourhoods: each formed where buildings cluster, with its people, rent, land price and mood.</summary>
+    private void RenderNeighbourhoods(Pane p, Town t)
     {
-        "Holy" => "shrines and temples",
-        "Fine" => "fine houses",
-        "Residential" => "homes",
-        "Commercial" => "shops",
-        "Industry" => "workshops",
-        "Farmland" => "farms",
-        _ => t.Content.Buildings.FirstOrDefault(b => b.Id == key) is { } d ? d.Name.ToLowerInvariant() + "s" : key,
+        if (t.City.Quarters.Count == 0) return;
+        p.Heading("Neighbourhoods");
+        p.Help("Nothing is laid out ahead: build anywhere your zones are painted.",
+            "Where buildings cluster, a neighbourhood forms and names itself after what it is.",
+            "What stands round a home sets its rent, land price and mood:",
+            "• A few shops near: dearer, cheerier. A whole market: noisy",
+            "• No shop within reach: a long walk, grumbling",
+            "• Workshops next door: cheap and gloomy. Nobody wants them, everybody needs them",
+            "• Temples and fine houses raise a street; tenements lower it",
+            "Manors need dear ground, tenements cheap ground, fisheries the river, a cathedral holy ground.",
+            "Arcane works close together make a scholars' quarter that adds lore.");
+        foreach (var q in t.City.Quarters)
+        {
+            var st = Neighbourhood.Stats(t, q);
+            if (st.Buildings == 0) continue;
+            p.Row($"{Ui.Tip($"[b]{Ui.Esc(q.Name)}[/b] {Ui.Img("ui-info", 13)}", QuarterTip(st))}\n[font_size=12]{QuarterChips(st)}[/font_size]", ("Show", true, false, () => LookAtQuarter(q.Id)));
+        }
+        int scholars = Neighbourhood.Scholars(t), least = Neighbourhood.Rules(t).Scholars.Least;
+        if (scholars > 0)
+            p.Text(Ui.Bullet(Ui.Tip(scholars >= least ? Ui.C(Ui.Good, $"Scholars' quarter: +{Js.Str(Neighbourhood.Rules(t).Scholars.Lore)} lore a day") : Ui.Dim($"Scholars' quarter: {scholars} / {least} arcane works together"),
+                "A library, mage tower, alchemists' quarter, observatory or apothecary within a few streets of each other."), "books"), 13);
+    }
+
+    /// <summary>A neighbourhood's figures as chips, for the City window and the map card.</summary>
+    public static string QuarterChips(QuarterStats st)
+    {
+        var mc = st.Mood >= 0.5 ? Ui.Good : st.Mood <= -0.5 ? Ui.Bad : Ui.Ink2;
+        var lc = st.Land >= 1.15 ? Ui.Gold : st.Land <= 0.9 ? Ui.Bad : Ui.Ink2;
+        return Ui.Chips(
+            Ui.Chip(CharacterIcon(st.Character), Ui.Cap(CharacterName(st.Character)), Ui.Ink2, "What it is now"),
+            st.Residents > 0 ? Ui.Chip("ui-person", $"{st.Residents}", null, "Living here") : "",
+            Ui.Chip("gold", $"×{st.Rent:0.00}", lc, "Rent, by what stands round the homes"),
+            Ui.Chip("ui-heart", $"{(st.Mood >= -0.05 ? "+" : "−")}{Math.Abs(st.Mood):0.0}", mc, "Mood its homes carry"));
+    }
+
+    /// <summary>The hover on a neighbourhood: when it formed, what's there and what the ground is worth.</summary>
+    public static string QuarterTip(QuarterStats st) =>
+        $"Formed day {st.Quarter.Day}, as {CharacterName(st.Quarter.Character)}.\n{st.Buildings} buildings: {st.Homes} homes, {st.Shops} shops, {st.Workshops} workshops.\nLand ×{st.Land:0.00} · rent ×{st.Rent:0.00}";
+
+    public static string CharacterName(string character) => character switch
+    {
+        "market" => "market street",
+        "workshops" => "workshops",
+        "farms" => "farmsteads",
+        "holy" => "temple close",
+        "rich" => "well-off",
+        "poor" => "poor",
+        "scholars" => "scholars",
+        "river" => "riverside",
+        _ => "homes",
     };
 
-    private void LookAtWard(string wardId)
+    public static string CharacterIcon(string character) => character switch
+    {
+        "market" => "ui-trade",
+        "workshops" => "tools",
+        "farms" => "bread",
+        "holy" => "ui-holy",
+        "rich" => "regalia-circlet",
+        "poor" => "homeless",
+        "scholars" => "books",
+        "river" => "inst-harbour",
+        _ => "ui-house",
+    };
+
+    /// <summary>The town's blocs: who speaks for which townsfolk, what they care about, and how they feel about the mayor.</summary>
+    private static void RenderBlocs(Pane p, Town t)
+    {
+        var speaking = Blocs.Speaking(t);
+        if (speaking.Count == 0) return;
+        p.Heading("Blocs");
+        p.Help("Townsfolk band into blocs by where they work, the house they live in and their faith, wherever in town they live.",
+            "Each person belongs to several, some more than others.",
+            "Every choice shows the blocs it pleases or angers. Warm blocs: cheerier folk, houses grow sooner. Sour ones grumble in the street.");
+        foreach (var b in speaking)
+        {
+            double f = Blocs.Feeling(t, b.Id);
+            var fc = f >= 15 ? Ui.Good : f <= -15 ? Ui.Bad : Ui.Ink2;
+            string cares = Regard.Describe(t, new TemperDef { Likes = b.Likes, Dislikes = b.Dislikes });
+            p.Text($"{Ui.Img(b.Icon == "" ? "ui-person" : b.Icon, 16)} {Ui.Tip($"[b]{Ui.Esc(Ui.Cap(b.Voice))}[/b]", $"{Ui.Cap(b.Voice)} {cares.Replace("; dislikes ", "; they dislike ").Replace("likes ", "like ")}.")}   [font_size=12]{Ui.Chips(
+                Ui.Chip("population", $"{Math.Round(Blocs.Size(t, b))}", null, "Members, by how much each belongs"),
+                Ui.Chip("standing", $"{Ui.Cap(Blocs.Describe(f))} {(f >= 0 ? "+" : "−")}{Math.Abs(Math.Round(f))}", fc, "How they feel about you"))}[/font_size]", 13);
+        }
+    }
+
+    private void LookAtQuarter(int id)
     {
         var t = _sim.Town;
-        var lots = t.Lots.Where(l => City.WardOf(t, l).Id == wardId).ToList();
-        if (lots.Count == 0) return;
-        var c = new Vector2((float)lots.Average(l => l.X), (float)lots.Average(l => l.Y));
-        Look(new Vector2(Geo.Margin + c.X + 0.5f, Geo.Margin + c.Y + 0.5f), 40);
+        if (Neighbourhood.Find(t, id) is not { } q) return;
+        _map.Lens.Show(true, Lens.Mode.Neighbourhoods);
+        Look(new Vector2(Geo.Margin + (float)q.X, Geo.Margin + (float)q.Y), 40);
     }
 }

@@ -360,9 +360,9 @@ public sealed class Story
     /// <summary>The minor power (<see cref="Powers"/>) a first-contact scene is about.</summary>
     public string? Minor { get; set; }
 
-    /// <summary>The townsperson who brought a petition, and the ward it is about.</summary>
+    /// <summary>The townsperson who brought a petition, and the neighbourhood it is about.</summary>
     public int? PetitionerId { get; set; }
-    public string? Ward { get; set; }
+    public int? QuarterId { get; set; }
 
     /// <summary>The settlement out in the wilds a story is about (its people, a trade route there).</summary>
     public int? SettlementId { get; set; }
@@ -473,7 +473,7 @@ public static class Stories
     /// chapter) and below:level (binds that undercity level while it is open and not cleared).
     /// </summary>
     public static readonly string[] Needs =
-        ["hero", "restless", "party", "menace", "march", "warband", "faction", "seat", "tavern", "temple", "site", "unheard", "power", "hungry", "homeless", "rich", "watch", "poor", "petitioner", "ward", "settlement", "route", "courted", "veteran", "fallen", "admirer", "aggrieved", "abroad", "stormbound", "homeward", "victorious", "lawbreaker", "famous", "infamous", "trouble", "contact", "band", "forge", "below", "library", "scholars", "remains", "minor", "egg", "eggHeld", "ranger", "column", "sworn", "pactless", "bloodied", "owed", "cursed", "lurker", "mole", "grudge", "guild", "rivals", "refugee", "festival"];
+        ["hero", "restless", "party", "menace", "march", "warband", "faction", "seat", "tavern", "temple", "site", "unheard", "power", "hungry", "homeless", "rich", "watch", "poor", "petitioner", "neighbourhood", "settlement", "route", "courted", "veteran", "fallen", "admirer", "aggrieved", "abroad", "stormbound", "homeward", "victorious", "lawbreaker", "famous", "infamous", "trouble", "contact", "band", "forge", "below", "library", "scholars", "remains", "minor", "egg", "eggHeld", "ranger", "column", "sworn", "pactless", "bloodied", "owed", "cursed", "lurker", "mole", "grudge", "guild", "rivals", "refugee", "festival"];
 
     private static readonly string[] Prefixed = ["precedent:", "decree:", "season:"];
 
@@ -499,6 +499,7 @@ public static class Stories
         if (n.StartsWith("known:", StringComparison.Ordinal)) return c.Research.Discovery(n[6..]) != null;
         if (need.StartsWith("below:", StringComparison.Ordinal)) return c.Undercity.Level(need[6..]) != null;
         if (need.StartsWith("zone:", StringComparison.Ordinal)) return Enum.TryParse<Zone>(need[5..], out var z) && z != Zone.None;
+        if (need.StartsWith("neighbourhood:", StringComparison.Ordinal)) return c.City.Neighbourhood.Quarters.Names.ContainsKey(need[14..]);
         if (need.StartsWith("patron:", StringComparison.Ordinal)) return c.Patrons.Patron(need[7..]) != null;
         if (need.StartsWith("keeper:", StringComparison.Ordinal)) return c.Taverns.Past(need[7..]) != null;
         if (n.StartsWith("variant:", StringComparison.Ordinal))
@@ -997,15 +998,15 @@ public static class Stories
                 s.PetitionerId = a?.Id;
                 return a != null;
             }
-            case "ward":
+            case "neighbourhood":
             {
-                if (s.Ward != null) return true;
-                if (!bind) return false;
-                var open = town.City.OpenWards;
-                // A petition comes from the newer wards when there are any: the old town has had its say.
-                var wards = open.Count > 1 ? open.Where(w => w != open[0]).ToList() : open.ToList();
-                s.Ward = wards.Count == 0 ? null : wards[town.Rng.Range(0, wards.Count)];
-                return s.Ward != null;
+                if (s.QuarterId != null) return true;
+                if (!bind) return town.City.Quarters.Count > 0;
+                var all = town.City.Quarters;
+                // A petition comes from the newer neighbourhoods when there are any: the old town has had its say.
+                var from = all.Count > 1 ? all.Skip(1).ToList() : all.ToList();
+                s.QuarterId = from.Count == 0 ? null : from[town.Rng.Range(0, from.Count)].Id;
+                return s.QuarterId != null;
             }
             case "lurker":
             {
@@ -1236,6 +1237,17 @@ public static class Stories
                     var a2 = Pick(town.Heroes.Where(a => !a.IsAway && a.Hero!.Cls.Id == cls && Callings.Of(town, a) == null).OrderBy(a => a.Id).ToList());
                     s.HeroId = a2?.Id;
                     return a2 != null;
+                }
+                if (need.StartsWith("neighbourhood:", StringComparison.Ordinal))
+                {
+                    // A neighbourhood that is now what the need names (market, workshops, poor...); binds it as the place.
+                    string kind = need[14..];
+                    bool Is(Quarter q) => Neighbourhood.Character(town, Neighbourhood.Buildings(town, q)) == kind;
+                    if (s.QuarterId is int bound) return Neighbourhood.Find(town, bound) is { } bq && Is(bq);
+                    if (!bind) return town.City.Quarters.Any(Is);
+                    var fit = town.City.Quarters.Where(Is).ToList();
+                    s.QuarterId = fit.Count == 0 ? null : fit[town.Rng.Range(0, fit.Count)].Id;
+                    return s.QuarterId != null;
                 }
                 if (need.StartsWith("zone:", StringComparison.Ordinal))
                 {
@@ -2022,7 +2034,7 @@ public static class Stories
         Put("{petitioner}", () => s.PetitionerId is int p ? town.Agent(p).Name : "a townsman");
         Put("{petitionerName}", () => s.PetitionerId is int p ? town.Agent(p).GivenName : "the petitioner");
         Put("{trade}", () => s.PetitionerId is int p ? town.Agent(p).Profession.ToLowerInvariant() : "townsman");
-        Put("{ward}", () => s.Ward is string w ? City.Ward(town, w).Name : "the old town");
+        Put("{neighbourhood}", () => s.QuarterId is int q && Neighbourhood.Find(town, q) is { } n ? n.Name : "the old town");
         Put("{settlement}", () => s.SettlementId is int st ? town.Settlements[st].Name : "a far town");
         Put("{people}", () => s.SettlementId is int sp ? town.Settlements[sp].People : "the folk of a far town");
         Put("{leader}", () => s.SettlementId is int sl ? town.Settlements[sl].Leader : "their leader");

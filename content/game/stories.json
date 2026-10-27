@@ -1261,12 +1261,12 @@
     {
       "id": "indenture",
       "odds": {"refugees": 0.3, "guilds": 0.1},
-      "title": "An indenture in {ward}",
+      "title": "An indenture in {neighbourhood}",
       "stakes": "low",
       "source": "town",
       "needs": [
         "petitioner",
-        "ward"
+        "neighbourhood"
       ],
       "minPopulation": 60,
       "perHundred": 0.08,
@@ -1274,7 +1274,7 @@
       "stages": [
         {
           "id": "start",
-          "text": "{petitioner} begs you to break the indenture on their youngest, bound for seven years to a master in {ward} who feeds the apprentices thin gruel and works them by lamplight.",
+          "text": "{petitioner} begs you to break the indenture on their youngest, bound for seven years to a master in {neighbourhood} who feeds the apprentices thin gruel and works them by lamplight.",
           "options": [
             {
               "label": "Shame the master into releasing the child", "tags": ["mercy"],
@@ -1545,11 +1545,11 @@
     {
       "id": "mend-the-road",
       "odds": {"tier": 0.1},
-      "title": "The road to {ward}",
+      "title": "The road to {neighbourhood}",
       "stakes": "medium",
       "source": "town",
       "needs": [
-        "ward"
+        "neighbourhood"
       ],
       "minPopulation": 150,
       "perHundred": 0.06,
@@ -1557,7 +1557,7 @@
       "stages": [
         {
           "id": "start",
-          "text": "The carters of {ward} have sent a delegation: the road in is axle-deep after every rain, and they want it drained and gravelled before the next.",
+          "text": "The carters of {neighbourhood} have sent a delegation: the road in is axle-deep after every rain, and they want it drained and gravelled before the next.",
           "options": [
             {
               "label": "Pay for the road", "tags": ["generous"],
@@ -1572,11 +1572,11 @@
               }
             },
             {
-              "label": "Raise a work gang from the ward", "tags": ["order"],
+              "label": "Raise a work gang from the neighbourhood", "tags": ["order"],
               "skill": "persuasion",
               "dc": 13,
               "success": {
-                "text": "The ward turns out with spades on a feast day, and you dig the first ditch yourself.",
+                "text": "The neighbourhood turns out with spades on a feast day, and you dig the first ditch yourself.",
                 "effects": {
                   "mandate": 3,
                   "timber": -10,
@@ -1780,27 +1780,27 @@
       "source": "town",
       "needs": [
         "precedent:open-gates",
-        "ward"
+        "neighbourhood"
       ],
       "minDay": 100,
       "repeatDays": 2000,
       "stages": [
         {
           "id": "start",
-          "text": "The refugees you took in have crowded into {ward}, and the old families mutter about strange gods and stranger cooking. The newcomers ask for a voice on the ward's moot.",
+          "text": "The refugees you took in have crowded into {neighbourhood}, and the old families mutter about strange gods and stranger cooking. The newcomers ask for a voice on the neighbourhood moot.",
           "options": [
             {
               "label": "Give them a quarter and a voice", "skill": "persuasion", "dc": 14, "tags": ["mercy", "freedom"],
               "prefer": 0.15,
-              "success": { "text": "You talk the old wards round: a quarter of their own, and a seat at the ward meeting. It costs you, but the lanes are quieter for it.", "effects": { "mandate": 1, "decree:newcomers-quarter": 0 } },
-              "failure": { "text": "They get their quarter, but the old wards call it a reward for trespass, and the first meeting ends in a fight.", "effects": { "mandate": -3, "tension": 3, "decree:newcomers-quarter": 0 } }
+              "success": { "text": "You talk the old families round: a quarter of their own, and a seat at the neighbourhood meeting. It costs you, but the lanes are quieter for it.", "effects": { "mandate": 1, "decree:newcomers-quarter": 0 } },
+              "failure": { "text": "They get their quarter, but the old families call it a reward for trespass, and the first meeting ends in a fight.", "effects": { "mandate": -3, "tension": 3, "decree:newcomers-quarter": 0 } }
             },
             {
               "label": "Bring the two together", "tags": ["mercy"],
               "skill": "performance",
               "dc": 14,
               "success": {
-                "text": "A feast on the ward green, each side cooking for the other. By midnight they're arguing about weddings.",
+                "text": "A feast on the green, each side cooking for the other. By midnight they're arguing about weddings.",
                 "effects": {
                   "mandate": 3,
                   "tension": -6,
@@ -1842,7 +1842,7 @@
       "stakes": "high",
       "source": "council",
       "needs": [
-        "ward",
+        "neighbourhood:market",
         "!precedent:guild-pact"
       ],
       "minDay": 120,
@@ -1852,13 +1852,13 @@
       "stages": [
         {
           "id": "start",
-          "text": "The merchants' guild lays a chest on the council table: three hundred gold, and more each season, for the sole right to trade in {ward}. Every other stall there would answer to them.",
+          "text": "The merchants' guild lays a chest on the council table: three hundred gold, and more each season, for the sole right to trade in {neighbourhood}. Every other stall there would answer to them.",
           "options": [
             {
               "label": "Take the gold", "tags": ["coin"],
               "prefer": 0.05,
               "success": {
-                "text": "The chest goes into the treasury. The guild's men take down every other stall in the ward by Friday.",
+                "text": "The chest goes into the treasury. The guild's men take down every other stall there by Friday.",
                 "effects": {
                   "gold": 300,
                   "mandate": -3,
@@ -1872,7 +1872,7 @@
               "skill": "persuasion",
               "dc": 15,
               "success": {
-                "text": "A charter, not a monopoly: the guild keeps a fair share of the ward's trade and pays well for the seal.",
+                "text": "A charter, not a monopoly: the guild keeps a fair share of the street's trade and pays well for the seal.",
                 "effects": {
                   "gold": 120,
                   "mandate": 1
@@ -1895,7 +1895,7 @@
               "label": "Refuse", "skill": "intimidation", "dc": 13, "tags": ["freedom"],
               "prefer": 0.1,
               "success": {
-                "text": "You push the chest back across the table. The stallholders of {ward} hear of it by evening.",
+                "text": "You push the chest back across the table. The stallholders of {neighbourhood} hear of it by evening.",
                 "effects": {
                   "mandate": 3
                 }
@@ -1906,7 +1906,7 @@
         }
       ],
       "ignored": {
-        "text": "While you dither, the guild buys up the ward's stalls one by one anyway.",
+        "text": "While you dither, the guild buys up the market's stalls one by one anyway.",
         "effects": {
           "mandate": -2,
           "decree:guild-monopoly": 60
@@ -1928,7 +1928,7 @@
       "stages": [
         {
           "id": "start",
-          "text": "Having bought one ward, the merchants' guild now wants the {seat} for its master, and hints that the gold could stop.",
+          "text": "Having bought one market, the merchants' guild now wants the {seat} for its master, and hints that the gold could stop.",
           "options": [
             {
               "label": "Break the pact", "tags": ["valor", "freedom"],
@@ -3689,16 +3689,16 @@
               "failure": { "text": "{heroName} gets the keys, and the watch captain resents a hero over his men. The gate is guarded by two sulking camps.", "effects": { "calling:gate-keeper": 1, "loyalty": 6, "mandate": -2 } }
             },
             {
-              "label": "Have them walk the outer wards instead", "skill": "survival", "dc": 12, "tags": ["valor"],
+              "label": "Have them walk the outskirts instead", "skill": "survival", "dc": 12, "tags": ["valor"],
               "prefer": 0.15,
               "success": {
-                "text": "{heroName} walks the lanes beyond the walls with a lantern every night. The newer wards sleep easier.",
+                "text": "{heroName} walks the lanes beyond the walls with a lantern every night. The newer streets sleep easier.",
                 "effects": {
                   "calling:ward-patrol": 1,
                   "loyalty": 4
                 }
               },
-              "failure": { "text": "They walk the outer wards, but lose the paths in the first fog and come back muddy and short-tempered.", "effects": { "calling:ward-patrol": 1, "loyalty": 1 } }
+              "failure": { "text": "They walk the outskirts, but lose the paths in the first fog and come back muddy and short-tempered.", "effects": { "calling:ward-patrol": 1, "loyalty": 1 } }
             },
             {
               "label": "Test them at the gate yourself", "tags": ["order"],
@@ -6108,7 +6108,7 @@
       "stages": [
         {
           "id": "start",
-          "text": "A glassmaker in the river ward has covered every mirror in her shop. In them, she says, a girl walks past who is not in the room, and the girl is her own daughter. She has no daughter. {hero} has offered to go down into the cellars the reflection keeps walking toward.",
+          "text": "A glassmaker by the river has covered every mirror in her shop. In them, she says, a girl walks past who is not in the room, and the girl is her own daughter. She has no daughter. {hero} has offered to go down into the cellars the reflection keeps walking toward.",
           "options": [
             {
               "label": "Send {hero} into the cellars",
@@ -6140,7 +6140,7 @@
               }
             },
             {
-              "label": "Have the temple bless every mirror in the ward",
+              "label": "Have the temple bless every mirror on the street",
               "tags": [
                 "faith"
               ],
@@ -6200,7 +6200,7 @@
       "stages": [
         {
           "id": "start",
-          "text": "Below the river ward, in a vault older than the town, something sings. Everyone who hears it long enough is forgotten by everyone who loved them, and walks down to join the choir. {hero} says they can find the singer and stop it.",
+          "text": "Below the riverside, in a vault older than the town, something sings. Everyone who hears it long enough is forgotten by everyone who loved them, and walks down to join the choir. {hero} says they can find the singer and stop it.",
           "options": [
             {
               "label": "Send {hero} down to end it",
@@ -20303,7 +20303,7 @@
     {"id": "curfew", "name": "The tavern curfew", "days": 60, "mood": -1.5, "tension": -0.4, "text": "The taps close at the evening bell. The lanes are quieter and the town is crosser."},
     {"id": "good-roads", "name": "Mended roads", "days": 90, "arrivals": 0.05, "build": 0.05, "text": "Drained and gravelled roads: carts reach the building sites, and the road brings more hopefuls."},
     {"id": "tithe-eased", "name": "The eased tithe", "days": 30, "gold": -3, "mood": 1.5, "yields": {"Food": 1.1}, "text": "The farms keep more of the harvest this season, and work the harder for it."},
-    {"id": "guild-monopoly", "name": "The guild's monopoly", "days": 120, "gold": 3, "mood": -1.5, "arrivals": -0.06, "text": "One guild sets the prices in the ward. The treasury takes its share; nobody else likes it."},
+    {"id": "guild-monopoly", "name": "The guild's monopoly", "days": 120, "gold": 3, "mood": -1.5, "arrivals": -0.06, "text": "One guild sets the prices in the market. The treasury takes its share; nobody else likes it."},
     {"id": "levy", "name": "The levy", "days": 30, "build": -0.2, "mood": -1, "tension": -0.3, "text": "Every able hand drills on the green at dawn. The building sites stand half empty."},
     {"id": "merchants-wary", "name": "Merchants keep away", "days": 90, "arrivals": -0.06, "gold": -1, "text": "Word went round the trading houses that this town seizes grain. Caravans take the long road."},
     {"id": "newcomers-quarter", "name": "A quarter for the newcomers", "days": 120, "mood": 1, "arrivals": 0.05, "text": "The refugees have a quarter and a voice of their own, and their cousins are coming up the road."},
@@ -20313,7 +20313,7 @@
   "precedents": [
     {"id": "open-gates", "text": "The gates were opened to the refugees, and the town took them in."},
     {"id": "closed-gates", "text": "The gates stayed shut while refugees begged outside them."},
-    {"id": "guild-pact", "text": "The mayor sold a guild the trade of a ward."},
+    {"id": "guild-pact", "text": "The mayor sold a guild the trade of a market."},
     {"id": "witch-burned", "text": "A hedge-witch was given to the crowd."},
     {"id": "sheltered-witch", "text": "The mayor stood between a hedge-witch and the crowd."},
     {"id": "seized-grain", "text": "The mayor seized a merchant's hoard in the hungry winter."}
@@ -20427,7 +20427,7 @@
     {"id": "town-sage", "class": "wizard", "name": "The town's sage", "build": 0.04, "mood": 0.3, "gold": -0.5, "text": "Runs a school of letters and numbers. Clerks are quicker and builders read plans."},
     {"id": "wall-warder", "class": "wizard", "name": "Warder of the walls", "defence": 7, "gold": -0.5, "text": "Sets wards in the gatehouse stones. The walls are harder to breach."},
     {"id": "gate-keeper", "class": "warden", "name": "Keeper of the gate keys", "defence": 8, "tension": -0.15, "text": "Holds the gate keys. Nothing comes in after dark unseen."},
-    {"id": "ward-patrol", "class": "warden", "name": "Lantern of the outer wards", "tension": -0.2, "mood": 0.3, "defence": 3, "text": "Walks the lanes outside the walls at night. The newer wards sleep easier."},
+    {"id": "ward-patrol", "class": "warden", "name": "Lantern of the outer wards", "tension": -0.2, "mood": 0.3, "defence": 3, "text": "Walks the lanes outside the walls at night. The newer streets sleep easier."},
     {"id": "map-room", "class": "cartographer", "name": "Keeper of the map room", "arrivals": 0.03, "dread": -0.02, "text": "Keeps the great map in the town hall. Settlers find their way here, and the wilds seem smaller."},
     {"id": "relic-keeper", "class": "reliquarian", "name": "Keeper of the whispering relic", "favour": 0.12, "mood": 0.2, "dread": 0.01, "text": "Keeps a whispering relic at the temple. Pilgrims and the gods come closer; so does something else."},
     {"id": "town-herbalist", "class": "hedge-witch", "name": "The town's herbalist", "mood": 0.6, "yields": {"Herbs": 1.1, "Potions": 1.1}, "text": "Brews salves and draughts by the apothecary fire. Fevers break sooner."},

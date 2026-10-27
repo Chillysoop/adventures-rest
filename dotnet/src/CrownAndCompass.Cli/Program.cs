@@ -176,7 +176,7 @@ var teller = Storyteller.Of(town);
 Print($"Told by {teller.Name} ({teller.Title}): {town.Enemy.Raids} raids and {town.Enemy.Sieges} sieges by the warband; {town.Moods.Inspirations} inspirations and {town.Moods.Breaks} breaks among the townsfolk.");
 if (Saga.Summary(town) != "") Print(Saga.Summary(town));
 if (Endless.On(town)) Print($"Endless: era {Endless.EraNumber(town)}; " + string.Join("; ", town.Saga.Endless.Eras.Select(e => $"era {e.Number} ended day {e.Day} by {e.Road} against {e.Foe}")));
-Print($"A {City.Tier(town).Name.ToLowerInvariant()} of about {City.Souls(town)} souls; wards: {string.Join(", ", town.City.OpenWards.Select(w => City.Ward(town, w).Name))}.");
+Print($"A {City.Tier(town).Name.ToLowerInvariant()} of about {City.Souls(town)} souls; neighbourhoods: {string.Join(", ", town.City.Quarters.Select(q => q.Name))}.");
 Print("Treasury books, all time: " + string.Join(", ", town.Accounts.OrderBy(kv => kv.Value).Select(kv => $"{kv.Key} {Js.ToFixed(kv.Value, 0)}")));
 Print("Vacant zoned lots: " + string.Join(", ", Planning.Paintable.Select(z => $"{z} {Planning.VacantZoned(town, z)}")) + $"; unpainted open ground {Land.OpenGround(town) / (Land.Res * Land.Res)} tiles");
 Print("Demand: " + string.Join(", ", town.Content.Buildings.Where(d => d.Buildable && d.IsBusiness).Select(d => $"{d.Id} {Js.ToFixed(Property.Demand(town, d.Id), 2)}")));

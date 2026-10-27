@@ -57,8 +57,8 @@ public sealed record BuildingDef
     /// <summary>The town tier (content/game/city.json) that unlocks it; empty for the charter's own buildings.</summary>
     public string Tier { get; init; } = "";
 
-    /// <summary>The only wards it can stand in; empty for any open ward.</summary>
-    public IReadOnlyList<string> Wards { get; init; } = [];
+    /// <summary>What the ground round it must be like (<see cref="Systems.Neighbourhood.Sited"/>); null for anywhere its zone is painted.</summary>
+    public Systems.SiteRule? Site { get; init; }
 
     /// <summary>The least density (city.json "densities": 0 low, 1 medium, 2 high) the land under it must be zoned for.</summary>
     public int Density { get; init; }
@@ -1792,7 +1792,7 @@ public sealed class Content
     /// <summary>The top bar's month and when a trend counts as trouble (content/game/trends.json).</summary>
     public TrendRules Trends { get; init; } = new();
     public MerchantRules Merchants { get; init; } = new();
-    public WardRules Wards { get; init; } = new();
+    public Systems.BlocRules Blocs { get; init; } = new();
     /// <summary>Fame and infamy for heroes and companies (content/game/notoriety.json).</summary>
     public NotorietyRules Notoriety { get; init; } = new();
     public Systems.AdvanceRules Advances { get; init; } = new();
@@ -2112,7 +2112,7 @@ public sealed class Content
             Negotiation = Parse<Systems.NegotiationRules>("negotiation.json"),
             Trends = Parse<TrendRules>("trends.json"),
             Merchants = Parse<MerchantRules>("merchants.json"),
-            Wards = Parse<WardRules>("wards.json"),
+            Blocs = Parse<Systems.BlocRules>("blocs.json"),
             Notoriety = Parse<NotorietyRules>("notoriety.json"),
             Advances = Parse<Systems.AdvanceRules>("advances.json"),
             Notables = Parse<NotableRules>("notables.json"),
