@@ -312,9 +312,11 @@ public class PowersTests
     [Fact]
     public void AnEnemyCourtingAPowerIsHowTheTownFirstHearsOfIt()
     {
-        var (sim, m) = Seeded();
+        var (sim, _) = Seeded();
         var t = sim.Town;
         sim.RunDays(t.Content.Powers.CourtFrom - t.Day - 1);
+        // A fresh foe on the eve of courting: the first one may have fallen to the heroes by now.
+        var m = Menaces.Seed(t, [2, 3])!;
         t.Discovered.RemoveAll(c => c.Key.StartsWith("power:", StringComparison.Ordinal));
         t.Stories.All.Clear();
         foreach (var p in t.Powers) p.Standing = p.Favour = -50;

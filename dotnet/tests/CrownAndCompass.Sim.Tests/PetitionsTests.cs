@@ -98,7 +98,10 @@ public class PetitionsTests
         // Most towns hear petitions both early and late (the story pool is wide, so one seed can miss a stretch, and a few
         // seeds can miss together: twelve of them keep the check from hanging on which ones). Over 48 seeds about three towns
         // in four hear both, so half of twelve is the floor, and the total keeps the pool from thinning unseen.
-        var petitions = Content.Default().Stories.Stories.Where(d => d.Needs.Contains("petitioner") || d.Needs.Contains("ward")).Select(d => d.Id).ToHashSet();
+        // A petition is any matter townsfolk bring the mayor: one of them by name, two notables at odds, or a street of the town.
+        var petitions = Content.Default().Stories.Stories
+            .Where(d => d.Needs.Any(n => n is "petitioner" or "refugee" or "rivals" or "ward" || n.StartsWith("zone:", StringComparison.Ordinal)))
+            .Select(d => d.Id).ToHashSet();
         int both = 0, total = 0;
         foreach (int seed in new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 })
         {
