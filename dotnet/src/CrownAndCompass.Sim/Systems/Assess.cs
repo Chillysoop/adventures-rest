@@ -33,7 +33,7 @@ public sealed record AssessRules
     /// <summary>The most points one effect adds to a reward or a risk, so one big number does not drown the rest.</summary>
     public double PerEffect { get; init; } = 3;
 
-    /// <summary>By effect key; decree:, precedent:, calling:, fixture: and project: effects go by their prefix.</summary>
+    /// <summary>By effect key; decree:, precedent:, calling:, fixture:, project: and promise: effects go by their prefix.</summary>
     public Dictionary<string, ImpactWeight> Effects { get; init; } = [];
 }
 

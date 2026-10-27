@@ -373,6 +373,9 @@ public sealed class Story
     /// <summary>The person out in the wilds the story is about (<see cref="Neighbours"/>).</summary>
     public int? ContactId { get; set; }
 
+    /// <summary>A first meeting's earlier steps, held so the whole meeting goes in the Ledger as one line.</summary>
+    public string Told { get; set; } = "";
+
     /// <summary>An enemy agent in town (<see cref="Lurker.Id"/>), a servant on the council (<see cref="Mole.Id"/>) and a foe's grudge (<see cref="Grudge.Foe"/>).</summary>
     public int? LurkerId { get; set; }
     public int? MoleId { get; set; }
@@ -517,7 +520,8 @@ public static class Stories
         || key.StartsWith("precedent:", StringComparison.Ordinal) && c.Stories.Precedent(key[10..]) != null
         || key.StartsWith("calling:", StringComparison.Ordinal) && c.Stories.Calling(key[8..]) != null
         || key.StartsWith("project:", StringComparison.Ordinal) && c.Neighbours.Project(key[8..]) != null
-        || key.StartsWith("fixture:", StringComparison.Ordinal) && c.Institutions.Fixture(key[8..]) != null;
+        || key.StartsWith("fixture:", StringComparison.Ordinal) && c.Institutions.Fixture(key[8..]) != null
+        || key.StartsWith("promise:", StringComparison.Ordinal) && c.Accords.Promise(key[8..]) != null;
 
     // ---------- The mayor ----------
 
@@ -1471,8 +1475,15 @@ public static class Stories
         s.Beats.Add(beat);
         string roll = beat.Result is StoryResult.Certain or StoryResult.Ignored ? "" : $" ({Rules(town).Skill(beat.Skill)?.Name ?? Cap(beat.Skill)} {beat.Total} against DC {beat.Dc}{(beat.Helpers != "" ? $", with {beat.Helpers}" : "")}: {Word(beat.Result)})";
         bool goesOn = outcome.Next != "" && d.Stages.Any(x => x.Id == outcome.Next);
-        town.Log(LedgerCategory.Story, d.Stakes == "high" && !goesOn ? Importance.Major : Importance.Notable,
-            $"{Fill(town, s, d.Title)}: {(beat.Result == StoryResult.Ignored ? "left to run its course" : $"Mayor {town.Stories.Mayor.Name} {chose}")}{roll}. {beat.Text}{effects}", Agents(s));
+        string said = $"{(beat.Result == StoryResult.Ignored ? (s.Told != "" ? "The rest is left to run its course" : "left to run its course") : $"{(s.Told != "" ? "Then the mayor" : $"Mayor {town.Stories.Mayor.Name}")} {chose}")}{roll}. {beat.Text}{effects}";
+        // A first meeting is one exchange: its steps are told together when it ends, so a later step never reads as a second answer.
+        if (goesOn && d.Source == Powers.ContactSource) s.Told = $"{s.Told}{(s.Told != "" ? " " : "")}{said}";
+        else
+        {
+            town.Log(LedgerCategory.Story, d.Stakes == "high" && !goesOn ? Importance.Major : Importance.Notable,
+                $"{Fill(town, s, d.Title)}: {s.Told}{(s.Told != "" ? " " : "")}{said}", Agents(s));
+            s.Told = "";
+        }
         if (goesOn)
         {
             s.Stage = outcome.Next;
@@ -1952,6 +1963,10 @@ public static class Stories
             else if (key.StartsWith("project:", StringComparison.Ordinal))
             {
                 if (v > 0 && s.SettlementId is int gs && Neighbours.Give(town, town.Settlements[gs], key[8..]) is { Length: > 0 } built) said.Add(built);
+            }
+            else if (key.StartsWith("promise:", StringComparison.Ordinal))
+            {
+                if (v > 0 && s.SettlementId is int ps && Accords.Give(town, town.Settlements[ps], key[8..]) is { Length: > 0 } word) said.Add(word);
             }
             else if (key.StartsWith("fixture:", StringComparison.Ordinal))
             {

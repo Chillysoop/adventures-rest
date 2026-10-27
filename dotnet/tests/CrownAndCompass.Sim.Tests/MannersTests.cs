@@ -60,7 +60,7 @@ public class MannersTests
             foreach (var st in d.Stages)
                 foreach (var o in st.Options)
                     foreach (var e in new[] { o.Success, o.Failure }.SelectMany(x => x.Effects.Keys))
-                        Assert.True(Stories.EffectKeys.Contains(e), $"{d.Id} option {o.Label} has effect {e}");
+                        Assert.True(Stories.KnownEffect(C, e), $"{d.Id} option {o.Label} has effect {e}");
         // No two peoples open the same way.
         var openings = C.World.Peoples.Select(p => C.Stories.Story(Manners.PeoplePrefix + p.Id)!.Stages[0].Text).ToList();
         Assert.Equal(openings.Count, openings.Distinct().Count());

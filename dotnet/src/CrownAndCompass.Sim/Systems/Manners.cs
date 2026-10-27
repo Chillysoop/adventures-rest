@@ -453,6 +453,9 @@ public static class Manners
 
     private static string Slot(string key, string manner) => key + "/" + manner;
 
+    /// <summary>The slot that holds the faction's next overture of any manner.</summary>
+    private const string Any = "*";
+
     /// <summary>The day an overture can next be made to them.</summary>
     public static int Ready(Town town, string key, string manner) => town.Overtures.Get(Slot(key, manner), 0);
 
@@ -474,7 +477,8 @@ public static class Manners
             if (p.Side == PowerSide.Enemy) return "it serves the enemy";
         }
         else return "nobody there";
-        int ready = Ready(town, key, manner);
+        // One overture a season to each faction, whichever manner it is made to.
+        int ready = Math.Max(Ready(town, key, manner), Ready(town, key, Any));
         if (ready > town.Day) return $"again in {ready - town.Day} days";
         if (o.Cost > 0 && town.Treasury < o.Cost) return $"needs {Js.Str(o.Cost)} gold";
         return null;
@@ -491,6 +495,7 @@ public static class Manners
         var o = Overtures(town, key).First(x => x.Manner.Id == manner).Overture;
         if (o.Cost > 0) town.Book(TreasuryAccount.Envoys, -o.Cost);
         town.Overtures[Slot(key, manner)] = town.Day + o.Every;
+        town.Overtures[Slot(key, Any)] = town.Day + o.Every;
         StoryBeat beat;
         if (o.Skill == "") beat = new StoryBeat { Tick = town.Tick, Result = StoryResult.Certain };
         else

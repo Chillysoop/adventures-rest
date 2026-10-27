@@ -332,9 +332,20 @@ public static class Neighbours
         foreach (var s in town.Settlements.Where(x => x.Met && !x.Razed && town.Regions[x.RegionId].Known && !Discovery.Known(town, Key(x))).ToList())
             Introduce(town, s, Discovery.Met);
         if (town.Day < w.MeetFrom || (town.Day - w.MeetFrom) % Math.Max(1, w.MeetEvery) != 0) return;
-        var next = town.Settlements.Where(x => !x.Razed && town.Regions[x.RegionId].Known && !Discovery.Known(town, Key(x)))
+        var next = town.Settlements.Where(x => !x.Razed && town.Regions[x.RegionId].Known && !Discovery.Known(town, Key(x)) && Reached(town, x))
             .OrderBy(x => town.Regions[x.RegionId].Days).ThenBy(x => x.Id).FirstOrDefault();
         if (next != null) Introduce(town, next, Discovery.Met);
+    }
+
+    /// <summary>Whether the town's map reaches a people: near, visited, or vouched for by a friend nearby.</summary>
+    public static bool Reached(Town town, Settlement s)
+    {
+        var w = town.Content.World.Standing;
+        var region = town.Regions[s.RegionId];
+        if (region.Days <= w.MeetNear || region.Visited) return true;
+        return town.Settlements.Any(x => x.Id != s.Id && !x.Razed && x.Standing >= w.MeetVouch && Known(town, x)
+            && Math.Abs(town.Regions[x.RegionId].Ring - region.Ring) <= 1
+            && World.AngleBetween(town.Regions[x.RegionId].Bearing, region.Bearing) <= w.MeetArc);
     }
 
     public static void Daily(Town town, bool autoMayor)
@@ -513,6 +524,7 @@ public static class Neighbours
         var r = Rules(town);
         string said = Saga.Cap(Fill(town, s, def.Solved));
         s.Trouble = null;
+        Accords.TroubleEnded(town, s, helped: party != null || aided, failed: false);
         s.Prosperity = Math.Min(100, s.Prosperity + r.SolvedProsperity);
         if (town.Regions[s.RegionId].Known) town.Log(LedgerCategory.Quest, Importance.Notable, said);
         string? memory = party != null ? $"the day the {party} came for {Lower(def.Name)}" : aided ? $"what {town.Name} sent when {s.Name} had {Lower(def.Name)}" : null;
@@ -528,6 +540,7 @@ public static class Neighbours
         string said = Saga.Cap(Fill(town, s, def.Failed));
         string? lostTo = s.Trouble?.SiteId;
         s.Trouble = null;
+        Accords.TroubleEnded(town, s, helped: false, failed: true);
         s.Prosperity = Math.Max(0, s.Prosperity - r.FailedProsperity);
         bool known = town.Regions[s.RegionId].Known;
         World.Shift(town, s, -r.FailedStanding);

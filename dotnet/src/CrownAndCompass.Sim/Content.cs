@@ -1184,9 +1184,16 @@ public sealed record StandingRules
     public double Envoy { get; init; } = 10;
     public int EnvoyEveryDays { get; init; } = 8;
 
-    /// <summary>From this day, every meetEvery days, the nearest people the town has heard of but not met sends riders.</summary>
+    /// <summary>
+    /// From this day, every meetEvery days, the nearest people the town has heard of but not met sends riders, if the map
+    /// reaches them: within meetNear days of the town, in a region a party has been through, or vouched for by a people
+    /// the town has met who stand at meetVouch or better and live in the next ring or the same one, within meetArc radians.
+    /// </summary>
     public int MeetFrom { get; init; } = 3;
-    public int MeetEvery { get; init; } = 5;
+    public int MeetEvery { get; init; } = 8;
+    public int MeetNear { get; init; } = 4;
+    public double MeetVouch { get; init; } = 25;
+    public double MeetArc { get; init; } = 0.9;
 
     /// <summary>Standing for clearing a site in a people's region.</summary>
     public double Cleared { get; init; } = 8;
@@ -1816,6 +1823,7 @@ public sealed class Content
     /// <summary>Each faction's first-meeting picture and crest (content/game/intros.json).</summary>
     public Systems.IntroRules Intros { get; init; } = new();
     public Systems.MannerRules Manners { get; init; } = new();
+    public Systems.AccordRules Accords { get; init; } = new();
 
     /// <summary>The charter goals of a new town's first days (content/game/goals.json).</summary>
     public Systems.GoalRules Goals { get; init; } = new();
@@ -2124,6 +2132,7 @@ public sealed class Content
             Heraldry = Parse<HeraldryRules>("heraldry.json"),
             Intros = Parse<Systems.IntroRules>("intros.json"),
             Manners = manners,
+            Accords = Parse<Systems.AccordRules>("accords.json"),
             Eggs = Parse<EggRules>("eggs.json"),
             Foes = Parse<FoeRules>("foes.json"),
             Cannons = Parse<Systems.CannonRules>("cannons.json"),

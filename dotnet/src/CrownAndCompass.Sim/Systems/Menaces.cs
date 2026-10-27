@@ -406,6 +406,8 @@ public static class Menaces
                 if (seat.Cleared) continue;
             }
             Grow(town, m, seat);
+            // A truce bought by parley (Accords): it grows, but leaves the town be.
+            if (Accords.InTruce(town, m) && m.ArrivalTick == null) continue;
             if (m.Stage >= MenaceStage.Power) Demand(town, m);
             if (m.Stage >= MenaceStage.Rising && town.Tick >= m.NextStrikeTick) Strike(town, m, seat);
             if (m.Stage >= MenaceStage.Dominion || m.ArrivalTick != null) Assaults(town, m);

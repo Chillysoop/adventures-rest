@@ -513,6 +513,9 @@ public sealed class Town
 
     /// <summary>The day each overture can next be made, by "key/manner" (<see cref="Systems.Manners.Overture"/>).</summary>
     public OrderedMap<string, int> Overtures { get; } = new();
+
+    /// <summary>Allies' asks, promises given at first meetings, truces and parleys (<see cref="Systems.Accords"/>).</summary>
+    public Systems.AccordState Accords { get; } = new();
     public int SightingCount { get; set; }
 
     /// <summary>Enemies' agents loose in town, looking over what they mean to strike tonight (<see cref="Systems.Lurkers"/>).</summary>

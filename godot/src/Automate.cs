@@ -59,12 +59,13 @@ public partial class Main
             p.Row($"{Ui.Img(a.Icon, 16)} [b]{a.Title}[/b]  {Ui.Chip("gold", cap > 0 ? $"{Js.Str(Js.Round(used))}/{Js.Str(cap)}" : Js.Str(Js.Round(used)), cap > 0 && used >= cap ? Ui.Bad : null, "Spent this month / cap")}",
                 Caps.Select(c => (c == 0 ? "∞" : Js.Str(c), true, (int)cap == c, (Action)(() => Act(() => _sim.SetStewardCap(id, c))))).ToArray());
         }
-        var armory = Stewards.Area("armory");
-        if (Stewards.Hand(t, _sim.Options, "armory"))
+        // Each lever a steward may pull, on or off one by one.
+        foreach (var a in Stewards.Areas.Where(a => a.Kinds.Length > 0 && Stewards.Hand(t, _sim.Options, a.Id)))
         {
-            p.Heading("Quartermaster's levers", "tab-armory");
-            p.Row($"{Ui.Img("tab-armory", 16)} [b]Buy · Gift · Sell[/b]", armory.Kinds.Select(k => (Ui.Cap(k), true, Stewards.LeverOn(t, "armory", k),
-                (Action)(() => Act(() => _sim.SetStewardLever("armory", k, !Stewards.LeverOn(t, "armory", k)))))).ToArray());
+            string id = a.Id;
+            p.Heading($"{a.Title}'s levers", a.Icon);
+            p.TipButtons(a.Kinds.Select(k => (LeverName(k), true, Stewards.LeverOn(t, id, k),
+                (Action)(() => Act(() => _sim.SetStewardLever(id, k, !Stewards.LeverOn(t, id, k)))), "On: the steward may do this. Off: only you.")).ToArray());
         }
 
         p.Page("Report", "records");
@@ -76,6 +77,20 @@ public partial class Main
         }
         p.Commit();
     }
+
+    private static string LeverName(string kind) => kind switch
+    {
+        "envoy" => "Envoys",
+        "route" => "New routes",
+        "wagon" => "Wagons",
+        "aid" => "Aid",
+        "works" => "Works",
+        "ally" => "Allies' asks",
+        "roadpatrol" => "Road patrols",
+        "bridge" => "Bridges",
+        "ruin" => "Ruins",
+        _ => Ui.Cap(kind),
+    };
 
     /// <summary>One area's row: its icon, its lesser councillor's title and name, and You / Asks / Steward.</summary>
     private void StewardRow(Pane p, Town t, StewardArea a, bool blurb)

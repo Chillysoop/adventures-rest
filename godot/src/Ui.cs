@@ -734,7 +734,8 @@ public sealed class Pane
             var v = new VBoxContainer();
             v.AddThemeConstantOverride("separation", 8);
             // Three or more buttons would squeeze the text to a letter a line in a narrow window: they wrap below it.
-            bool below = buttons.Length > 2;
+            // So do two beside a portrait, which takes its own share of the width.
+            bool below = buttons.Length > 2 || (buttons.Length > 1 && look?.Lead != null);
             Container h = below ? new HFlowContainer() : new HBoxContainer();
             h.AddThemeConstantOverride(below ? "h_separation" : "separation", 8);
             Control text = Ui.Rich(bbcode);

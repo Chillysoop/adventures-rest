@@ -1,0 +1,76 @@
+{
+  "_doc": "Accords (Systems/Accords.cs): what keeps the peoples' friendship alive after first contact. Rivals: peoples (world.json ids) with an old grudge; when the town warms one (any gain in standing), its rivals cool by rivalShare of it, and each alliance costs its rivals rivalAllied, never below rivalFloor. Conquest reads the same pairs. Allies: an allied people's standing drifts back toward where it began at allyDrift a day (other peoples drift at world.json standing drift); one that falls below leaveBelow leaves the alliance. Every askEvery days an ally asks something of the town (asks: gift of gold, goods it wants, or a site cleared); the town has answerDays to answer; yes wins win standing (a site is promised and must be cleared within clearDays), no or silence costs lose. Promises: the terms a people asks at a first meeting (manners.json terms effects promise:id). Each kind: aid (called when trouble comes to them: kept when the town aids them or its heroes end it, broken if the trouble does its worst), peace (broken if the town marches on them), mark (a decor piece goes up in town now; broken if it is taken down), festival (kept at each festival; with dueDays, broken if none is held in time), toll (each month a share of every trade route's run is paid to them), letters (each month they tell of a site near them), tribute (each month they ask gold; refusing breaks it). Every marching on a people breaks all its promises. Kept: kept standing; broken: broken standing to them and kin to every people of the same kin. Parley: words with a known menace from its card (not the big bad's truce or turn): truce (gold, a roll; it neither strikes, demands nor marches for days), ransom (gold for each captive it holds), turn (a roll: it falls on the nearest other menace, both lose clash of their power). Each again after every days.",
+  "rivals": [
+    ["dwarves", "elves"],
+    ["gnomes", "dwarves"],
+    ["lizardfolk", "villagers"],
+    ["frostsworn", "templars"],
+    ["freeport", "oasis"],
+    ["tidekin", "isle-city"],
+    ["griffon-clans", "cloud-court"],
+    ["catfolk", "birdfolk"],
+    ["hollow-legion", "templars"],
+    ["brass-ancient", "bronze-ancient"],
+    ["copper-ancient", "silver-ancient"],
+    ["halflings", "lizardfolk"]
+  ],
+  "rivalShare": 0.3,
+  "rivalAllied": 8,
+  "rivalFloor": -30,
+  "allyDrift": 0.08,
+  "leaveBelow": 40,
+  "askEvery": [45, 75],
+  "answerDays": 12,
+  "clearDays": 60,
+  "asks": [
+    { "id": "gift", "gold": 60, "perProsperity": 1, "win": 8, "lose": -10, "text": "{leader} of {settlement} asks {town} for {gold} gold to see them through a lean month." },
+    { "id": "goods", "qty": 12, "win": 9, "lose": -8, "text": "{leader} of {settlement} asks {town} for {qty} {good}: they are short, and friends share." },
+    { "id": "clear", "win": 14, "lose": -12, "text": "{leader} of {settlement} asks {town}'s heroes to deal with {site}, which troubles their roads." }
+  ],
+  "askTexts": {
+    "yes": "{town} answers {settlement}'s ask. {people} will not forget it.",
+    "no": "{town} turns down {settlement}'s ask. {people} take it coolly.",
+    "lapsed": "{settlement}'s ask goes unanswered. {people} take the silence badly.",
+    "cleared": "{site} is dealt with, as {town} promised {settlement}. {people} toast {town}.",
+    "failed": "{town} promised {settlement} it would deal with {site}, and has not. {people} stop expecting it to.",
+    "left": "{people} drift away from the alliance with {town}: too long since it did anything for them."
+  },
+  "promises": [
+    { "id": "walls", "kind": "aid", "name": "Shelter if trouble comes", "icon": "defence" },
+    { "id": "battle", "kind": "aid", "name": "Stand with them in battle", "icon": "rivals" },
+    { "id": "lean", "kind": "aid", "name": "Share in lean years", "icon": "food" },
+    { "id": "riders", "kind": "peace", "name": "Keep riders off their land", "icon": "ui-road" },
+    { "id": "shrine", "kind": "mark", "name": "A shrine to their faith", "icon": "faith", "decor": "wayside_shrine" },
+    { "id": "street", "kind": "mark", "name": "A sign for their heroes", "icon": "standing", "decor": "banner" },
+    { "id": "honour", "kind": "festival", "name": "A place of honour at feasts", "icon": "favour" },
+    { "id": "fair", "kind": "festival", "name": "Come to the next fair", "icon": "mandate", "dueDays": 120 },
+    { "id": "roads", "kind": "toll", "name": "A share of the roads", "icon": "ui-trade", "gold": 6 },
+    { "id": "letters", "kind": "letters", "name": "An exchange of letters", "icon": "books" },
+    { "id": "goodwill", "kind": "tribute", "name": "Paid for their goodwill", "icon": "gold", "gold": 40 },
+    { "id": "share", "kind": "toll", "name": "First pick of the market", "icon": "gold", "gold": 3 }
+  ],
+  "kept": 6,
+  "broken": -18,
+  "kin": -6,
+  "every": 30,
+  "promiseTexts": {
+    "called": "{people} call on {town}'s word: {promise}. Trouble has come to {settlement}.",
+    "kept": "{town} keeps its word to {settlement}: {promise}. {people} remember it.",
+    "broken": "{town} breaks its word to {settlement}: {promise}. Every {kin} hears of it.",
+    "mark": "{town} raises {piece} for {people}, as promised.",
+    "toll": "{town} pays {settlement} its share: {gold} gold.",
+    "letters": "Letters from {settlement}: they tell {town} of {site}."
+  },
+  "parley": {
+    "truce": { "skill": "persuasion", "dc": 14, "gold": 120, "perPower": 0.6, "days": 60, "every": 90 },
+    "ransom": { "perCaptive": 50, "every": 10 },
+    "turn": { "skill": "deception", "dc": 15, "clash": 0.18, "every": 75 },
+    "texts": {
+      "truce": "{leader} takes {gold} gold and gives its word: {menace} will leave {town} be for {days} days.",
+      "truceFailed": "{leader} hears {town}'s envoy out and sends them home with nothing.",
+      "ransom": "{town} pays {gold} gold to {menace}, and {count} of its people walk home.",
+      "turn": "{town}'s whispers reach {leader}: {menace} falls on {other}, and both come out of it weaker.",
+      "turnFailed": "{leader} sees through {town}'s whispers. {menace} is no weaker, and no fonder of {town}."
+    }
+  }
+}

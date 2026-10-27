@@ -770,7 +770,8 @@ public static class World
         {
             // Feelings cool or warm back toward where they started.
             double d = s.Kin.Start + Reigns.Standing(town, s) - s.Standing;
-            if (!s.Allied && !s.Razed) s.Standing += Math.Sign(d) * Math.Min(Math.Abs(d), w.Standing.Drift);
+            // Allies cool too, slower: a friendship needs tending (Accords).
+            if (!s.Razed) s.Standing += Math.Sign(d) * Math.Min(Math.Abs(d), s.Allied ? town.Content.Accords.AllyDrift : w.Standing.Drift);
         }
         LapsePleas(town);
         PostPleas(town);
@@ -899,8 +900,12 @@ public static class World
         if (s.Razed) return;
         // A diplomatic people warms faster to a good turn; a closed one is slower to.
         if (delta > 0) delta *= Character.Diplomacy(town, s);
+        double was = s.Standing;
         s.Standing = Math.Clamp(s.Standing + delta, -100, 100);
-        if (s.Allied || s.Standing < town.Content.World.Standing.Ally) return;
+        bool seals = !s.Allied && s.Standing >= town.Content.World.Standing.Ally;
+        // Its rivals take the town's warmth badly (only what it really gained).
+        if (s.Standing > was || seals) Accords.Warmed(town, s, s.Standing - was, seals);
+        if (!seals) return;
         s.Allied = true;
         var b = s.Kin.Boon;
         town.Log(

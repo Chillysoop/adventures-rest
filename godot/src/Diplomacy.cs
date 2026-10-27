@@ -99,6 +99,41 @@ public partial class Main
         return lines + "[/font_size]";
     }
 
+    /// <summary>What wants the mayor's eye on a people's row: trouble, shadow, a captive captain, the town's promises and an ally's ask.</summary>
+    private static string StateChips(Town t, Settlement s)
+    {
+        var chips = new List<string>();
+        if (Neighbours.TroubleOf(t, s) is { } tr)
+            chips.Add(Ui.Chip("ui-skull", $"{Math.Round(s.Trouble!.Severity)}%", s.Trouble.Severity >= 60 ? Ui.Bad : Ui.Gold, $"Trouble: {tr.Name}"));
+        if (Shadows.Shadowed(s) && Shadows.Over(t, s) is { } dark)
+            chips.Add(Ui.Chip("warband", $"{Math.Round(s.Shadow!.Depth)}%", Ui.Bad, $"In the shadow of {dark.Name}"));
+        if (s.Band?.CaptiveAt is string at && Quests.Site(t, at) is { } held)
+            chips.Add(Ui.Chip("power-chain", "", Ui.Bad, $"Their captain is held at {held.Def.Name}"));
+        foreach (var pr in Accords.To(t, s))
+        {
+            if (Accords.DefOf(t, pr) is not { } d) continue;
+            var (col, said) = pr.State switch
+            {
+                PromiseState.Called => (Ui.Gold, "called on now"),
+                PromiseState.Broken => (Ui.Bad, "broken"),
+                _ => pr.Kept > 0 ? (Ui.Good, $"kept {pr.Kept}×") : (Ui.Ink2, "given"),
+            };
+            chips.Add(Ui.Chip(d.Icon, "", col, $"Promised: {d.Name} · {said}"));
+        }
+        if (Accords.Promised(t).FirstOrDefault(a => a.SettlementId == s.Id) is { } owed)
+            chips.Add(Ui.Chip("ui-time", Ui.Days(Math.Max(0, owed.Until - t.Day)), Ui.Gold, $"You promised to deal with {Accords.Describe(t, owed)}"));
+        var rivals = Accords.RivalsOf(t, s).Where(x => Neighbours.Known(t, x)).Select(x => x.Name).ToList();
+        if (rivals.Count > 0) chips.Add(Ui.Chip("rivals", "", Ui.Ink2, $"Old grudge with {string.Join(", ", rivals)}: warming one cools the other"));
+        return string.Join(" ", chips);
+    }
+
+    /// <summary>A people's sheet, life and memories as plain text, for the hover on its row.</summary>
+    private static string Details(Town t, Settlement s)
+    {
+        string scores = string.Join(" · ", Character.Sheet(t, s).Select(x => $"{x.Name} {x.Value}"));
+        return Ui.Plain($"{CharacterSheet(t, s)}\n{scores}\n\n{Life(t, s)}\n\n{Cast(t, s)}").Replace("\n\n\n", "\n\n");
+    }
+
     /// <summary>The people there who remember the town, and what they remember.</summary>
     private static string Cast(Town t, Settlement s)
     {
@@ -353,7 +388,9 @@ public partial class Main
                 continue;
             }
             if (Reaches.Unreached(t, s) is { } high) head += $"\n[font_size=12]{Ui.Chip("inst-sky-dock", "Out of reach", Ui.Bad, Ui.Cap(high))}[/font_size]";
-            head += $"\n[font_size=12]{MannerChips(t, Neighbours.Key(s))}[/font_size]\n" + CharacterSheet(t, s) + "\n" + Life(t, s);
+            // One compact row: what needs the mayor shows; the sheet, the people's life and who remembers the town wait on a hover.
+            string state = StateChips(t, s);
+            head += $"\n[font_size=12]{MannerChips(t, Neighbours.Key(s))}{(state != "" ? "   " + state : "")}   {Ui.Tip(Ui.Img("ui-info", 14), Details(t, s))}[/font_size]";
             var buttons = new List<(string, bool, bool, Action)>();
             if (!s.Allied || Shadows.Shadowed(s)) buttons.Add(($"Envoy · {Js.Str(w.EnvoyCost)}g · {DecisionOdds(t, "envoy")}", t.Treasury >= w.EnvoyCost && Reaches.Unreached(t, s) == null, false, () => Act(() => _sim.SendEnvoy(id))));
             if (Shadows.Shadowed(s))
@@ -376,6 +413,13 @@ public partial class Main
             double standing = s.Standing;
             p.Row(head, ($"st{band}{word}{Math.Round(standing)}", null, () => Foes.Standing(band, word, standing)), buttons.ToArray());
             RenderOvertures(p, t, Neighbours.Key(s));
+            foreach (var a in Accords.Waiting(t).Where(a => a.SettlementId == s.Id))
+            {
+                int askId = a.Id;
+                string blocked = Accords.AnswerBlocked(t, a) ?? "";
+                p.Row($"{Ui.Img("favour", 16)} [b]{Ui.Esc(Accords.Describe(t, a))}[/b]  {Ui.Chip("ui-time", Ui.Days(Math.Max(1, a.Until - t.Day)), Ui.Gold, "To answer; silence counts as no")}" + (blocked != "" ? $"\n{Ui.C(Ui.Bad, $"[font_size=11]{Ui.Esc(Ui.Cap(blocked))}[/font_size]")}" : ""),
+                    ("Yes", blocked == "", true, () => Act(() => _sim.AnswerAllyAsk(askId, true))), ("No", true, false, () => Act(() => _sim.AnswerAllyAsk(askId, false))));
+            }
             var build = Neighbours.ProjectsFor(t, s).Where(x => !s.Projects.Contains(x.Id)).ToList();
             if (s.Works == null && build.Count > 0)
                 p.Buttons(build.Select(x =>
@@ -383,7 +427,6 @@ public partial class Main
                     string pid = x.Id;
                     return ($"{x.Name} · {Js.Str(x.Cost)}g", Neighbours.ProjectRefused(t, s, x) == null, false, (Action)(() => Act(() => _sim.FundProject(id, pid))));
                 }).ToArray());
-            p.Row(Cast(t, s));
         }
         p.Help(
             "Each settlement has its own leader, its own band of adventurers and its own troubles. Aid meets a need; a project there lasts (a watchtower keeps it safe, a bridge or patrol keeps its road open, a waystation lets your parties rest). The people you help remember it.",

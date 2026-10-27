@@ -104,7 +104,8 @@ public static class Sparks
             case "ally":
             {
                 var def = town.Content.Powers.Powers.FirstOrDefault(x => x.Id == Arg(1));
-                return new(def != null && Powers.Ally(town, Arg(1)), def != null ? Powers.Name(town, def) : Arg(1), Ally);
+                // Reads only: an allied power, never the purchase of one.
+                return new(def != null && Powers.Find(town, Arg(1)) is { Side: PowerSide.Town }, def != null ? Powers.Name(town, def) : Arg(1), Ally);
             }
             case "foe":
             {

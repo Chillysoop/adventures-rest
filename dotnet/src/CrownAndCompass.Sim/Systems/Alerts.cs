@@ -76,11 +76,12 @@ public static class Alerts
     public static readonly AlertKind Traitor = new("traitor", "A traitor on the council", "mandate", AlertLevel.Decision, AlertWindow.Council, "Hall>Before the council");
     public static readonly AlertKind Scholars = new("scholars", "Idle scholars", "d20", AlertLevel.Minor, AlertWindow.Library, "Study>The scholars");
     public static readonly AlertKind Below = new("below", "Stirring below", "warband", AlertLevel.Decision, AlertWindow.City, "Homes>Under the streets");
-    public static readonly AlertKind Trade = new("trade", "Trade routes", "gold", AlertLevel.Minor, AlertWindow.Diplomacy, "Trade routes");
-    public static readonly AlertKind Courted = new("courted", "Powers courted", "rivals", AlertLevel.Decision, AlertWindow.Diplomacy, "Peoples of the wilds");
-    public static readonly AlertKind Envoy = new("envoy", "Envoys waiting", "standing", AlertLevel.Decision, AlertWindow.Diplomacy, "Peoples of the wilds");
-    public static readonly AlertKind Neighbour = new("neighbour", "Neighbours in trouble", "favour", AlertLevel.Decision, AlertWindow.Diplomacy, "Peoples of the wilds");
-    public static readonly AlertKind Shadow = new("shadow", "Villages in shadow", "warband", AlertLevel.Decision, AlertWindow.Diplomacy, "Peoples of the wilds");
+    public static readonly AlertKind Trade = new("trade", "Trade routes", "gold", AlertLevel.Minor, AlertWindow.Diplomacy, "Trade>Trade routes");
+    public static readonly AlertKind Courted = new("courted", "Powers courted", "rivals", AlertLevel.Decision, AlertWindow.Diplomacy, "Powers>Minor powers");
+    public static readonly AlertKind Envoy = new("envoy", "Envoys waiting", "standing", AlertLevel.Decision, AlertWindow.Diplomacy, "Powers>Minor powers");
+    public static readonly AlertKind Neighbour = new("neighbour", "Neighbours in trouble", "favour", AlertLevel.Decision, AlertWindow.Diplomacy, "Peoples>Peoples of the wilds");
+    public static readonly AlertKind AllyAsk = new("allyask", "Allies ask", "favour", AlertLevel.Decision, AlertWindow.Diplomacy, "Peoples>Peoples of the wilds");
+    public static readonly AlertKind Shadow = new("shadow", "Villages in shadow", "warband", AlertLevel.Decision, AlertWindow.Diplomacy, "Peoples>Peoples of the wilds");
     public static readonly AlertKind Plot = new("plot", "Villains' plans", "warband", AlertLevel.Decision, AlertWindow.Campaign, "Foes>Threats in the land");
     public static readonly AlertKind Charter = new("charter", "Charters", "favour", AlertLevel.Decision, AlertWindow.City, "Claim");
     public static readonly AlertKind GrandWork = new("grandwork", "Grand works", "gold", AlertLevel.Decision, AlertWindow.City, "Growth>Grand works");
@@ -134,7 +135,7 @@ public static class Alerts
 
     /// <summary>Every kind, in the order their icons sit on the strip within a level.</summary>
     public static readonly IReadOnlyList<AlertKind> Kinds =
-        [Siege, Sighted, Lurker, Captives, Overdue, Ride, Doom, Crisis, Sick, Fear, Hunger, Coffers, Underfunded, Unrest, Radicals, Strike, Hostile, Motion, Ask, Guild, Balance, Fealty, Gathering, DarkQuest, Road, Clash, Traitor, Plot, Dark, Spent, Fields, Carts, Unmanned, Strangers, Stores, Story, Scry, Explorers, Fallen, LevelUp, Charter, GrandWork, Tourney, Bastion, Institution, Notable, Heroes, Honours, Courted, Envoy, Neighbour, Shadow, Treasure, Loot, Stalled, Bridge, Ruin, Work, Settlers, Below, Scholars, Trade, Wager, RareFind, Gifts, Tower, Patrol, Outpost, Housing, Rooms, Camp, Crowded, WarAsk];
+        [Siege, Sighted, Lurker, Captives, Overdue, Ride, Doom, Crisis, Sick, Fear, Hunger, Coffers, Underfunded, Unrest, Radicals, Strike, Hostile, Motion, Ask, Guild, Balance, Fealty, Gathering, DarkQuest, Road, Clash, Traitor, Plot, Dark, Spent, Fields, Carts, Unmanned, Strangers, Stores, Story, Scry, Explorers, Fallen, LevelUp, Charter, GrandWork, Tourney, Bastion, Institution, Notable, Heroes, Honours, Courted, Envoy, Neighbour, AllyAsk, Shadow, Treasure, Loot, Stalled, Bridge, Ruin, Work, Settlers, Below, Scholars, Trade, Wager, RareFind, Gifts, Tower, Patrol, Outpost, Housing, Rooms, Camp, Crowded, WarAsk];
 
     /// <summary>The standing rules, each naming what needs the player now. No rng and no writes: the client calls them often.</summary>
     public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Trades, Hostility, Winter, Growth, Routes, Region, Courting, Undercity, Study, Loyalty, Armoury, Homes, Sites, Allies, Word, Crowds, Keepers, Notables, Outposts, Lists, Brought, Missing, Frontiers, Treasures, Blocs];
@@ -264,6 +265,10 @@ public static class Alerts
             foreach (var d in Victory.Roads(t).Where(d => Victory.ClaimBlocked(t, d.Id) == null))
                 yield return new($"road:{d.Id}", Road, $"Claim {d.Name}",
                     $"Every term of {d.Name} holds. Claim it in the Campaign window: {bb.Name} marches at once, and the terms must hold {Days(d.Hold)} more to win.");
+        else
+            foreach (var d in Victory.Roads(t).Where(d => d.Early && Victory.ClaimBlocked(t, d.Id) == null))
+                yield return new($"road:{d.Id}", Road, $"Claim {d.Name}",
+                    $"Every term of {d.Name} holds. Claim it in the Campaign window: the big bad is drawn out early to stop it, and the terms must hold {Days(Victory.HoldOf(t, d))} more to win.");
         if (Menaces.PendingDemand(t) is { } dm)
             yield return new($"demand:{dm.Id}", Fealty, "A demand for fealty", $"{Cap(dm.Name)} wants the town as its vassal. Bend the knee or refuse in the Campaign window; silence is a refusal.");
     }
@@ -430,6 +435,13 @@ public static class Alerts
         foreach (var s in t.Settlements.Where(x => x.Standing >= 10 && x.Trouble is { Severity: >= 40 } && Neighbours.AidRefused(t, x) == null).OrderBy(x => x.Id))
             yield return new($"neighbour:{s.Id}", Neighbour, $"{s.Name} needs help",
                 $"{Cap(s.People)} face {Neighbours.TroubleOf(t, s)!.Name}. Send aid from the Diplomacy window before it does its worst; they will remember who helped.");
+        // An ally's ask, waiting on the mayor's word.
+        foreach (var a in Accords.Waiting(t).OrderBy(a => a.Id))
+        {
+            var s = t.Settlements[a.SettlementId];
+            yield return new($"allyask:{a.Id}", AllyAsk, $"{s.Name} asks {Accords.Describe(t, a)}",
+                $"{Cap(s.People)} ask a friend's favour. Answer in the Diplomacy window within {Days(Math.Max(1, a.Until - t.Day))}; silence costs as much as no.");
+        }
         // A people paying an enemy tribute (or ruled by its creature): one to win back.
         foreach (var s in t.Settlements.Where(x => Shadows.Paying(x) && Neighbours.Known(t, x)).OrderBy(x => x.Id))
         {

@@ -17,8 +17,6 @@ public sealed record ConquestRules
     public double GrudgeGain { get; init; } = 10;
     public double AskGain { get; init; } = 20;
 
-    /// <summary>Peoples who bear each other a grudge, by people id.</summary>
-    public IReadOnlyList<string[]> Grudges { get; init; } = [];
 
     /// <summary>Daily chance an ally with a grudge asks the town to strike a settlement of its foes, and days the ask stands.</summary>
     public double AskChance { get; init; } = 0.01;
@@ -124,14 +122,14 @@ public static class Conquest
     }
 
     /// <summary>Whether two peoples bear each other a grudge.</summary>
-    public static bool Grudge(Town town, string a, string b) =>
-        Rules(town).Grudges.Any(g => g.Length == 2 && (g[0] == a && g[1] == b || g[0] == b && g[1] == a));
+    public static bool Grudge(Town town, string a, string b) => Accords.Rivals(town, a, b);
 
     /// <summary>The host marches on a settlement: every people sees it.</summary>
     public static void Declare(Town town, Settlement target)
     {
         var r = Rules(town);
         bool betrayal = target.Allied;
+        Accords.Betrayed(town, target);
         target.Allied = false;
         target.Standing = Math.Min(target.Standing - r.TargetHit, -40);
         foreach (var s in town.Settlements.Where(x => x.Id != target.Id && !x.Razed).OrderBy(x => x.Id))
@@ -318,7 +316,7 @@ public static class Conquest
 
         // An ally with a grudge asks the town to strike its foes.
         town.Army.Asks.RemoveAll(a => a.UntilDay < town.Day);
-        if (town.Army.Asks.Count > 0 || r.Grudges.Count == 0) return;
+        if (town.Army.Asks.Count > 0 || town.Content.Accords.Rivals.Count == 0) return;
         var allies = town.Settlements.Where(s => s.Allied && !s.Razed).OrderBy(s => s.Id).ToList();
         if (allies.Count == 0 || !rng.Chance(r.AskChance)) return;
         foreach (var ally in allies)

@@ -177,7 +177,8 @@ public class VoyagesTests
     {
         var sim = new Simulation(new SimulationOptions { Seed = 4 });
         var t = sim.Town;
-        for (int d = 0; d < 60 && !t.Parties.Any(p => !p.Returned); d++) sim.RunDays(1);
+        // Out late enough that it could be overdue already.
+        for (int d = 0; d < 60 && (!t.Parties.Any(p => !p.Returned) || t.Day <= t.Content.Knowledge.OverdueDays + 2); d++) sim.RunDays(1);
         var party = t.Parties.First(p => !p.Returned);
         Assert.True(party.Expected > 0);
         Assert.DoesNotContain(Alerts.Standing(t), a => a.Key == $"overdue:{party.Id}");
