@@ -11,8 +11,8 @@
   "stake": 120,
   "dividend": 0.01,
   "patron": { "spare": 800, "renown": 10, "share": 0.5, "every": 30, "fame": 2, "favourPerGold": 0.01 },
-  "_fortunes": "Before the rest, once a week: a hero with retireGold spare, retireLevel and a veteran's record (no fief, no bastion) retires to teach and leaves retireShare of it to the treasury; one with a house and manorCost (plus manorPerLevel a level) buys a manor (a land sale; manorLoyalty once); one with feastSpare spare throws a feast at a tavern every feastEvery days, feastShare of it up to feastMost into the tavern's till.",
-  "fortunes": { "feastSpare": 400, "feastShare": 0.15, "feastMost": 400, "feastEvery": 14, "manorCost": 1200, "manorPerLevel": 80, "manorLoyalty": 10, "retireGold": 8000, "retireLevel": 10, "retireShare": 0.5,
+  "_fortunes": "Before the rest, once a week: a hero with retireGold spare, retireLevel and a veteran's record (no fief, and not one of the last two keeping a bastion) retires to teach and leaves retireShare of it to the treasury; one with a house and manorCost (plus manorPerLevel a level) buys a manor (a land sale; manorLoyalty once); one with feastSpare spare throws a feast at a tavern every feastEvery days, feastShare of it up to feastMost into the tavern's till.",
+  "fortunes": { "feastSpare": 400, "feastShare": 0.25, "feastMost": 800, "feastEvery": 10, "manorCost": 1200, "manorPerLevel": 80, "manorLoyalty": 10, "retireGold": 3000, "retireLevel": 10, "retireShare": 0.5,
     "manors": ["a manor on the hill with a walled orchard", "a fortified manor by the river", "a great house off the market square", "a stone manor with a tower of its own"] },
   "holdings": ["a farmstead past the mill", "a narrow house on the hill", "an old tower by the river", "a cottage with a walled garden", "a hunting lodge at the forest's edge", "a house over the bakery"],
   "lines": {

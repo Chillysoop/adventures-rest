@@ -102,7 +102,7 @@ public static class Downtime
             if (s.AwayUntil != null || (a.Id + town.Day) % 7 != 0) continue;
             double spare = a.Gold - r.Keep;
             var f = r.Fortunes;
-            if (spare >= f.RetireGold && s.Level >= f.RetireLevel && Legacies.Veteran(town, a) && s.FiefId == null && s.BastionId == null)
+            if (spare >= f.RetireGold && s.Level >= f.RetireLevel && Legacies.Veteran(town, a) && s.FiefId == null && (Bastions.Of(town, a) is not { } bas || bas.Members.Count > 2))
             {
                 RichRetire(town, a, spare);
                 continue;
