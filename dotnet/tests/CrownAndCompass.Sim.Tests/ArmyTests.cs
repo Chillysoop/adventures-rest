@@ -256,7 +256,9 @@ public class ArmyTests
         var t = sim.Town;
         sim.RaiseRegiment("swordsmen", 12, ArmyPost.Patrol);
         sim.RaiseRegiment("archers", 10, ArmyPost.Walls);
-        sim.RaiseLevy(5);
+        // Conscription, so a small town with no volunteers still calls its levy.
+        sim.SetServiceLaw(ServiceLaw.Conscription);
+        Assert.NotNull(sim.RaiseLevy(5));
         sim.RunDays(2);
         var loaded = SaveGame.Read(SaveGame.Write(sim));
         Assert.Equal(SaveGame.StateJson(sim), SaveGame.StateJson(loaded));

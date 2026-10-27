@@ -103,6 +103,9 @@ public sealed record AimRules
 
 public sealed record ProwessRules
 {
+    /// <summary>The least DC of the Constitution save to keep a spell held by concentration when hurt.</summary>
+    public int ConcentrationDc { get; init; } = 10;
+
     public IReadOnlyDictionary<string, int> Attacks { get; init; } = new Dictionary<string, int>();
     public IReadOnlyDictionary<string, int[]> ExtraAttacks { get; init; } = new Dictionary<string, int[]>();
     public IReadOnlyList<int> CantripSteps { get; init; } = [];

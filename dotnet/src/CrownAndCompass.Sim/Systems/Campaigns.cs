@@ -38,16 +38,10 @@ public static class Campaigns
             .Where(h => Muster.Rides(town, leader, h))
             .Where(h => (company != null && h.Hero!.PartyName == company) || Math.Abs(h.Hero!.Level - leader.Hero.Level) <= rules.LevelSpread)
             .Where(h => leader.OpinionOf(h.Id) >= -10 && h.OpinionOf(leader.Id) >= -10)
-            .OrderByDescending(h => company != null && h.Hero!.PartyName == company ? 1 : 0)
-            .ThenByDescending(h => leader.OpinionOf(h.Id))
+            .OrderByDescending(h => leader.OpinionOf(h.Id))
             .ThenByDescending(h => h.Hero!.Level)
             .ThenBy(h => h.Id);
-        foreach (var r in recruits)
-        {
-            if (members.Count >= rules.MaxMembers) break;
-            if (!Muster.Rides(town, leader, r, members.Count(m => m.Hero!.PartyName == null))) continue;
-            members.Add(r);
-        }
+        Muster.Fill(members, recruits, rules.Core, rules.MaxMembers, r => Muster.Rides(town, leader, r, members.Count(m => m.Hero!.PartyName == null)));
         return members;
     }
 
@@ -69,7 +63,7 @@ public static class Campaigns
         // Well-armed companies reckon themselves a little stronger than their levels.
         double avg = members.Average(m => m.Hero!.Level) + Gear.Levels(town.Content, members);
         // Bold leaders reach a step higher, but only with a full company behind them.
-        bool bold = (leader.Has(Trait.Ambitious) || leader.Has(Trait.HotTempered)) && members.Count >= rules.MaxMembers;
+        bool bold = (leader.Has(Trait.Ambitious) || leader.Has(Trait.HotTempered)) && members.Count >= rules.Core;
         int cap = (int)Math.Floor(avg) + (bold ? rules.BoldStep : 0);
         // Greenhorns with no veteran to lead them start somewhere gentler.
         if (members.Any(m => m.Hero!.Expeditions == 0) && !members.Any(m => m.Hero!.Expeditions >= rules.Veteran))

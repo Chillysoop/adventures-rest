@@ -33,7 +33,8 @@ public class MoodsTests
         Assert.Contains(blade.Name, Assert.Single(a.Moments));
         Assert.Contains(t.Ledger.About(a.Id), e => e.Text.Contains(blade.Name));
 
-        var hero = Quests.CreateHero(t, t.Content.Classes.First(c => c.Id == "fighter"), 3);
+        // Seasoned enough for a +3 blade (heroes only take magic their level is ready for).
+        var hero = Quests.CreateHero(t, t.Content.Classes.First(c => c.Id == "fighter"), 11);
         Assert.True(sim.Gift(blade.Id, hero.Id));
         Assert.StartsWith(blade.Name, Gear.Describe(hero.Hero!));
         Assert.Contains(t.Ledger.Entries, e => e.Text.Contains($"gives {hero.Name} {blade.Name} ("));
