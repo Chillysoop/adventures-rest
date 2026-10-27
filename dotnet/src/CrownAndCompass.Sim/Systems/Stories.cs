@@ -64,6 +64,9 @@ public sealed record StoryRules
     /// <summary>The checks the mayor rolls on everyday decisions (council motions, demands, envoys...), by decision.</summary>
     public Dictionary<string, DecisionCheck> Decisions { get; init; } = [];
 
+    /// <summary>The most the town's readings can multiply one story's chance by (<see cref="Systems.Odds.Factor"/>).</summary>
+    public double OddsCap { get; init; } = 4;
+
     public FeatDef? Feat(string id) => Feats.FirstOrDefault(f => f.Id == id);
 
     public StakesDef StakesOf(string id) => Stakes.FirstOrDefault(s => s.Id == id) ?? Stakes[0];
@@ -189,6 +192,13 @@ public sealed record StoryDef
 
     /// <summary>Weight added for every hundred people: petitions come more often as the town grows.</summary>
     public double PerHundred { get; init; }
+
+    /// <summary>What in the town makes it likelier, as a weight per unit of each reading (<see cref="Systems.Odds"/>); negative makes it rarer.</summary>
+    public Dictionary<string, double> Odds { get; init; } = [];
+
+    /// <summary>The charter tier it first comes up at, and the tier the town outgrows it at (empty for none).</summary>
+    public string FromTier { get; init; } = "";
+    public string UntilTier { get; init; } = "";
 
     /// <summary>Days before the same story can open again.</summary>
     public int RepeatDays { get; init; } = 90;
@@ -362,6 +372,16 @@ public sealed class Story
 
     /// <summary>The person out in the wilds the story is about (<see cref="Neighbours"/>).</summary>
     public int? ContactId { get; set; }
+
+    /// <summary>An enemy agent in town (<see cref="Lurker.Id"/>), a servant on the council (<see cref="Mole.Id"/>) and a foe's grudge (<see cref="Grudge.Foe"/>).</summary>
+    public int? LurkerId { get; set; }
+    public int? MoleId { get; set; }
+    public string? Foe { get; set; }
+
+    /// <summary>A trade guild, and the notables a feud is between.</summary>
+    public string? GuildId { get; set; }
+    public int? NotableId { get; set; }
+    public int? Notable2Id { get; set; }
     /// <summary>The institutions the story is about, in the order its needs name them (a request, or two of them at odds).</summary>
     public List<string> Institutions { get; } = [];
     /// <summary>When the next stage comes, if the story waits on it (a party's next sending).</summary>
@@ -443,7 +463,7 @@ public static class Stories
     /// precedent:id (1 sets it, -1 forgets it) and calling:id (1: the story's hero takes it up, -1: it ends).
     /// </summary>
     public static readonly string[] EffectKeys =
-        ["gold", "mandate", "dread", "tension", "food", "timber", "loyalty", "wound", "favour", "standing", "seat", "foePower", "grudge", "delay", "festival", "reveal", "inspiration", "people", "leaves", "renown", "heat", "expose", "regard", "retire", "memorial", "esteem", "heroXp", "personal", "dismiss", "edge", "swell", "partyHurt", "rest", "slots", "loot", "partyLoyalty", "turnBack", "fine", "jail", "taint", "infamy", "exile", "goodwill", "goodwill2", "prosperity", "security", "contact", "band", "moves", "stir", "book", "lore", "recover", "minor", "egg", "ranger", "shelter", "settle", "pact", "pactFavour", "weregild", "owed", "curse", "magicItem"];
+        ["gold", "mandate", "dread", "tension", "food", "timber", "loyalty", "wound", "favour", "standing", "seat", "foePower", "grudge", "delay", "festival", "reveal", "inspiration", "people", "leaves", "renown", "heat", "expose", "regard", "retire", "memorial", "esteem", "heroXp", "personal", "dismiss", "edge", "swell", "partyHurt", "rest", "slots", "loot", "partyLoyalty", "turnBack", "fine", "jail", "taint", "infamy", "exile", "goodwill", "goodwill2", "prosperity", "security", "contact", "band", "moves", "stir", "book", "lore", "recover", "minor", "egg", "ranger", "shelter", "settle", "pact", "pactFavour", "weregild", "owed", "curse", "magicItem", "seize", "suspicion", "foeHeat", "guild", "notable", "notable2"];
 
     /// <summary>
     /// Every need a story or option can name; besides these, precedent:id, decree:id, season:id and
@@ -453,7 +473,7 @@ public static class Stories
     /// chapter) and below:level (binds that undercity level while it is open and not cleared).
     /// </summary>
     public static readonly string[] Needs =
-        ["hero", "restless", "party", "menace", "march", "warband", "faction", "seat", "tavern", "temple", "site", "unheard", "power", "hungry", "homeless", "rich", "watch", "poor", "petitioner", "ward", "settlement", "route", "courted", "veteran", "fallen", "admirer", "aggrieved", "abroad", "stormbound", "homeward", "victorious", "lawbreaker", "famous", "infamous", "trouble", "contact", "band", "forge", "below", "library", "scholars", "remains", "minor", "egg", "eggHeld", "ranger", "column", "sworn", "pactless", "bloodied", "owed", "cursed"];
+        ["hero", "restless", "party", "menace", "march", "warband", "faction", "seat", "tavern", "temple", "site", "unheard", "power", "hungry", "homeless", "rich", "watch", "poor", "petitioner", "ward", "settlement", "route", "courted", "veteran", "fallen", "admirer", "aggrieved", "abroad", "stormbound", "homeward", "victorious", "lawbreaker", "famous", "infamous", "trouble", "contact", "band", "forge", "below", "library", "scholars", "remains", "minor", "egg", "eggHeld", "ranger", "column", "sworn", "pactless", "bloodied", "owed", "cursed", "lurker", "mole", "grudge", "guild", "rivals", "refugee", "festival"];
 
     private static readonly string[] Prefixed = ["precedent:", "decree:", "season:"];
 
@@ -478,6 +498,7 @@ public static class Stories
         if (n.StartsWith("building:", StringComparison.Ordinal)) return c.Buildings.Any(x => x.Id == n[9..]);
         if (n.StartsWith("known:", StringComparison.Ordinal)) return c.Research.Discovery(n[6..]) != null;
         if (need.StartsWith("below:", StringComparison.Ordinal)) return c.Undercity.Level(need[6..]) != null;
+        if (need.StartsWith("zone:", StringComparison.Ordinal)) return Enum.TryParse<Zone>(need[5..], out var z) && z != Zone.None;
         if (need.StartsWith("patron:", StringComparison.Ordinal)) return c.Patrons.Patron(need[7..]) != null;
         if (need.StartsWith("keeper:", StringComparison.Ordinal)) return c.Taverns.Past(need[7..]) != null;
         if (n.StartsWith("variant:", StringComparison.Ordinal))
@@ -684,7 +705,7 @@ public static class Stories
         {
             // Sendings come from parties on the road (Sendings.Hourly), and word of a lost company from its wipe (Lost), not the town.
             if (Sendings.Is(d) || d.Source == LostSource || d.Source == FoundSource || d.Source == Powers.ContactSource || d.Source == Eggs.Source || d.Source == Poaching.Source || d.Source == Refugees.Source) continue;
-            if (open.Contains(d.Id) || town.Day < d.MinDay || town.Population < d.MinPopulation) continue;
+            if (open.Contains(d.Id) || town.Day < d.MinDay || town.Population < d.MinPopulation || !Odds.InTier(town, d)) continue;
             if (st.LastDay.Get(d.Id, -9999) + d.RepeatDays > town.Day) continue;
             if (Bind(town, d) is { } bound) fits.Add((d, bound));
         }
@@ -704,7 +725,7 @@ public static class Stories
         Begin(town, pick.Def, pick.Bound);
     }
 
-    private static double WeightOf(Town town, StoryDef d) => d.Weight + d.PerHundred * town.Population / 100.0;
+    public static double WeightOf(Town town, StoryDef d) => (d.Weight + d.PerHundred * town.Population / 100.0) * Odds.Factor(town, d);
 
     /// <summary>Open a story now, binding what it is about; null when its needs are not met. Tests and scripted shots call it directly.</summary>
     public static Story? Open(Town town, string defId)
@@ -953,6 +974,67 @@ public static class Stories
                 s.Ward = wards.Count == 0 ? null : wards[town.Rng.Range(0, wards.Count)];
                 return s.Ward != null;
             }
+            case "lurker":
+            {
+                // An enemy agent loitering in town, before its night comes.
+                if (s.LurkerId is int lid) return Lurkers.Of(town, lid) is { } bl && town.Tick < bl.StrikeTick;
+                if (!bind) return false;
+                var l = Pick(town.Lurkers.Where(l => town.Tick < l.StrikeTick).OrderBy(l => l.Id).ToList());
+                s.LurkerId = l?.Id;
+                return l != null;
+            }
+            case "mole":
+            {
+                // A foe's servant on the council, not yet named; binds the seat they hold.
+                if (s.MoleId is int mid) return town.Moles.Any(m => m.Id == mid);
+                if (!bind) return false;
+                var m = Pick(town.Moles.Where(m => town.Seats.Any(x => x.HolderId == m.AgentId)).OrderBy(m => m.Id).ToList());
+                if (m == null) return false;
+                s.MoleId = m.Id;
+                s.SeatId ??= town.Seats.First(x => x.HolderId == m.AgentId).Def.Id;
+                return true;
+            }
+            case "grudge":
+            {
+                // A foe whose grudge is at least half way to striking.
+                double half = town.Content.Crises.Vengeance.StrikeAt / 2;
+                if (s.Foe is string bf) return Vengeance.Of(town, bf) != null;
+                if (!bind) return false;
+                var g = Pick(town.Grudges.Where(g => g.Heat >= half).OrderBy(g => g.Foe, StringComparer.Ordinal).ToList());
+                s.Foe = g?.Foe;
+                return g != null;
+            }
+            case "guild":
+            {
+                if (s.GuildId is string bg) return Guilds.Find(town, bg) != null;
+                if (!bind) return false;
+                var g = Pick(town.Guilds.OrderBy(g => g.Id, StringComparer.Ordinal).ToList());
+                s.GuildId = g?.Id;
+                return g != null;
+            }
+            case "rivals":
+            {
+                // Two notables of the town at odds: the mayor mediates.
+                var live = Notables.Active(town).OrderBy(n => n.Id).ToList();
+                if (s.NotableId is int n1 && s.Notable2Id is int n2) return live.Any(n => n.Id == n1) && live.Any(n => n.Id == n2);
+                if (!bind || live.Count < 2) return false;
+                int i = town.Rng.Range(0, live.Count), j = town.Rng.Range(0, live.Count - 1);
+                if (j >= i) j++;
+                s.NotableId = live[i].Id;
+                s.Notable2Id = live[j].Id;
+                return true;
+            }
+            case "refugee":
+            {
+                // Someone who came in fleeing a blow, camped or settled; bound as the petitioner.
+                if (s.PetitionerId is int rp) return town.Agent(rp) is { Departed: false, Refugee: true };
+                if (!bind) return false;
+                var a = Pick(town.Agents.Where(a => !a.Departed && a.Refugee && a.Hero == null && a.Age >= 16).OrderBy(a => a.Id).ToList());
+                s.PetitionerId = a?.Id;
+                return a != null;
+            }
+            case "festival":
+                return town.FestivalDays > 0;
             case "minor":
                 // Only ever bound by the first meeting that opens the scene (Powers.Introduce).
                 return s.Minor is string minorId && Powers.Find(town, minorId) != null;
@@ -1121,6 +1203,17 @@ public static class Stories
                     var a2 = Pick(town.Heroes.Where(a => !a.IsAway && a.Hero!.Cls.Id == cls && Callings.Of(town, a) == null).OrderBy(a => a.Id).ToList());
                     s.HeroId = a2?.Id;
                     return a2 != null;
+                }
+                if (need.StartsWith("zone:", StringComparison.Ordinal))
+                {
+                    // A finished building on land painted for the zone; binds it as the place.
+                    var zone = Enum.Parse<Zone>(need[5..]);
+                    bool On(Building b) => b.Complete && !b.Closed && town.Lots[b.LotId].Zone == zone;
+                    if (s.BuildingId is int zb) return On(town.Building(zb));
+                    if (!bind) return town.Buildings.Any(On);
+                    var zp = Pick(town.Buildings.Where(On).OrderBy(b => b.Id).ToList());
+                    s.BuildingId = zp?.Id;
+                    return zp != null;
                 }
                 if (need.StartsWith("below:", StringComparison.Ordinal))
                 {
@@ -1730,6 +1823,35 @@ public static class Stories
                         said.Add($"{ja.GivenName} spends {(int)v} days in the cells");
                     }
                     break;
+                case "seize":
+                    // The watch takes the agent before its night comes.
+                    if (v > 0 && s.LurkerId is int seizeId && Lurkers.Seize(town, seizeId)) said.Add("the agent is taken");
+                    break;
+                case "suspicion":
+                    if (s.MoleId is int sm && town.Moles.FirstOrDefault(m => m.Id == sm) is { } smm) smm.Suspicion = Math.Max(0, smm.Suspicion + v);
+                    break;
+                case "foeHeat":
+                    if (s.Foe is string heatFoe && Vengeance.Of(town, heatFoe) is { } fhg)
+                    {
+                        fhg.Heat = Math.Max(0, fhg.Heat + v);
+                        said.Add($"{fhg.Name}'s grudge {(v > 0 ? "grows" : "cools")}");
+                    }
+                    break;
+                case "guild":
+                    if (s.GuildId is string gs && Guilds.Find(town, gs) is { } gsg)
+                    {
+                        gsg.Standing = Math.Clamp(gsg.Standing + v, 0, 100);
+                        said.Add($"the {Guilds.Name(town, gsg).ToLowerInvariant()} {(v > 0 ? "+" : "−")}{Js.Str(Math.Abs(v))}");
+                    }
+                    break;
+                case "notable":
+                case "notable2":
+                    if ((key == "notable" ? s.NotableId : s.Notable2Id) is int nid && town.Notables.FirstOrDefault(n => n.Id == nid) is { Gone: false } nn)
+                    {
+                        Notables.Sway(nn, v);
+                        said.Add($"{nn.Name} {(v > 0 ? "warms" : "cools")}");
+                    }
+                    break;
                 case "expose":
                     // The hero names the faction's members to the watch.
                     if (v > 0 && s.FactionId is string ef && Factions.Find(town, ef) is { Active: true, Known: false } efs)
@@ -1874,6 +1996,16 @@ public static class Stories
         Put("{keeperStory}", () => s.BuildingId is int tk && Taverns.Past(town, town.Building(tk)) is { } kp ? kp.Story : "came from somewhere else");
         Put("{victim}", () => s.HeroId is int vh && town.BloodDebts.LastOrDefault(d => d.HeroId == vh) is { } vd ? vd.Victim : "the dead");
         Put("{kin}", () => s.HeroId is int vh && town.BloodDebts.LastOrDefault(d => d.HeroId == vh) is { } vd ? vd.Kin : "the family");
+        Put("{disguise}", () => s.LurkerId is int dl && Lurkers.Of(town, dl) is { } dll ? dll.Disguise : "a stranger");
+        Put("{agentBy}", () => s.LurkerId is int bl && Lurkers.Of(town, bl) is { } bll ? bll.By : s.MoleId is int bm && town.Moles.FirstOrDefault(m => m.Id == bm) is { } bmm ? bmm.By : "the enemy");
+        Put("{lurks}", () => s.LurkerId is int wl && Lurkers.Of(town, wl) is { } wll ? Lurkers.Where(town, wll) : "the gate");
+        Put("{grudge}", () => s.Foe is string gf && Vengeance.Of(town, gf) is { } gg ? gg.Name : "the enemy");
+        Put("{grudgeLeader}", () => s.Foe is string gl && Vengeance.Of(town, gl) is { Leader: not "" } gll ? gll.Leader : "their master");
+        Put("{guild}", () => s.GuildId is string gi && Guilds.Find(town, gi) is { } gu ? Lower(Guilds.Name(town, gu)) : "the guild");
+        Put("{guildMaster}", () => s.GuildId is string gm && Guilds.Find(town, gm)?.MasterId is int gmi ? town.Agent(gmi).Name : "the guild master");
+        Put("{notable}", () => s.NotableId is int n1 && town.Notables.FirstOrDefault(n => n.Id == n1) is { } nn1 ? nn1.Name : "a notable");
+        Put("{notable2}", () => s.Notable2Id is int n2 && town.Notables.FirstOrDefault(n => n.Id == n2) is { } nn2 ? nn2.Name : "another notable");
+        Put("{place}", () => s.BuildingId is int pb ? town.Building(pb).Name : "the street");
         Put("{class}", () => s.HeroId is int h ? town.Agent(h).Hero?.Cls.Name.ToLowerInvariant() ?? "hero" : "hero");
         // A name that opens a sentence ("the Ashen Abbot") is capitalised there.
         return Saga.Sentences(sb.ToString());
