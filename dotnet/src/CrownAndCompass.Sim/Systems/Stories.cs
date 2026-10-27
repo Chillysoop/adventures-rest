@@ -727,6 +727,39 @@ public static class Stories
 
     public static double WeightOf(Town town, StoryDef d) => (d.Weight + d.PerHundred * town.Population / 100.0) * Odds.Factor(town, d);
 
+    /// <summary>
+    /// An enemy agent come to town may leave a sign before its night: one of the stories that need a lurker, bound to it,
+    /// picked by the town's odds. It comes on its own day, like a first meeting, and holds back none of the town's stories.
+    /// </summary>
+    public static Story? Sign(Town town, Lurker l)
+    {
+        var st = town.Stories;
+        var open = st.Open.Select(s => s.Def).ToHashSet();
+        var fits = new List<(StoryDef Def, Story Bound)>();
+        foreach (var d in Rules(town).Stories)
+        {
+            if (!d.Needs.Contains("lurker") || open.Contains(d.Id) || !Odds.InTier(town, d)) continue;
+            if (st.LastDay.Get(d.Id, -9999) + d.RepeatDays > town.Day) continue;
+            if (BindFrom(town, d, new Story { LurkerId = l.Id }) is { } bound) fits.Add((d, bound));
+        }
+        if (fits.Count == 0) return null;
+        double roll = town.Rng.Next() * Js.Sum(fits, f => WeightOf(town, f.Def));
+        var pick = fits[^1];
+        foreach (var f in fits)
+        {
+            roll -= WeightOf(town, f.Def);
+            if (roll < 0)
+            {
+                pick = f;
+                break;
+            }
+        }
+        int next = st.NextDay;
+        var story = Begin(town, pick.Def, pick.Bound);
+        st.NextDay = next;
+        return story;
+    }
+
     /// <summary>Open a story now, binding what it is about; null when its needs are not met. Tests and scripted shots call it directly.</summary>
     public static Story? Open(Town town, string defId)
     {
@@ -996,8 +1029,8 @@ public static class Stories
             }
             case "grudge":
             {
-                // A foe whose grudge is at least half way to striking.
-                double half = town.Content.Crises.Vengeance.StrikeAt / 2;
+                // A foe whose grudge is at least a third of the way to striking.
+                double half = town.Content.Crises.Vengeance.StrikeAt / 3;
                 if (s.Foe is string bf) return Vengeance.Of(town, bf) != null;
                 if (!bind) return false;
                 var g = Pick(town.Grudges.Where(g => g.Heat >= half).OrderBy(g => g.Foe, StringComparer.Ordinal).ToList());

@@ -91,13 +91,17 @@ public static class Odds
         return n;
     }
 
-    /// <summary>How much likelier the town makes a story: the product of 1 + weight × reading over its odds, each at least nothing, and at most the cap.</summary>
+    /// <summary>How much likelier the town makes a story: the product over its odds of 1 + weight × reading (or 1 / (1 − weight × reading) for one against it), at most the cap.</summary>
     public static double Factor(Town town, StoryDef d)
     {
         if (d.Odds.Count == 0) return 1;
         double f = 1;
         foreach (var (reading, weight) in d.Odds.OrderBy(o => o.Key, StringComparer.Ordinal))
-            f *= Math.Max(0, 1 + weight * Read(town, reading));
+        {
+            // More of a reading against it divides the chance, so a strong watch makes crime rarer but never impossible.
+            double x = weight * Read(town, reading);
+            f *= x >= 0 ? 1 + x : 1 / (1 - x);
+        }
         return Math.Min(f, town.Content.Stories.OddsCap);
     }
 

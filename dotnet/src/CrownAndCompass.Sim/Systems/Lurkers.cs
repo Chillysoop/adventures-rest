@@ -19,6 +19,9 @@ public sealed record LurkerRules
     /// <summary>Mandate a catch wins, and tension it eases.</summary>
     public double Mandate { get; init; } = 2;
     public double Calm { get; init; } = 4;
+
+    /// <summary>Chance an agent's coming leaves a sign the mayor hears of: one of the stories that need a lurker (<see cref="Stories.Sign"/>).</summary>
+    public double Sign { get; init; } = 0.35;
 }
 
 /// <summary>An enemy's agent loose in town, looking over what it means to burn, knife or spoil before it strikes.</summary>
@@ -142,6 +145,7 @@ public static class Lurkers
         };
         town.Lurkers.Add(l);
         if (r.Seen != "") town.Log(LedgerCategory.War, Importance.Notable, Saga.Sentences(Fill(r.Seen, town, l)));
+        if (r.Sign > 0 && town.Rng.Chance(r.Sign)) Stories.Sign(town, l);
         return true;
     }
 
