@@ -89,10 +89,11 @@ public class SimulationTests
     {
         var watch = Stopwatch.StartNew();
         var sim = Run(1, 120);
-        // The budget is per townsperson past 200: a bigger town costs more to run without being any slower per head.
+        // The budget is per townsperson past 225: a bigger town costs more to run without being any slower per head.
         // Below that the world, its companies and roads cost most of the time, so this seed's town can be 140 or 210
-        // people by day 120 (as its neighbourhoods fall) in the same time.
-        Assert.True(watch.ElapsedMilliseconds < 5000 * Math.Max(1.35, sim.Town.Population / 150.0), $"{watch.ElapsedMilliseconds} ms for {sim.Town.Population} people");
+        // people by day 120 (as its neighbourhoods fall) in the same time. Since tenements, townhouses on any land and
+        // houses climbing past timber, it reaches about 190 by then (129 before), costing some 15% more for 45% more people.
+        Assert.True(watch.ElapsedMilliseconds < 5000 * Math.Max(1.5, sim.Town.Population / 150.0), $"{watch.ElapsedMilliseconds} ms for {sim.Town.Population} people");
     }
 }
 

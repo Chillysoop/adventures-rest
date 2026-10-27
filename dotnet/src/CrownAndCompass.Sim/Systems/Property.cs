@@ -226,6 +226,10 @@ public static class Property
 
     private static void TryBuildRental(Town town, Agent a)
     {
+        // Whatever a landlord would build, they need the purse for it: spare the lot searches for one who can't afford the cheapest.
+        double cheapest = town.Content.Buildings.Where(d => d.Zone == Zone.Residential || d.Id is "tenement" or "house")
+            .Min(d => d.Cost + Planning.Materials(town, d));
+        if (a.Gold < (town.LotPrice(Town.Grid) + cheapest) * 1.5) return;
         int homeless = town.Workers.Count(x => x.Roofless);
         int openBeds = 0;
         foreach (var b in town.Buildings) openBeds += b.IsSite ? b.Def.Housing : b.OpenBeds;

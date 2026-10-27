@@ -57,6 +57,20 @@ public static class Blocs
 
     private static string ZoneName(Zone z) => ZoneNames.TryGetValue(z, out var n) ? n : z.ToString();
 
+    /// <summary>A bloc's member keys read once (kind, then the building or zone named), in the order blocs.json lists them.</summary>
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<BlocDef, (int Kind, string Arg, double V)[]> Compiled = new();
+
+    private static (int Kind, string Arg, double V)[] MembersOf(BlocDef bloc) => Compiled.GetValue(bloc, b => b.Members.Select(m => m.Key switch
+    {
+        "devout" => (0, "", m.Value),
+        "hedge" => (1, "", m.Value),
+        "refugee" => (2, "", m.Value),
+        "work:holy" => (3, "", m.Value),
+        _ when m.Key.StartsWith("work:", StringComparison.Ordinal) => (4, m.Key[5..], m.Value),
+        _ when m.Key.StartsWith("home:", StringComparison.Ordinal) => (5, m.Key[5..], m.Value),
+        _ => (-1, "", m.Value),
+    }).ToArray());
+
     /// <summary>How much a townsperson belongs to a bloc, 0 to 1.</summary>
     public static double Degree(Town town, BlocDef bloc, Agent a)
     {
@@ -64,16 +78,16 @@ public static class Blocs
         double d = 0;
         var work = a.JobId is int j ? town.Building(j) : null;
         var home = a.HomeId is int h ? town.Building(h) : null;
-        foreach (var (key, v) in bloc.Members)
+        foreach (var (kind, arg, v) in MembersOf(bloc))
         {
-            bool match = key switch
+            bool match = kind switch
             {
-                "devout" => a.Devout,
-                "hedge" => a.HedgeSpell != "",
-                "refugee" => a.Refugee,
-                "work:holy" => work?.Def.Holy == true,
-                _ when key.StartsWith("work:", StringComparison.Ordinal) => work != null && (key.AsSpan(5).SequenceEqual(work.Def.Id) || key.AsSpan(5).SequenceEqual(ZoneName(work.Def.Zone))),
-                _ when key.StartsWith("home:", StringComparison.Ordinal) => home != null && key.AsSpan(5).SequenceEqual(home.Def.Id),
+                0 => a.Devout,
+                1 => a.HedgeSpell != "",
+                2 => a.Refugee,
+                3 => work?.Def.Holy == true,
+                4 => work != null && (arg == work.Def.Id || arg == ZoneName(work.Def.Zone)),
+                5 => home != null && arg == home.Def.Id,
                 _ => false,
             };
             if (match) d += v;

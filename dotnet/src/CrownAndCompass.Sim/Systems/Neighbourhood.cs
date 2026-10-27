@@ -226,7 +226,9 @@ public static class Neighbourhood
         foreach (var b in town.Buildings)
         {
             if (!b.Complete) continue;
-            h = h * 1_000_003 + b.Id * 31 + b.LotId * 7 + (int)b.Def.Zone * 3 + (b.Def.Holy ? 1 : 0) + b.Def.Housing * 17 + b.Def.Id.Length;
+            // Only what the field reads of a building: a house growing a storey leaves it be unless it turns fine.
+            h = h * 1_000_003 + b.Id * 31 + b.LotId * 7 + (int)b.Def.Zone * 3 + (b.Def.Holy ? 1 : 0)
+                + (b.Def.Housing > 0 && b.Def.Rent >= FineRent ? 17 : 0) + (b.Def.Id == "tenement" ? 41 : 0);
         }
         return h;
     }
