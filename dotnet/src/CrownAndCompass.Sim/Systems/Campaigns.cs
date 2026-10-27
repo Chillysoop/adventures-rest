@@ -24,6 +24,8 @@ public static class Campaigns
             if (members.Count < rules.MinMembers) continue;
             var target = Choose(town, members, rules);
             if (target == null) continue;
+            Muster.Specialist(town, members, pool, target, h => Muster.Rides(town, leader, h, members.Count(m => m.Hero!.PartyName == null))
+                && Math.Abs(h.Hero!.Level - leader.Hero!.Level) <= rules.LevelSpread + 1 && leader.OpinionOf(h.Id) >= -10 && h.OpinionOf(leader.Id) >= -10 && Passage.CanReach(town, [.. members, h], target));
             foreach (var m in members) pool.Remove(m);
             Launch(town, members, target);
         }
@@ -95,6 +97,8 @@ public static class Campaigns
                 pay * (leader.Has(Trait.Greedy) ? 1.5 : 1) +
                 (region != null && !region.Visited ? 0.15 : 0) +
                 (site.Def.Id == camp ? rules.CampGlory : 0) +
+                // A village's plea is renown as well as pay: the songs are about the heroes who came when asked.
+                (town.Pleas.Any(p => p.SiteId == site.Def.Id && p.Status == PleaStatus.Open) ? rules.PleaPull : 0) +
                 Troubles.Pull(town, site) +
                 Dungeons.Pull(town, site) -
                 rules.Travel * site.Def.Distance -

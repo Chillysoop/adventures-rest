@@ -50,7 +50,8 @@ public class OceanTests
     {
         var t = World(3);
         var isle = t.Sites.Where(s => s.RegionId is int rid && t.Regions[rid].Theme.Sea).OrderBy(s => s.Def.Tier).ThenBy(s => s.Def.Id, StringComparer.Ordinal).First();
-        var mind = new RouteMind(1, 1, 1, "Ada", null, false, false);
+        // Aboard the town's ship (Voyages.Embark) they sail the open sea.
+        var mind = new RouteMind(1, 1, 1, "Ada", null, false, false) { Sail = 1 };
         var road = Roads.Plan(t, (0, 0), Systems.World.Spot(t, isle), mind, new Rng(1), []);
         Assert.Contains(road, w => w.Way == "sail" && w.Feature?.Kind.Id == "ocean");
     }

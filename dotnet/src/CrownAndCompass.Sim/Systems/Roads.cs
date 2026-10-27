@@ -546,8 +546,8 @@ public static class Roads
                 }
                 bool flies = (mind.Ways & needs) == needs;
                 // The bone ferryman takes anyone over his water, for a toll; the town's own boats take them over its sea.
-                // Aboard the harbour's ship they sail even where they could fly; the open sea takes nobody else but fliers.
-                bool boats = next.Kind.Boats && (!flies || next.Kind.Ship && mind.Sail > 0);
+                // Aboard the harbour's ship they sail even where they could fly; the open sea takes nobody else but fliers and vessels of their own.
+                bool boats = next.Kind.Ship ? mind.Sail > 0 : next.Kind.Boats && !flies;
                 bool ferry = !flies && (boats || next.Kind.Wonder?.Kind == "ferry");
                 bool over = flies || ferry || around.Count == 0;
                 if (!ferry && Passage.Rules(town).Texts.TryGetValue(over ? "over" : "round", out var told) && told.Count > 0)
@@ -933,7 +933,11 @@ public static class Roads
             return;
         }
 
-        var v = new Expedition.Venture(town.Rng, content, members, site.Def) { Swell = Lairs.Swell(town, site) + party.Swell, Clock = party.DepartTick };
+        // A site above the company's level fields more of its foes in every fight: overreaching is how companies die.
+        double peril = Storyteller.Peril(town);
+        int over = Math.Max(0, site.Def.Tier - (int)Math.Floor(members.Average(m => m.Hero!.Level)));
+        int overreach = (int)Math.Round(over * content.World.Delve.Overreach * peril);
+        var v = new Expedition.Venture(town.Rng, content, members, site.Def) { Swell = Lairs.Swell(town, site) + party.Swell + overreach, Clock = party.DepartTick, Danger = peril };
         v.TakeJobs(Wayfaring.Assign(town, members), Wayfaring.Bonuses(town, members), Wayfaring.Dice(town, party.Id + 7919));
         if (party.Edge != 0) v.Hearten(party.Edge);
         if (party.BountyId is int tb && town.Bounties[tb - 1].Terms != "slay") v.Terms = Terms.Of(town, town.Bounties[tb - 1]);

@@ -30,6 +30,7 @@ public enum AlertWindow
     Tourney,
     Army,
     Notables,
+    Fleet,
 }
 
 /// <summary>A group of alerts: one icon on the strip, with a count and a hover list of what is in it.</summary>
@@ -131,14 +132,17 @@ public static class Alerts
     public static readonly AlertKind Notable = new("notable", "Notables", "np-shaking-hands", AlertLevel.Decision, AlertWindow.Notables);
     public static readonly AlertKind Ask = new("ask", "A bloc asks", "vote-aye", AlertLevel.Decision, AlertWindow.Council, "Blocs>");
     public static readonly AlertKind Radicals = new("radicals", "Radicals", "suspicion", AlertLevel.Urgent, AlertWindow.Council, "Blocs>");
+    public static readonly AlertKind Ship = new("ship", "Hull holed", "defence", AlertLevel.Decision, AlertWindow.Fleet, "Patch");
+    public static readonly AlertKind Corsairs = new("corsairs", "Corsairs grow bold", "warband", AlertLevel.Decision, AlertWindow.Fleet, "Patrol");
+    public static readonly AlertKind Idle = new("idle", "A ship lies idle", "inst-harbour", AlertLevel.Minor, AlertWindow.Fleet, "Run");
 
 
     /// <summary>Every kind, in the order their icons sit on the strip within a level.</summary>
     public static readonly IReadOnlyList<AlertKind> Kinds =
-        [Siege, Sighted, Lurker, Captives, Overdue, Ride, Doom, Crisis, Sick, Fear, Hunger, Coffers, Underfunded, Unrest, Radicals, Strike, Hostile, Motion, Ask, Guild, Balance, Fealty, Gathering, DarkQuest, Road, Clash, Traitor, Plot, Dark, Spent, Fields, Carts, Unmanned, Outgrown, Strangers, Stores, Story, Scry, Explorers, Fallen, LevelUp, Charter, GrandWork, Tourney, Bastion, Institution, Notable, Heroes, Honours, Courted, Envoy, Neighbour, Shadow, Treasure, Loot, Stalled, Bridge, Ruin, Work, Settlers, Below, Scholars, Trade, Wager, RareFind, Gifts, Tower, Patrol, Outpost, Housing, Rooms, Camp, Crowded, WarAsk];
+        [Siege, Sighted, Lurker, Captives, Overdue, Ride, Doom, Crisis, Sick, Fear, Hunger, Coffers, Underfunded, Unrest, Radicals, Strike, Hostile, Motion, Ask, Guild, Balance, Fealty, Gathering, DarkQuest, Road, Clash, Traitor, Plot, Dark, Spent, Fields, Carts, Unmanned, Outgrown, Strangers, Corsairs, Ship, Stores, Story, Scry, Explorers, Fallen, LevelUp, Charter, GrandWork, Tourney, Bastion, Institution, Notable, Heroes, Honours, Courted, Envoy, Neighbour, Shadow, Treasure, Loot, Stalled, Bridge, Ruin, Work, Settlers, Below, Scholars, Trade, Wager, RareFind, Gifts, Tower, Patrol, Outpost, Housing, Rooms, Camp, Crowded, Idle, WarAsk];
 
     /// <summary>The standing rules, each naming what needs the player now. No rng and no writes: the client calls them often.</summary>
-    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Trades, Hostility, Winter, Growth, Routes, Region, Courting, Undercity, Study, Loyalty, Armoury, Homes, Sites, Allies, Word, Crowds, Keepers, Notables, Outposts, Lists, Brought, Missing, Frontiers, Treasures, Blocs];
+    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Trades, Hostility, Winter, Growth, Routes, Region, Courting, Undercity, Study, Loyalty, Armoury, Homes, Sites, Allies, Word, Crowds, Keepers, Notables, Outposts, Lists, Brought, Missing, Frontiers, Treasures, Blocs, Seas];
 
     public static List<Alert> Standing(Town town) => Rules.SelectMany(r => r(town)).ToList();
 
@@ -574,6 +578,24 @@ public static class Alerts
             yield return new($"stalled:{b.Id}", Stalled, $"{Cap(b.Name)} waits for {what}",
                 $"The builders stand idle: the market has no {what} left. {from} send for it by caravan from the site ({Js.Str(Construction.CaravanCost(t, b))}g).", BuildingId: b.Id);
         }
+    }
+
+    /// <summary>The harbour's ships: a hull holed past half at its mooring, corsairs near and angry with nobody on patrol, a ship with a hold and no run.</summary>
+    private static IEnumerable<Alert> Seas(Town t)
+    {
+        if (Fleet.Harbour(t) == null) yield break;
+        var moored = Fleet.AtSea(t).Where(s => s.Out == null && s.Flight == null && Voyages.Carrying(t, s) == null).ToList();
+        foreach (var s in moored.Where(s => s.Hull < Fleet.Def(t, s).Hull * 0.5 && !Fleet.AtAnchor(t, s)))
+            yield return new($"ship:{s.Id}", Ship, $"{Cap(s.Name)} is holed",
+                $"{Cap(s.Name)} lies at her mooring with {Js.Str(Js.Round(s.Hull))} of {Js.Str(Fleet.Def(t, s).Hull)} hull. Below a quarter she can't sail at all. Patch her in the Fleet window ({Js.Str(Fleet.RepairCost(t, s))}g).");
+        var holds = Fleet.Holds(t);
+        if (t.FleetState.Wrath >= 3 && holds.Any(h => h.RegionId is int g && t.Regions[g].Ring <= 2) && Voyages.Patrolling(t) == 0 && moored.Any(s => Voyages.Moored(t, s)))
+            yield return new("corsairs", Corsairs, $"{Cap(Fleet.Lord(t))}'s corsairs grow bold",
+                $"Corsair sails are seen off the coast more each week: {holds.Count} of their holds stand, the nearest {holds[0].Def.Name}. Send a ship to patrol the home waters, or post a bounty on a hold to burn it.", SiteId: holds[0].Def.Id);
+        foreach (var s in moored.Where(s => s.Route == null && Fleet.Def(t, s).Hold > 0 && Voyages.Moored(t, s)).Take(1))
+            if (Fleet.Ports(t).Any())
+                yield return new($"idle:{s.Id}", Idle, $"{Cap(s.Name)} has no run",
+                    $"{Cap(s.Name)} only fishes at her mooring. Give her a standing run in the Fleet window and she sails to that port again each time she is home.");
     }
 
     /// <summary>The frontier: fields stripped beyond the walls, a wall with too few on it, strangers robbing an open town.</summary>

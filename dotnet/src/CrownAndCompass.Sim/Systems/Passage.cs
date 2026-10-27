@@ -19,6 +19,9 @@ public enum Ways
 
     /// <summary>The open sky: only wings, a flying spell or an airship reach the isles that float above the wilds.</summary>
     Air = 8,
+
+    /// <summary>The open sea, days of it: only a ship or real flight. Walking on water won't carry anyone that far.</summary>
+    Sea = 16,
 }
 
 /// <summary>
@@ -911,7 +914,9 @@ public static class Passage
                 "river" => Ways.River,
                 "water" => Ways.Water | Ways.River,
                 "sheer" => Ways.Sheer,
-                "air" => Ways.Air,
+                // Whatever flies crosses the open sea too; a vessel ("sea") crosses it and every lesser water.
+                "air" => Ways.Air | Ways.Sea,
+                "sea" => Ways.Sea | Ways.Water | Ways.River,
                 _ => Ways.None,
             };
         return w;
@@ -955,7 +960,7 @@ public static class Passage
     public static Ways Abilities(Town town, IReadOnlyList<Agent> members)
     {
         if (members.Count == 0) return Ways.None;
-        Ways all = Ways.River | Ways.Water | Ways.Sheer | Ways.Air, carried = Ways.None;
+        Ways all = Ways.River | Ways.Water | Ways.Sheer | Ways.Air | Ways.Sea, carried = Ways.None;
         foreach (var m in members)
         {
             var (self, party) = Of(town, m);
@@ -989,6 +994,7 @@ public static class Passage
         if ((w & Ways.Water) != 0) bits.Add("rivers and lakes");
         else if ((w & Ways.River) != 0) bits.Add("rivers anywhere, not just at fords");
         if ((w & Ways.Sheer) != 0) bits.Add("sheer heights");
+        if ((w & Ways.Sea) != 0) bits.Add("the open sea");
         if ((w & Ways.Air) != 0) bits.Add("the open sky");
         return string.Join(", ", bits);
     }
@@ -997,6 +1003,7 @@ public static class Passage
     public static Ways Needs(TerrainKindDef kind) => kind.Barrier switch
     {
         "water" => Ways.Water,
+        "sea" => Ways.Sea,
         "sheer" => Ways.Sheer,
         "air" => Ways.Air,
         _ => Ways.None,
@@ -1036,7 +1043,7 @@ public static class Passage
         var meets = Meets(town, from, to) | (aloft ? Ways.Air : Ways.None);
         if (ship == Ways.None || (meets & ~mind.Ways) == Ways.None || AirshipsFree(town) <= 0) return mind;
         // Open sea and nothing else in the way: the town's own ship takes them (Voyages.Embark), not a borrowed airship.
-        if (!aloft && (meets & ~mind.Ways & ~Ways.Water) == Ways.None && Voyages.Sails(town, from, to)) return mind;
+        if (!aloft && (meets & ~mind.Ways & ~(Ways.Water | Ways.Sea)) == Ways.None && Voyages.Sails(town, from, to)) return mind;
         party.Airship = true;
         if (r.Text.Count > 0)
         {

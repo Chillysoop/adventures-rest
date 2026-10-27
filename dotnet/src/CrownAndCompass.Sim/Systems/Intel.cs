@@ -88,6 +88,10 @@ public static class Intel
     /// <summary>Appended to the ledger line of a party that keeps its report.</summary>
     public const string Keeping = " No council bounty paid for the trip, so they keep what they saw to themselves unless the town buys it.";
 
+    /// <summary>Why a company keeps its report: no bounty at all, or one somebody other than the council put up.</summary>
+    public static string KeepingFor(Party party) =>
+        party.BountyId != null ? " Their bounty wasn't the council's, so they keep what they saw to themselves unless the town buys it." : Keeping;
+
     /// <summary>Whether the council paid for this trip with a bounty from the treasury.</summary>
     public static bool Commissioned(Town town, Party party) =>
         (party.BountyId is int bid && town.Bounties[bid - 1] is { FunderId: null, PatronId: null }) || party.SurveyId != null;

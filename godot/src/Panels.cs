@@ -1130,6 +1130,7 @@ public partial class Main
             var o = t.Content.Lairs.Outpost;
             p.Buttons(($"Build a tower · {Js.Str(o.Cost)}g", blocked == null, true, () => Act(() => _sim.HoldSite(sid))));
             p.Note(blocked == null ? $"• Rises in {Ui.Days(o.BuildDays)}\n• {Js.Str(o.Upkeep)}g a day\n• Nothing moves back in · seen live\n• Now and then tested" : Ui.Cap(blocked) + ".");
+            if (s.Clearings >= t.Content.Lairs.HoldAfter) p.Note($"• Cleared {s.Clearings} times · worth a tower");
             return;
         }
         p.Heading("Eyes on it");

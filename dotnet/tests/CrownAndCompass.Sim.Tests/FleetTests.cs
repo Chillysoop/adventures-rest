@@ -76,7 +76,8 @@ public class FleetTests
         t.Market.Seed(Good.Food, 200);
         Assert.True(sim.SendShip(ship.Id, port!.Id, Good.Timber));
         Assert.NotNull(ship.Out);
-        sim.RunDays(Fleet.Days(t, ship, port) + 1);
+        // The weather and the navigator set the days: she is home the day after the run says.
+        sim.RunDays(ship.Out!.Days + 1);
         if (t.Ships.Contains(ship))
         {
             Assert.Null(ship.Out);

@@ -155,7 +155,8 @@ public class FoundingTests
                 Assert.False(Roads.Contains(sea, x, y), $"seed {seed}: {s.Def.Name} in the sea");
             }
             double a = sea.Bearing * Math.PI / 180, r = sea.Outer + 0.3;
-            var mind = new RouteMind(1, 1, 1, "Ada", null, false, false);
+            // Aboard the town's ship: the open sea past the cove takes one.
+            var mind = new RouteMind(1, 1, 1, "Ada", null, false, false) { Sail = 1 };
             var road = Roads.Plan(t, (0, 0), (r * Math.Sin(a), -r * Math.Cos(a)), mind, new Rng(1), []);
             Assert.Contains(road, w => w.Way == "sail");
         }

@@ -294,6 +294,33 @@ public partial class Overlay(MapView map) : Control
     /// A company marches out under its banner and is lost to the fog past the town's light; it is
     /// seen again only on its way home, or under a scrying.
     /// </summary>
+    /// <summary>A ship's hull and sail under a company at sea, or an airship's envelope over one aloft.</summary>
+    private void Vessel(Vector2 at, float fade, bool aloft)
+    {
+        var wood = new Color("6a4a2a", fade);
+        var cloth = new Color("e8dcc0", fade);
+        if (aloft)
+        {
+            var env = new Vector2[16];
+            for (int i = 0; i < env.Length; i++)
+            {
+                float a = i * Mathf.Tau / env.Length;
+                env[i] = at + new Vector2(Mathf.Cos(a) * 15, -30 + Mathf.Sin(a) * 6);
+            }
+            DrawColoredPolygon(env, new Color("b8c8d8", fade));
+            DrawPolyline([.. env, env[0]], new Color(InkC, fade), 1.2f);
+            DrawLine(at + new Vector2(-6, -24), at + new Vector2(-4, -18), new Color(InkC, fade), 1);
+            DrawLine(at + new Vector2(6, -24), at + new Vector2(4, -18), new Color(InkC, fade), 1);
+            DrawRect(new Rect2(at + new Vector2(-6, -19), new Vector2(12, 4)), wood);
+            return;
+        }
+        Vector2[] hull = [at + new Vector2(-14, 1), at + new Vector2(14, 1), at + new Vector2(9, 7), at + new Vector2(-9, 7)];
+        DrawColoredPolygon(hull, wood);
+        DrawPolyline([.. hull, hull[0]], new Color(InkC, fade), 1.2f);
+        DrawLine(at + new Vector2(8, 1), at + new Vector2(8, -16), new Color(InkC, fade), 1.2f);
+        DrawColoredPolygon([at + new Vector2(9, -15), at + new Vector2(9, -2), at + new Vector2(16, -3)], cloth);
+    }
+
     private void DrawParties(Town town)
     {
         foreach (var p in town.Parties)
@@ -303,6 +330,9 @@ public partial class Overlay(MapView map) : Control
             float fogA = map.Fog.AlphaAt(pos);
             if (fogA >= Fog.SightAlpha || !map.OnScreen(map.Gen.At(pos, 1), out var at)) continue;
             float fade = 1 - Mathf.Clamp(fogA / Fog.SightAlpha, 0, 1);
+            // A company over the open sea rides the town's ship; one lent the Sky Dock's airship flies under it.
+            if (p.Airship) Vessel(at, fade, true);
+            else if (p.ShipId != null && map.Gen.HeightAt(pos.X, pos.Y) < WorldGen.WaterLevel - 0.1f) Vessel(at, fade, false);
             Banner(at - new Vector2(0, 14), Palette.Gold, InkC, fade);
             // A camp fire by night, a thin smoke at the noon rest.
             if (pace == Pace.Camped)

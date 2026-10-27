@@ -299,6 +299,11 @@ public static class Threat
         string where = target!.Name;
         Passage.Alarm(town, target);
         local *= Garrison.FlagFactor(town, target) * Elements.Watch(town, out string fog);
+        if (Founding.Flooded(town, town.Tick))
+        {
+            local *= 1 + Founding.Of(town).Tide!.Raid;
+            timing += ", wading the causeway against the tide";
+        }
         if (fog != "") timing += fog;
         if (Garrison.Covered(town, target)) timing += ", where the watch had planted its flag";
 
@@ -382,6 +387,13 @@ public static class Threat
         bool away = Lairs.AwayShare(town) >= l.SoftShare;
         if (town.Tick >= en.NextRaidTick)
         {
+            // An island's raiders wait for a night the causeway lies bare, as long as they wait for anything.
+            if (Founding.Flooded(town, town.Tick) && en.RaidWaited < l.MaxWaitDays)
+            {
+                en.RaidWaited++;
+                if (en.RaidWaited == 1) town.Log(LedgerCategory.War, Importance.Notable, $"Riders of {town.Content.Enemy.Name} reach the shore at dusk to find the causeway under the tide. They wait for the ebb.");
+                return false;
+            }
             if (away || en.RaidWaited >= l.MaxWaitDays) return true;
             en.RaidWaited++;
             if (en.RaidWaited == 1) town.Log(LedgerCategory.War, Importance.Notable, $"Riders of {town.Content.Enemy.Name} watch the gate from the treeline, counting the heroes at home. They do not come tonight.");

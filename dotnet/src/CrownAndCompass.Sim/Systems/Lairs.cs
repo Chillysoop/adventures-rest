@@ -445,6 +445,9 @@ public static class Lairs
         s.BandTarget = null;
         Sightings.Clear(town, Key(s));
         int wait = town.Rng.Range(r.ResettleDays[0], r.ResettleDays[1] + 1);
+        // Each clearing leaves the country quieter: the next tenant takes longer to come.
+        wait = (int)Math.Round(wait * Math.Min(r.QuietMost, 1 + r.Quieter * s.Clearings));
+        s.Clearings++;
         // Folk driven out rather than slain come back sooner.
         if (result.Driven) wait = Math.Max(1, (int)Math.Round(wait * town.Content.Bounties.Term("drive").Resettle));
         s.ResettleTick = town.Tick + wait * SimTime.HoursPerDay;
@@ -518,16 +521,24 @@ public static class Lairs
         var lead = leaders[rng.Range(0, leaders.Count)];
         var escorts = c.Wanderers(s.Def, [0.125, Math.Max(0.25, lead.Cr / 2)]).Where(m => m.Id != lead.Id).ToList();
         var escort = escorts.Count > 0 ? escorts[rng.Range(0, escorts.Count)] : null;
+        // The place is theirs now: the old occupants' rooms hold the newcomers, and the heart its new master.
+        string Line(IReadOnlyList<string> lines, string fallback, int k) =>
+            (lines.Count > 0 ? lines[(int)(Voices.Hash($"resettle:{s.Def.Id}:{lead.Id}", town.Seed, k) % (uint)lines.Count)] : fallback).Replace("{creature}", Library.Prose(lead.Name), StringComparison.Ordinal);
+        var rooms = s.Def.Encounters.Select((e, i) => e.Kind != "combat" || e.Monster == "" ? e
+            : escort != null ? e with { Monster = escort.Id, Text = Line(r.Newcomers, "the newcomers", i) }
+            : new EncounterDef { Kind = "wander", Cr = [0.125, Math.Max(0.25, lead.Cr / 2)], Budget = 100 * tier, Text = Line(r.Newcomers, "the newcomers", i) }).ToList();
         s.Def = s.Def with
         {
             Tier = tier,
             Kind = KindOf(lead.Type, s.Def.Kind),
+            Encounters = rooms,
             Boss = s.Def.Boss with
             {
                 Monster = c.BossOf(lead.Id).Id,
                 Count = [1, 1],
                 Escort = escort?.Id,
                 EscortCount = escort != null ? [2, 3] : null,
+                Text = Line(r.NewMaster, "the new master of the place", -1),
             },
             Loot = [s.Def.Loot[0] + 30 * (tier - s.Def.Tier), s.Def.Loot[1] + 60 * (tier - s.Def.Tier)],
         };
@@ -676,7 +687,9 @@ public static class Lairs
         if (town.Treasury < o.Cost + 600) return null;
         return town.Sites
             .Where(x => !IsWarCamp(town, x) && HoldBlocked(town, x) == null)
-            .OrderBy(x => x.Def.Distance)
+            // The places the town keeps clearing come first: a tower ends the round of clearings.
+            .OrderByDescending(x => x.Clearings >= Rules(town).HoldAfter)
+            .ThenBy(x => x.Def.Distance)
             .ThenBy(x => x.Def.Id, StringComparer.Ordinal)
             .FirstOrDefault();
     }

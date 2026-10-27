@@ -62,7 +62,7 @@ public static class ShipFight
         if (outcome is "won" or "boarded")
         {
             s.Won++;
-            s.Prowess = Math.Min(5, s.Prowess + r.Learn);
+            s.Prowess = Math.Min(5, s.Prowess + (aloft ? r.Learn : Fleet.Rules(town).Learn * 2));
             town.Book(TreasuryAccount.Trade, r.Prize * (1 + (region?.Ring ?? 0)));
             foreach (var a in marines.Select(town.Agent).Where(a => !a.Dead && a.Hero != null)) Notoriety.Deed(town, a, aloft ? "sky" : "sea", r.Fame);
             if (foe.Menace is { } m) m.Power = Math.Max(1, m.Power * (1 - r.MenaceHurt));

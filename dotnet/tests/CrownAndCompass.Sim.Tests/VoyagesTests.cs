@@ -19,6 +19,7 @@ public class VoyagesTests
         sim.RunDays(2);
         t.City.Tier = City.TierIndex(t, "village");
         Assert.NotNull(Fleet.Build(t, "longship"));
+        Hands.Man(t);
         return sim;
     }
 
