@@ -106,6 +106,12 @@
   A wall gives its full strength (`Threat.Fortification`) only manned, a watchman per `tilesPerGuard` of it (`Frontier.Manned`).
   The gate law (`Simulation.SetGate`: open/watched/shut) turns away covert agents (`Blows.Strike`) and strangers who rob an
   open town, at a cost in settlers. Raiders come bigger for a rich town (`Frontier.Lure`). Mood expectations grow with size (`Expect`).
+- Story odds (`Systems/Odds.cs`, stories.json `odds`, `fromTier`/`untilTier`, `oddsCap`): a story's chance is its weight times
+  1 + weight × reading for each reading of the town it names (tier, classes, notables, guilds, refugees, enemy agents, council
+  moles, grudge heat, unrest, wealth, crowds, sickness, watch, gate law, season, zone land); readings only look, never roll.
+  Town tales bind an agent in town (`lurker`, effect `seize`), a council mole (`mole`, `suspicion`), a grudge (`grudge`,
+  `foeHeat`), a guild (`guild`), two notables to mediate between (`rivals`, `notable`/`notable2`), a refugee (`refugee`), a
+  festival and a building on a zone's land (`zone:Commercial`, binds `{place}`). New town events extend these, not new pickers.
 - News diet (`Systems/News.cs`, `content/game/news.json`): only `budget` Notable lines a day from busy kinds (war, stories,
   council and hardship always pass); the rest go Routine into a morning digest line. Write Notable lines as before.
 - The last battle: the champions ride for the big bad's seat only on the mayor's call (`Simulation.CallLastRide`, alert `ride`;

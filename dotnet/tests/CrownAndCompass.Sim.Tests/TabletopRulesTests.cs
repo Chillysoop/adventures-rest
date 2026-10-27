@@ -228,7 +228,8 @@ public class TabletopRulesTests
         var t = sim.Town;
         var d = t.Content.Research.Discoveries.Where(x => x.Requires.Count == 0).OrderBy(x => x.Rank).First();
         t.Research.Revealed[d.Id] = "test";
-        Assert.True(sim.StudyDiscovery(d.Id));
+        // The scholars may already be on it of their own accord.
+        Assert.True(t.Research.Study == d.Id || sim.StudyDiscovery(d.Id));
         int notes = t.Research.Feed.Count(n => n.Icon == "d20");
         for (int i = 0; i < 60 && !Research.IsKnown(t, d.Id); i++)
         {
