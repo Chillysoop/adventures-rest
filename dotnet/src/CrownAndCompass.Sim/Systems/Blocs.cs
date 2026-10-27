@@ -50,6 +50,10 @@ public static class Blocs
 
     public static double Feeling(Town town, string blocId) => town.City.Blocs.Get(blocId, 0);
 
+    private static readonly Dictionary<Zone, string> ZoneNames = Enum.GetValues<Zone>().Distinct().ToDictionary(z => z, z => z.ToString());
+
+    private static string ZoneName(Zone z) => ZoneNames.TryGetValue(z, out var n) ? n : z.ToString();
+
     /// <summary>How much a townsperson belongs to a bloc, 0 to 1.</summary>
     public static double Degree(Town town, BlocDef bloc, Agent a)
     {
@@ -65,8 +69,8 @@ public static class Blocs
                 "hedge" => a.HedgeSpell != "",
                 "refugee" => a.Refugee,
                 "work:holy" => work?.Def.Holy == true,
-                _ when key.StartsWith("work:", StringComparison.Ordinal) => work != null && (work.Def.Id == key[5..] || work.Def.Zone.ToString() == key[5..]),
-                _ when key.StartsWith("home:", StringComparison.Ordinal) => home?.Def.Id == key[5..],
+                _ when key.StartsWith("work:", StringComparison.Ordinal) => work != null && (key.AsSpan(5).SequenceEqual(work.Def.Id) || key.AsSpan(5).SequenceEqual(ZoneName(work.Def.Zone))),
+                _ when key.StartsWith("home:", StringComparison.Ordinal) => home != null && key.AsSpan(5).SequenceEqual(home.Def.Id),
                 _ => false,
             };
             if (match) d += v;

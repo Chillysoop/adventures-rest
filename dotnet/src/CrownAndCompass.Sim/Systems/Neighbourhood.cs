@@ -237,16 +237,30 @@ public static class Neighbourhood
         float[] land = new float[n], rent = new float[n], mood = new float[n], shops = new float[n], access = new float[n];
         var r = Rules(town);
         bool anyShops = false;
-        void Splat(double bx, double by, double reach, Action<int, float> add)
+        // Adds w × (1 − distance/reach) of each value to its array over a disc; a null array is skipped. With set, writes 1 instead.
+        void Splat(double bx, double by, double reach, float[] a, double va, float[]? b = null, double vb = 0, float[]? c = null, double vc = 0, bool set = false)
         {
             int cx = (int)Math.Floor(bx * Systems.Land.Res), cy = (int)Math.Floor(by * Systems.Land.Res), cells = (int)Math.Ceiling(reach * Systems.Land.Res);
+            double reach2 = reach * reach;
             for (int y = Math.Max(0, cy - cells); y <= Math.Min(size - 1, cy + cells); y++)
+            {
+                double dy = (y + 0.5) / Systems.Land.Res - by;
                 for (int x = Math.Max(0, cx - cells); x <= Math.Min(size - 1, cx + cells); x++)
                 {
-                    double dx = (x + 0.5) / Systems.Land.Res - bx, dy = (y + 0.5) / Systems.Land.Res - by;
-                    double d = Math.Sqrt(dx * dx + dy * dy);
-                    if (d < reach) add(y * size + x, (float)(1 - d / reach));
+                    double dx = (x + 0.5) / Systems.Land.Res - bx, d2 = dx * dx + dy * dy;
+                    if (d2 >= reach2) continue;
+                    int i = y * size + x;
+                    if (set)
+                    {
+                        a[i] = 1;
+                        continue;
+                    }
+                    float w = (float)(1 - Math.Sqrt(d2) / reach);
+                    a[i] += (float)va * w;
+                    if (b != null) b[i] += (float)vb * w;
+                    if (c != null) c[i] += (float)vc * w;
                 }
+            }
         }
         foreach (var b in town.Buildings)
         {
@@ -255,8 +269,8 @@ public static class Neighbourhood
             if (b.Def.Zone == Zone.Commercial)
             {
                 anyShops = true;
-                Splat(bx, by, r.Shops.Near, (i, w) => shops[i] += w);
-                Splat(bx, by, r.Shops.Reach, (i, _) => access[i] = 1);
+                Splat(bx, by, r.Shops.Near, shops, 1);
+                Splat(bx, by, r.Shops.Reach, access, 1, set: true);
             }
             double l = 0, rt = 0, m = 0;
             foreach (var k in KindsOf(b.Def))
@@ -267,12 +281,7 @@ public static class Neighbourhood
                     m += lean.Mood;
                 }
             if (l == 0 && rt == 0 && m == 0) continue;
-            Splat(bx, by, r.Reach, (i, w) =>
-            {
-                land[i] += (float)l * w;
-                rent[i] += (float)rt * w;
-                mood[i] += (float)m * w;
-            });
+            Splat(bx, by, r.Reach, land, l, rent, rt, mood, m);
         }
         // Shops: the first few close by help, past them each is noise; none in reach is a long walk.
         var sh = r.Shops;
