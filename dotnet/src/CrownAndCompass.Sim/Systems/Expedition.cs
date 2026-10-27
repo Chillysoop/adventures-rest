@@ -200,10 +200,13 @@ public static partial class Expedition
         public string Type => Lib?.Type is { Length: > 0 } t ? t : Def.Type;
     }
 
-    private sealed record Check(Combatant Who, int Roll, int Total, string With = "")
+    private sealed record Check(Combatant Who, int Roll, int Total, string With = "", int Edge = 0)
     {
-        /// <summary>The hero's name, with the friend or rival who swayed the roll.</summary>
-        public string Name => With == "" ? Who.Agent.GivenName : $"{Who.Agent.GivenName}, {With},";
+        /// <summary>The hero's name, with the friend or rival who swayed the roll, and whether their training gave them advantage or left them at a disadvantage.</summary>
+        public string Name =>
+            Who.Agent.GivenName
+            + (With == "" ? "" : $", {With},")
+            + (Edge > 0 ? $" (a {Who.Sheet.Cls.Name}'s work, advantage)" : Edge < 0 ? " (nobody trained for it, disadvantage)" : "");
     }
 
     private static readonly Dictionary<string, string> SkillAbility = new()
@@ -383,10 +386,19 @@ public static partial class Expedition
                     best = bonus;
                 }
             }
+            // The right hero for the job rolls with advantage; a party with nobody trained for it rolls with disadvantage.
+            int trained = who!.Sheet.Cls.Skills.GetValueOrDefault(kind, 0);
+            var d = _content.Dungeons.Checks;
+            int edge = kind == SkillKind.Hazard ? 0 : trained >= d.Specialist ? 1 : trained <= d.Untrained ? -1 : 0;
             int roll = _rng.D20();
+            if (edge != 0)
+            {
+                int other = _rng.D20();
+                roll = edge > 0 ? Math.Max(roll, other) : Math.Min(roll, other);
+            }
             // A friend beside them steadies the hand; a rival in the party spoils it.
-            var (chem, with) = Regard.Chemistry(_content.Regard, who!.Agent, Standing.Select(c => c.Agent));
-            return new Check(who, roll, roll + best + chem, with);
+            var (chem, with) = Regard.Chemistry(_content.Regard, who.Agent, Standing.Select(c => c.Agent));
+            return new Check(who, roll, roll + best + chem, with, edge);
         }
 
         /// <summary>The mayor's word over the sending stone: a bonus (or a penalty) on every check and blow at the site.</summary>
@@ -496,11 +508,12 @@ public static partial class Expedition
                 case "trap":
                 {
                     var check = BestCheck(SkillKind.Trap);
+                    int dc = e.Dc + _content.Dungeons.Checks.Harder.GetValueOrDefault(e.Kind);
                     string who = check.Name;
-                    if (check.Total >= e.Dc)
+                    if (check.Total >= dc)
                     {
-                        Log($"{Cap(e.Text)}: {who} spots it and disarms it (d20 {check.Roll}, {check.Total} vs DC {e.Dc}).");
-                        Mark("trap", check, e.Dc);
+                        Log($"{Cap(e.Text)}: {who} spots it and disarms it (d20 {check.Roll}, {check.Total} vs DC {dc}).");
+                        Mark("trap", check, dc);
                         Xp += 25;
                     }
                     else
@@ -509,9 +522,9 @@ public static partial class Expedition
                         int dmg = 0;
                         for (int k = 0; k < Scale; k++) dmg += _rng.Roll(1, e.DamageDie) + _rng.Roll(1, e.DamageDie);
                         Hurt(victim, dmg);
-                        Log($"{Cap(e.Text)}: {who} misses it (d20 {check.Roll}, {check.Total} vs DC {e.Dc}) and {victim.Agent.GivenName} takes {dmg} damage" +
+                        Log($"{Cap(e.Text)}: {who} misses it (d20 {check.Roll}, {check.Total} vs DC {dc}) and {victim.Agent.GivenName} takes {dmg} damage" +
                             (victim.Down ? " and drops." : "."));
-                        Mark("trap", check, e.Dc);
+                        Mark("trap", check, dc);
                         if (victim.Down) AfterCombat();
                     }
                     return;
@@ -522,7 +535,7 @@ public static partial class Expedition
                     foreach (var c in Standing)
                     {
                         int roll = _rng.D20();
-                        if (roll + SkillBonus(c, SkillKind.Hazard) < e.Dc)
+                        if (roll + SkillBonus(c, SkillKind.Hazard) < e.Dc + _content.Dungeons.Checks.Harder.GetValueOrDefault(e.Kind))
                         {
                             int dmg = 0;
                             for (int k = 0; k < Scale; k++) dmg += _rng.Roll(1, e.DamageDie);
@@ -539,20 +552,21 @@ public static partial class Expedition
                 case "parley":
                 {
                     var check = BestCheck(e.Kind == "puzzle" ? SkillKind.Puzzle : SkillKind.Parley);
+                    int dc = e.Dc + _content.Dungeons.Checks.Harder.GetValueOrDefault(e.Kind);
                     string who = check.Name;
-                    if (check.Total >= e.Dc)
+                    if (check.Total >= dc)
                     {
                         int gold = _rng.Range(e.Gold[0], e.Gold[1] + 1);
                         Gold += gold;
                         Xp += 50;
                         if (e.Kind == "parley") _skipNextCombat = true;
-                        Log($"{Cap(e.Text)}. {who} handles it (d20 {check.Roll}, {check.Total} vs DC {e.Dc}): {gold} gold{(e.Kind == "parley" ? " and a safer path" : "")}.");
-                        Mark(e.Kind, check, e.Dc);
+                        Log($"{Cap(e.Text)}. {who} handles it (d20 {check.Roll}, {check.Total} vs DC {dc}): {gold} gold{(e.Kind == "parley" ? " and a safer path" : "")}.");
+                        Mark(e.Kind, check, dc);
                     }
                     else
                     {
-                        Log($"{Cap(e.Text)}. {who} gets nowhere (d20 {check.Roll}, {check.Total} vs DC {e.Dc}).");
-                        Mark(e.Kind, check, e.Dc);
+                        Log($"{Cap(e.Text)}. {who} gets nowhere (d20 {check.Roll}, {check.Total} vs DC {dc}).");
+                        Mark(e.Kind, check, dc);
                     }
                     return;
                 }
@@ -1927,6 +1941,7 @@ public static partial class Expedition
                 return true;
             }
             Raise(site, $"{check.Name} kicks a pail in the dark (d20 {check.Roll}, {check.Total} vs DC {dc})");
+            Mark("sneak", check, dc);
             return false;
         }
 
@@ -1961,6 +1976,7 @@ public static partial class Expedition
                     continue;
                 }
                 Raise(site, $"{check.Name} fumbles {what} on the vault (d20 {check.Roll}, {check.Total} vs DC {dc})");
+                Mark("vault", check, dc);
                 if (Alarm >= h.AlarmMax) return false;
             }
             return true;

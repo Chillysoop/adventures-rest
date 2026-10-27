@@ -190,17 +190,20 @@ public static partial class Expedition
             double underdog = Math.Max(0, site.Tier - avg);
             var leader = Party[0].Agent;
             bool bold = leader.Has(Trait.HotTempered) || leader.Has(Trait.Ambitious);
-            var options = new List<(string Id, double W)> { ("storm", a.Storm.Weight + (bold ? a.Storm.Bold : 0)) };
+            // The party's make-up leans the choice: the classes that suit a way in, and a big company's patience for a siege.
+            double Lean(DoorDef d) =>
+                (Party.Any(c => d.Classes.Contains(c.Sheet.Cls.Id)) ? d.Class : 0) + (Party.Count >= d.Crowd ? d.Crowded : 0);
+            var options = new List<(string Id, double W)> { ("storm", a.Storm.Weight + (bold ? a.Storm.Bold : 0) + Lean(a.Storm)) };
             if (!bold)
             {
                 var quiet = Standing.Select(c => SkillBonus(c, SkillKind.Trap)).DefaultIfEmpty(0).Max();
                 if (Party.Count <= a.Sneak.MaxParty && quiet >= a.Sneak.Min)
-                    options.Add(("sneak", a.Sneak.Weight + (mapped ? a.Sneak.Mapped : 0) + underdog * a.Sneak.Underdog));
+                    options.Add(("sneak", Lean(a.Sneak) + a.Sneak.Weight + (mapped ? a.Sneak.Mapped : 0) + underdog * a.Sneak.Underdog));
                 var voice = Standing.Select(c => SkillBonus(c, SkillKind.Parley)).DefaultIfEmpty(0).Max();
                 if (canParley && voice >= a.Parley.Min && _content.Monster(site.Boss.Monster).Int >= a.Parley.MinInt)
-                    options.Add(("parley", a.Parley.Weight + underdog * a.Parley.Underdog));
+                    options.Add(("parley", Lean(a.Parley) + a.Parley.Weight + underdog * a.Parley.Underdog));
                 if (Party.Count >= a.Siege.MinParty && a.Siege.Kinds.Contains(site.Kind))
-                    options.Add(("siege", a.Siege.Weight + (mapped ? a.Siege.Mapped : 0) + underdog * a.Siege.Underdog));
+                    options.Add(("siege", Lean(a.Siege) + a.Siege.Weight + (mapped ? a.Siege.Mapped : 0) + underdog * a.Siege.Underdog));
             }
             var pick = options.Count == 1 ? options[0] : options.OrderByDescending(o => o.W + _rng.Next() * a.Noise).First();
             Approach = pick.Id;

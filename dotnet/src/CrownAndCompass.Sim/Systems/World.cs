@@ -687,7 +687,7 @@ public static class World
             probe = probe with { Habitats = habitats };
         }
 
-        int dc = 11 + (level + 1) / 2;
+        int dc = content.Dungeons.Checks.Dc + (level + 1) / 2;
         int die = level <= 1 ? 6 : level <= 3 ? 8 : level <= 6 ? 10 : 12;
         var deck = new List<EncounterDef>();
         foreach (var k in kind.Deck)

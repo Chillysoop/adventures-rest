@@ -28,6 +28,44 @@ public static class Muster
         return mine == null || Intel.Members(town, mine).Count + recruited < Rules(town).MaxMembers;
     }
 
+    /// <summary>The part a class plays in a party: front line, healer, caster or scout (or none of the four).</summary>
+    public static string Role(ClassDef c) =>
+        c.Card == "tank" ? "front" : c.Card == "healer" ? "healer" : c.Card == "scout" ? "scout" : c.Spell ? "caster" : "";
+
+    private static readonly string[] Roles = ["front", "healer", "caster", "scout"];
+
+    /// <summary>
+    /// Fill a party from candidates in the order given: its own company first, then whoever covers a part nobody plays
+    /// yet, then the rest while it is under its core size and not yet strong enough. Past the core only its own and those
+    /// filling a missing part join, up to the most it takes. Candidates who don't fit now never will, so they drop out.
+    /// </summary>
+    public static void Fill(List<Agent> members, IEnumerable<Agent> candidates, int core, int most, Func<Agent, bool> fits, Func<bool>? enough = null)
+    {
+        string? company = members[0].Hero!.PartyName;
+        var left = candidates.ToList();
+        while (members.Count < most && left.Count > 0)
+        {
+            var missing = Roles.Where(r => !members.Any(m => Role(m.Hero!.Cls) == r)).ToHashSet();
+            bool Own(Agent h) => company != null && h.Hero!.PartyName == company;
+            bool Fills(Agent h) => missing.Contains(Role(h.Hero!.Cls));
+            Agent? pick = null;
+            foreach (var h in left.OrderByDescending(Own).ThenByDescending(Fills).ToList())
+            {
+                if (fits(h))
+                {
+                    pick = h;
+                    break;
+                }
+                left.Remove(h);
+            }
+            if (pick == null) break;
+            bool room = members.Count < core && !(enough?.Invoke() ?? false);
+            if (!Own(pick) && !Fills(pick) && !room) break;
+            members.Add(pick);
+            left.Remove(pick);
+        }
+    }
+
     /// <summary>A name no company has worn, sharing no word with a company that still rides, and never one word twice ("Lantern Lanterns").</summary>
     public static string Name(Town town)
     {

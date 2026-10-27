@@ -1,5 +1,6 @@
 {
   "_doc": "Dungeon maps (Systems/Dungeons.cs). Every site's delve is a map drawn once from its own dice: a main way of rooms (its deck, 2 + tier of them as before) to the heart, side rooms off it (sideRooms by tier, from the rest of the deck or caches of the hoard's gold), and a feature in some rooms. Cleared rooms stay cleared between trips; the occupants react to the time between (reactions by site kind). Companies choose an approach at the door (approaches). Clearing a site of tier deeps.minTier or more may open its deeps: a new site a tier harder below it, with a sure find in its hoard.",
+  "checks": { "_doc": "Delve checks: a new site's trap and hazard DC is dc plus half its level. The hero who rolls has advantage when their class training (classes.json skills) is specialist or more, disadvantage when it is untrained or less, so a party with the right hero for the room does far better. harder adds to a room's own DC by kind.", "dc": 13, "specialist": 3, "untrained": 0, "harder": { "parley": 2, "trap": 1, "hazard": 1 } },
   "sideRooms": [0, 1, 1, 2, 2, 2, 3],
   "sideHealthy": 0.6,
   "findDc": 11,
@@ -84,11 +85,12 @@
   },
   "approaches": {
     "noise": 0.8,
-    "_doc": "How a company goes in, chosen at the door by weight plus up to noise: storm (fight room by room), sneak (the heist's slip-past checks; rooms passed stay held), parley (talk the master down, as the talk-down terms), siege (camp outside days, thinning every fight by swell, with a sally each night). A mapped place (scouted, or a company came home from it) adds mapped to sneak and siege. Weaker parties lean on underdog per level they are short.",
+    "_doc": "How a company goes in, chosen at the door by weight plus up to noise: storm (fight room by room), sneak (the heist's slip-past checks; rooms passed stay held), parley (talk the master down, as the talk-down terms), siege (camp outside days, thinning every fight by swell, with a sally each night). A mapped place (scouted, or a company came home from it) adds mapped to sneak and siege. Weaker parties lean on underdog per level they are short. The party's make-up adds class when it has a hero of one of classes, and crowded when it is crowd heroes or more.",
     "storm": { "weight": 1.0, "bold": 0.4 },
-    "sneak": { "weight": 0.5, "min": 5, "mapped": 0.4, "underdog": 0.3, "maxParty": 4 },
-    "parley": { "weight": 0.4, "min": 3, "underdog": 0.3, "minInt": 6 },
-    "siege": { "weight": 0.4, "mapped": 0.3, "underdog": 0.2, "minParty": 3, "days": 2, "swell": -1, "sally": 0.4, "kinds": ["tribe", "rivals"] },
+    "sneak": { "weight": 0.5, "min": 5, "mapped": 0.4, "underdog": 0.3, "maxParty": 4, "classes": ["rogue", "monk", "ranger"], "class": 0.8 },
+    "parley": { "weight": 0.4, "min": 3, "underdog": 0.3, "minInt": 6, "classes": ["bard", "warlock", "paladin", "reliquarian"], "class": 0.6 },
+    "siege": { "weight": 0.4, "mapped": 0.3, "underdog": 0.2, "minParty": 3, "crowd": 5, "crowded": 0.9,
+      "days": 2, "swell": -1, "sally": 0.4, "kinds": ["tribe", "rivals", "schemers"] },
     "texts": {
       "storm": "They go in the front way, weapons out.",
       "sneak": "{name} leads them in by a back way, quiet as cats.",

@@ -63,6 +63,14 @@ public sealed record DoorDef
     public int Swell { get; init; }
     public double Sally { get; init; }
     public List<string> Kinds { get; init; } = [];
+
+    /// <summary>Added once the party has a hero of one of these classes (rogues sneak, bards talk).</summary>
+    public List<string> Classes { get; init; } = [];
+    public double Class { get; init; }
+
+    /// <summary>Added for a party of at least this many (big companies sit down to a siege).</summary>
+    public int Crowd { get; init; } = 99;
+    public double Crowded { get; init; }
 }
 
 public sealed record ApproachRules
@@ -86,8 +94,23 @@ public sealed record DeepsRules
     public string Found { get; init; } = "";
 }
 
+/// <summary>Checks in a delve: a new site's trap and hazard DC base (plus half its level), and who rolls with advantage or disadvantage.</summary>
+public sealed record CheckRules
+{
+    public int Dc { get; init; } = 11;
+
+    /// <summary>Class training (classes.json skills) at or above which the hero rolls with advantage, at or below which with disadvantage.</summary>
+    public int Specialist { get; init; } = 99;
+    public int Untrained { get; init; } = -99;
+
+    /// <summary>Added to a room's own DC at the roll, by its kind (trap, hazard, puzzle, parley).</summary>
+    public Dictionary<string, int> Harder { get; init; } = [];
+}
+
 public sealed record DungeonRules
 {
+    public CheckRules Checks { get; init; } = new();
+
     /// <summary>Side rooms off the main way, by tier (the last for any higher).</summary>
     public List<int> SideRooms { get; init; } = [];
 
@@ -359,6 +382,8 @@ public static class Dungeons
         };
     }
 
+    private static string Lower(string s) => s.Length == 0 ? s : char.ToLowerInvariant(s[0]) + s[1..];
+
     private static string Cap(string s) => s.Length == 0 ? s : char.ToUpperInvariant(s[0]) + s[1..];
 
     // After a delve ------------------------------------------------------------------------------
@@ -366,6 +391,11 @@ public static class Dungeons
     /// <summary>A party came home: the town knows the place's ways now, and a cleared site may open its deeps.</summary>
     public static void Home(Town town, Party party, SiteState s, ExpeditionResult result)
     {
+        // What the occupants did since the last company came is news in town too.
+        var reacted = result.Beats.Where(b => b.Kind == "react" && b.Line < result.Lines.Count).Select(b => result.Lines[b.Line]).Distinct().ToList();
+        if (reacted.Count > 0)
+            town.Log(LedgerCategory.Quest, Importance.Notable,
+                $"The {party.Name} bring word from {s.Def.Name}: {Lower(string.Join(" ", reacted))}", party.Members.ToList());
         if (result.Outcome != ExpeditionOutcome.Wiped && s.Dungeon is { } d && !party.Withheld) d.Mapped = true;
         if (result.Outcome == ExpeditionOutcome.Cleared && !result.Talked && !result.Driven) Deeps(town, party, s);
     }

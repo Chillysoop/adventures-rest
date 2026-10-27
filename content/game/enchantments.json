@@ -62,7 +62,7 @@
     "spell-scroll-8th-level": { "scrolls": 1 },
     "spell-scroll-9th-level": { "scrolls": 1 }
   },
-  "events": { "deck-of-many-things": "deck-of-many-things" },
+  "events": { "deck-of-many-things": "deck-of-many-things", "ring-of-three-wishes": "ring-of-three-wishes" },
   "found": {
     "adamantine-armor": ["mountain", "caves", "underworld"],
     "aegis-of-the-founding-stone": ["mountain", "caves", "underworld"],
@@ -549,7 +549,6 @@
     { "ref": "ring-of-elemental-command", "kind": "blast", "element": "fire", "dice": "8d6", "targets": 4, "uses": 1 },
     { "ref": "ring-of-invisibility", "kind": "first" },
     { "ref": "ring-of-invisibility", "kind": "guard" },
-    { "ref": "ring-of-three-wishes", "kind": "heal", "dice": "10d8", "uses": 1 },
     { "ref": "ring-of-animal-influence", "kind": "rout", "targets": 3, "uses": 1 },
     { "ref": "mantle-of-spell-resistance", "kind": "resist", "element": "" },
     { "ref": "periapt-of-wound-closure", "kind": "regen", "dice": "1d4" },

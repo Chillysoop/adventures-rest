@@ -1214,7 +1214,9 @@ public sealed record StandingRules
 public sealed record CompanyRules
 {
     public int MinMembers { get; init; } = 3;
-    public int MaxMembers { get; init; } = 4;
+    /// <summary>Heroes a company takes on as they come; past this it only takes its own and heroes who cover a part nobody plays (front line, healer, caster, scout), up to <see cref="MaxMembers"/>.</summary>
+    public int Core { get; init; } = 4;
+    public int MaxMembers { get; init; } = 6;
 
     /// <summary>Heroes only band together within this many levels of their leader.</summary>
     public int LevelSpread { get; init; } = 2;
