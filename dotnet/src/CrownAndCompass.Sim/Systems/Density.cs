@@ -85,7 +85,7 @@ public static class Density
 
     /// <summary>
     /// The density the stand-in mayor zones a cell to: the densest whose reach the cell lies within, so the old town
-    /// rises first and the dense core spreads outward as the town grows, never past its ward's <see cref="WardDef.Densest"/>.
+    /// rises first and the dense core spreads outward as the town grows, never past <see cref="NeighbourhoodRules.OuterDensest"/> beyond the city wall's ring.
     /// </summary>
     public static int Target(Town town, int cell, double[] reaches)
     {
@@ -98,7 +98,7 @@ public static class Density
                 level = i;
                 break;
             }
-        return Math.Min(level, Land.WardAt(town, cell).Densest);
+        return Land.RingAt(town, cell) >= City.WallRings ? Math.Min(level, Neighbourhood.Rules(town).OuterDensest) : level;
     }
 
     public static int Target(Town town, double x, double y)
@@ -112,7 +112,7 @@ public static class Density
 
     /// <summary>
     /// Daily, for the stand-in mayor: zone the homes and shops nearest the hall denser where the charter says the
-    /// ward should be, a round patch at a time, so the old core rises first and the sprawl follows it out.
+    /// town should be, a round patch at a time, so the old core rises first and the sprawl follows it out.
     /// </summary>
     public static void StandIn(Town town)
     {

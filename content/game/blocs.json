@@ -1,0 +1,30 @@
+{
+  "_doc": "Town-wide blocs (Systems/Blocs.cs): who speaks for a kind of townsfolk wherever they live, and the kinds of choice they like and dislike (story option tags). A townsperson belongs to several blocs at once, each to a degree: by where they work (work:<zone>, work:holy, work:<building id>), the house they live in (home:<house id>), and who they are (devout, hedge, refugee). A bloc speaks once its members add up to least. step is the feeling a choice moves per tag liked less each disliked; decay the share kept each day; comfort and mood the house contentment and resident mood at full feeling (+-100).",
+  "step": 6,
+  "decay": 0.98,
+  "comfort": 0.1,
+  "mood": 3,
+  "least": 3,
+  "blocs": [
+    { "id": "householders", "voice": "the householders", "icon": "ui-house", "likes": ["order", "caution"], "dislikes": ["guile"],
+      "members": { "home:house": 1, "home:timber_house": 1, "home:tall_house": 0.6 } },
+    { "id": "stallholders", "voice": "the stallholders", "icon": "ui-trade", "likes": ["coin", "freedom"], "dislikes": ["harsh"],
+      "members": { "work:Commercial": 1 } },
+    { "id": "guilds", "voice": "the guild masters", "icon": "tools", "likes": ["order", "coin"], "dislikes": ["generous"],
+      "members": { "work:Industry": 1 } },
+    { "id": "farmers", "voice": "the farmers", "icon": "bread", "likes": ["caution", "mercy"], "dislikes": ["coin"],
+      "members": { "work:Farmland": 1 } },
+    { "id": "temple", "voice": "the temple wardens", "icon": "ui-holy", "likes": ["faith", "mercy"], "dislikes": ["guile", "harsh"],
+      "members": { "work:holy": 1, "devout": 0.6 } },
+    { "id": "gentry", "voice": "the manor houses", "icon": "regalia-circlet", "likes": ["order", "harsh"], "dislikes": ["generous", "freedom"],
+      "members": { "home:manor": 1, "home:townhouse": 0.5 } },
+    { "id": "tenements", "voice": "the tenement folk", "icon": "population", "likes": ["generous", "mercy"], "dislikes": ["harsh", "coin"],
+      "members": { "home:tenement": 1, "refugee": 0.5 } },
+    { "id": "wharves", "voice": "the wharf crews", "icon": "inst-harbour", "likes": ["freedom", "guile"], "dislikes": ["order"],
+      "members": { "work:fishery": 1, "work:harbour": 1, "work:river_harbour": 1 } },
+    { "id": "inns", "voice": "the innkeepers and carters", "icon": "ale", "likes": ["coin", "valor"], "dislikes": ["caution"],
+      "members": { "work:tavern": 1, "work:inn": 1 } },
+    { "id": "scholars", "voice": "the scholars and hedge mages", "icon": "books", "likes": ["freedom", "guile"], "dislikes": ["harsh"],
+      "members": { "hedge": 1, "work:library": 1, "work:mage_tower": 1, "work:observatory": 1, "work:alchemists_quarter": 1 } }
+  ]
+}

@@ -174,9 +174,9 @@ public static class Voices
     {
         if (tags.Count == 0 || result is StoryResult.Certain or StoryResult.Ignored) return "";
         var (heroes, angry) = Regard.Reactions(town, tags);
-        var (wards, angryWards) = Wards.Reactions(town, tags);
-        var pleased = heroes.Select(h => h.GivenName).Take(3).Concat(wards.Select(w => w.Name)).ToList();
-        var angered = angry.Select(h => h.GivenName).Take(3).Concat(angryWards.Select(w => w.Name)).ToList();
+        var (blocs, angryBlocs) = Blocs.Reactions(town, tags);
+        var pleased = heroes.Select(h => h.GivenName).Take(3).Concat(blocs.Select(b => b.Voice)).ToList();
+        var angered = angry.Select(h => h.GivenName).Take(3).Concat(angryBlocs.Select(b => b.Voice)).ToList();
         bool won = result is StoryResult.Critical or StoryResult.Success or StoryResult.Partial;
         var t = Rules(town.Content).Table;
         uint h = Hash("table", town.Tick, (int)result);

@@ -171,7 +171,7 @@ public static class Land
     {
         town.Plan.Fresh();
         // The largest the townsfolk build in the zone, so a count of one means anything of theirs fits.
-        var probe = town.Content.Buildings.Where(d => d.Zone == zone && d.Buildable && d.Wards.Count == 0 && d.Density == 0).OrderByDescending(d => Footprint(d).W * Footprint(d).D).ThenBy(d => d.Id, StringComparer.Ordinal).FirstOrDefault()
+        var probe = town.Content.Buildings.Where(d => d.Zone == zone && d.Buildable && d.Site == null && d.Density == 0).OrderByDescending(d => Footprint(d).W * Footprint(d).D).ThenBy(d => d.Id, StringComparer.Ordinal).FirstOrDefault()
             ?? new BuildingDef { Id = "", Name = "", Zone = zone };
         var plan = town.Plan;
         var (w, d) = Footprint(probe);
@@ -315,27 +315,33 @@ public static class Land
         var (w, d) = Footprint(def);
         var plan = town.Plan;
         plan.Fresh();
-        // Buildings kept to certain wards search on their own; the rest share a search per zone and size.
+        // Buildings that ask something of their site search afresh each time (the ground round them changes as the town grows);
+        // those kept to a density or crop search on their own; the rest share a search per zone and size.
         byte crop = Farming.CropOf(town, def);
-        var key = (zone, w, d, def.Wards.Count == 0 && def.Density == 0 && crop == 0 && def.Id != town.Content.Sky.Heights.Building ? "" : def.Id);
+        if (def.Site != null) return Search(town, def, w, d, zone, crop) is { } fresh ? new Lot(town.Lots.Count, fresh.X, fresh.Y) { W = w, D = d, Yaw = fresh.Yaw, Zone = zone ?? Zone.Civic } : null;
+        var key = (zone, w, d, def.Density == 0 && crop == 0 && def.Id != town.Content.Sky.Heights.Building ? "" : def.Id);
         if (!plan.Found.TryGetValue(key, out var spot)) plan.Found[key] = spot = Search(town, def, w, d, zone, crop);
         // A fresh lot each time: the caller may set its zone, and claims it under the next id.
         return spot == null ? null : new Lot(town.Lots.Count, spot.X, spot.Y) { W = w, D = d, Yaw = spot.Yaw, Zone = zone ?? Zone.Civic };
     }
 
     /// <summary>
-    /// As <see cref="Find"/>, but in the cheapest ward to live in that has room: where the council puts the houses it lets
-    /// to working folk, so they can pay the rent.
+    /// As <see cref="Find"/>, but on the cheapest ground to live on that has room (<see cref="Neighbourhood.Rent(Town, double, double)"/>):
+    /// where the council puts the houses it lets to working folk, so they can pay the rent.
     /// </summary>
     public static Lot? FindCheapest(Town town, BuildingDef def, Zone zone)
     {
         var (w, d) = Footprint(def);
-        var fronts = Streets.Fronts(town, d, zone);
-        foreach (double rent in town.Content.City.Wards.Select(x => x.Rent).Distinct().Order())
-            foreach (var (_, x, y, yaw) in fronts)
-                if (WardAt(town, (int)(y * Res) * Size + (int)(x * Res)).Rent == rent && City.Allows(town, def, x, y) && Fits(town, x, y, w, d, yaw, zone))
-                    return new Lot(town.Lots.Count, x, y) { W = w, D = d, Yaw = yaw, Zone = zone };
-        return null;
+        Lot? best = null;
+        double bestRent = double.MaxValue;
+        foreach (var (_, x, y, yaw) in Streets.Fronts(town, d, zone))
+        {
+            double rent = Js.Round(Neighbourhood.Rent(town, x, y) * 20) / 20;
+            if (rent >= bestRent || !City.Allows(town, def, x, y) || !Fits(town, x, y, w, d, yaw, zone)) continue;
+            bestRent = rent;
+            best = new Lot(town.Lots.Count, x, y) { W = w, D = d, Yaw = yaw, Zone = zone };
+        }
+        return best;
     }
 
     private static Lot? Search(Town town, BuildingDef def, int w, int d, Zone? zone, byte crop)
@@ -498,23 +504,23 @@ public static class Land
         return plan.UnderWall[i];
     }
 
-    /// <summary>The ward a cell's middle lies in (<see cref="City.WardOf(Town, double, double)"/>), kept for the plan's life.</summary>
-    public static WardDef WardAt(Town town, int i)
+    /// <summary>The ring a cell's middle lies in (<see cref="City.Ring(Town, double, double)"/>), kept for the plan's life.</summary>
+    public static int RingAt(Town town, int i)
     {
         var plan = town.Plan;
-        if (plan.Wards == null)
+        if (plan.Rings == null)
         {
-            plan.Wards = new WardDef[Size * Size];
-            for (int c = 0; c < plan.Wards.Length; c++) plan.Wards[c] = City.WardOf(town, (c % Size + 0.5) / Res, (c / Size + 0.5) / Res);
+            plan.Rings = new byte[Size * Size];
+            for (int c = 0; c < plan.Rings.Length; c++) plan.Rings[c] = (byte)City.Ring(town, (c % Size + 0.5) / Res, (c / Size + 0.5) / Res);
         }
-        return plan.Wards[i];
+        return plan.Rings[i];
     }
 
     /// <summary>The cells decorations stand on (null when there are none): the brush leaves those unpainted as gardens.</summary>
     private static bool[]? Gardens(Town town) => Decor.Cells(town);
 
     /// <summary>Whether a cell lies in a ring the town's charter reaches (<see cref="City.IsOpen(Town, double, double)"/> at its middle).</summary>
-    public static bool Open(Town town, int i) => City.RingOpen(town, WardAt(town, i).Ring) && Workings.Cells(town)[i] == 0;
+    public static bool Open(Town town, int i) => City.RingOpen(town, RingAt(town, i)) && Workings.Cells(town)[i] == 0;
 
     /// <summary>
     /// Zone a round patch of open ground, centred on the open cell in a ring the charter reaches with the lowest
@@ -630,9 +636,9 @@ public sealed class LandPlan
     [field: NotSaved]
     public int BoundsSeen { get; set; } = -1;
 
-    /// <summary>The ward each cell lies in (<see cref="Land.WardAt"/>).</summary>
+    /// <summary>The ring each cell lies in (<see cref="Land.RingAt"/>).</summary>
     [field: NotSaved]
-    public WardDef[]? Wards { get; set; }
+    public byte[]? Rings { get; set; }
 
     /// <summary>Whether each cell lies on the strip kept clear along the wall lines (<see cref="Land.OnWallStrip"/>).</summary>
     [field: NotSaved]

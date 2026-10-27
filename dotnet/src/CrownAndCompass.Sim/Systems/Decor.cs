@@ -115,9 +115,10 @@ public sealed record DecorRules
     public double ContentCap { get; init; } = 0.1;
     public double ContentFloor { get; init; } = -0.05;
 
-    /// <summary>Land dearer in a ward per point of its buildings' average appeal, up to a share.</summary>
-    public double WardPerAppeal { get; init; } = 0.02;
-    public double WardCap { get; init; } = 0.15;
+    /// <summary>Land dearer per point of the neighbourhood's appeal (the streets round a lot, out to PrestigeReach tiles), up to a share.</summary>
+    public double PrestigePerAppeal { get; init; } = 0.02;
+    public double PrestigeCap { get; init; } = 0.15;
+    public double PrestigeReach { get; init; } = 6;
 
     /// <summary>Watch strength when every building is lit.</summary>
     public double LightWatch { get; init; } = 0.2;
@@ -194,8 +195,6 @@ public sealed class DecorState
         public readonly double[] Talk = new double[buildings];
         public double LitShare;
 
-        /// <summary>Each ward's buildings' average appeal, by ward id.</summary>
-        public readonly Dictionary<string, double> Wards = [];
     }
 }
 
@@ -412,8 +411,6 @@ public static class Decor
                 if (f.Light[b.Id] >= 0.3) lit++;
             }
             f.LitShare = n > 0 ? (double)lit / n : 0;
-            foreach (var g in town.Buildings.Where(b => b.Complete).GroupBy(b => City.WardOf(town, town.Lot(b.LotId)).Id))
-                f.Wards[g.Key] = g.Average(b => f.Appeal[b.Id]);
         }
         s.Cached = f;
         return f;
@@ -482,12 +479,14 @@ public static class Decor
         return Math.Clamp(AppealOf(town, house) * r.ContentPerAppeal, r.ContentFloor, r.ContentCap);
     }
 
-    /// <summary>How much dearer land is in a ward its buildings make pleasant, as a multiplier (1 for none): the town sells its plots for more.</summary>
-    public static double Prestige(Town town, string wardId)
+    /// <summary>How much dearer land is where the streets round it are pleasant, as a multiplier (1 for none): the town sells its plots for more.</summary>
+    public static double Prestige(Town town, Lot lot)
     {
-        if (town.Decor.Pieces.Count == 0 || !Fields(town).Wards.TryGetValue(wardId, out double appeal)) return 1;
+        if (town.Decor.Pieces.Count == 0) return 1;
         var r = Rules(town);
-        return 1 + Math.Clamp(appeal * r.WardPerAppeal, 0, r.WardCap);
+        double reach = r.PrestigeReach / 2, appeal = AppealAt(town, lot.X, lot.Y);
+        foreach (var (dx, dy) in new[] { (1, 0), (-1, 0), (0, 1), (0, -1) }) appeal += AppealAt(town, lot.X + dx * reach, lot.Y + dy * reach);
+        return 1 + Math.Clamp(appeal / 5 * r.PrestigePerAppeal, 0, r.PrestigeCap);
     }
 
     /// <summary>Added to how much each watchman counts: lit streets and the stocks.</summary>

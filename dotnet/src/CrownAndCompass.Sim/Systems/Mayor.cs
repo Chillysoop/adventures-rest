@@ -33,7 +33,7 @@ public static class Mayor
         CommissionHousing(town);
     }
 
-    /// <summary>Keep a few lots of each zone vacant: in a ward that favours the zone first, then near the hall (or far out, for fields and workshops).</summary>
+    /// <summary>Keep a few lots of each zone vacant: near the hall (or far out, for fields and workshops), homes clear of dear ground and smoke.</summary>
     /// <param name="crop">Fields only: the crop they are sown with (<see cref="Farming"/>).</param>
     /// <param name="extra">Patches to paint even when the zone has its open plots.</param>
     private static void KeepZoned(Town town, Zone zone, int minVacant, bool edge, byte crop = 0, int extra = 0)
@@ -41,15 +41,14 @@ public static class Mayor
         if (Planning.VacantZoned(town, zone) >= minVacant && extra == 0) return;
         double reach = town.Lots.Count == 0 ? 0 : town.Lots.Max(Town.DistanceFromCenter);
         // A round patch at a time, as a player would paint it, until the zone has the open plots it wants:
-        // in the wards that favour it first; fields and workshops out at the edge of the built town, homes and shops close in;
-        // and alongside a street, so it fills from the street. Homes keep out of the dear wards, where working folk can't pay the rent.
+        // fields and workshops out at the edge of the built town, homes and shops close in; and alongside a street, so it fills
+        // from the street. Homes keep off dear ground, where working folk can't pay the rent, and away from the workshops' smoke.
         float[] field = [];
         double? Key(double x, double y, double d)
         {
             int i = (int)(y * Land.Res) * Land.Size + (int)(x * Land.Res);
-            var ward = Land.WardAt(town, i);
-            return (ward.Favours == zone ? 0 : 100) + (edge ? Math.Abs(d - (reach + 1)) : d)
-                + (zone == Zone.Residential ? Math.Max(0, ward.Rent - 1) * 20 : 0)
+            return (edge ? Math.Abs(d - (reach + 1)) : d)
+                + (zone == Zone.Residential ? Math.Max(0, Neighbourhood.RentAt(town, i) - 1) * 20 + Math.Max(0, -Neighbourhood.MoodAt(town, i)) * 2 : 0)
                 + Math.Abs(field[i] / Land.Res - 2) * 0.7;
         }
         for (int i = 0; i < 12 && (Planning.VacantZoned(town, zone) < minVacant || extra-- > 0); i++)

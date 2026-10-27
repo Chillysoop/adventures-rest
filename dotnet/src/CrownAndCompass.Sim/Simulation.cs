@@ -275,7 +275,7 @@ public sealed class Simulation
         using (Asking("honours")) Legacies.Daily(t, Hand("honours"));
         Institutions.Daily(t, Hand("planning"));
         Regard.Daily(t);
-        Wards.Daily(t);
+        Blocs.Daily(t);
         Broadsheet.Daily(t, Hand("stories"));
         using (Asking("honours")) Loyalty.Daily(t, Hand("honours"));
         Secrets.Daily(t, Options.AutoMayor && Stewards.Mode(t, Options, "council") == StewardMode.Steward);
