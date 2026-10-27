@@ -346,11 +346,22 @@ public static class Land
 
     private static Lot? Search(Town town, BuildingDef def, int w, int d, Zone? zone, byte crop)
     {
-        // Fronting on a street, the way the townsfolk build; families look inside the walls first.
+        // Fronting on a street, the way the townsfolk build; families look inside the walls first, in one pass that
+        // keeps the first open front outside in case nothing inside has room.
         if (zone == Zone.Residential && Frontier.Walled(town))
+        {
+            Lot? outside = null;
             foreach (var (_, x, y, yaw) in Streets.Fronts(town, d, zone))
-                if (Frontier.Within(town, x, y) && City.Allows(town, def, x, y) && Fits(town, x, y, w, d, yaw, zone))
-                    return new Lot(town.Lots.Count, x, y) { W = w, D = d, Yaw = yaw, Zone = zone.Value };
+            {
+                bool within = Frontier.Within(town, x, y);
+                if (!within && outside != null) continue;
+                if (!City.Allows(town, def, x, y) || !Fits(town, x, y, w, d, yaw, zone)) continue;
+                var lot = new Lot(town.Lots.Count, x, y) { W = w, D = d, Yaw = yaw, Zone = zone.Value };
+                if (within) return lot;
+                outside = lot;
+            }
+            return outside;
+        }
         foreach (var (_, x, y, yaw) in Streets.Fronts(town, d, zone))
             if (City.Allows(town, def, x, y) && Fits(town, x, y, w, d, yaw, zone, crop: zone == Zone.Farmland ? crop : (byte)0))
                 return new Lot(town.Lots.Count, x, y) { W = w, D = d, Yaw = yaw, Zone = zone ?? Zone.Civic };

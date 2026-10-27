@@ -232,10 +232,13 @@ public static class Property
         // Landlords build ahead of the town: a few empty beds draw settlers down the road. And however many beds stand
         // empty, the poorest want the cheapest, so a town keeps a few tenements for them.
         var tenement = town.Content.Building("tenement");
+        bool full = homeless <= openBeds && openBeds >= 2;
         bool slum = City.Unlocked(town, tenement)
             && Js.Sum(town.Buildings.Where(b => b.Def.Id == tenement.Id), b => b.Def.Housing) < town.Content.City.Slum * town.Workers.Count
+            // A landlord who can't afford a tenement stops here either way while beds stand empty: spare the search.
+            && (!full || a.Gold >= (town.LotPrice(Town.Grid) + tenement.Cost + Planning.Materials(town, tenement)) * 1.5)
             && FindLot(town, tenement) != null;
-        if (!slum && homeless <= openBeds && openBeds >= 2) return;
+        if (!slum && full) return;
         var house = slum ? tenement : RentalKind(town, a);
         if (a.Gold < (town.LotPrice(Town.Grid) + house.Cost + Planning.Materials(town, house)) * 1.5) return;
         if (TryBuild(town, a, house, true) && !a.Has(Trait.Greedy)) a.Ambition = Ambition.None;
