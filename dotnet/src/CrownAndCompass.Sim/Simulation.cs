@@ -604,6 +604,9 @@ public sealed class Simulation
     /// <summary>Post (or call off) a standing patrol over a cleared site, to keep it clear (<see cref="Lairs.Patrol"/>).</summary>
     public bool Patrol(string siteId, bool on) => Lairs.Patrol(Town, siteId, on);
 
+    /// <summary>Put council gold behind a settlement's plea, in escrow, so companies answer it.</summary>
+    public bool BackPlea(int pleaId) => World.BackPlea(Town, pleaId);
+
     /// <summary>Endow a temple to the town's god once the town is big enough.</summary>
     public Building? BuildTemple() => Shrines.BuildTemple(Town);
 

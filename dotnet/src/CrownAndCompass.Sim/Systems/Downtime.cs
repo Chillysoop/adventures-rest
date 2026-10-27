@@ -9,6 +9,9 @@ public sealed record DowntimeLines
     public string Monument { get; init; } = "";
     public string Shrine { get; init; } = "";
     public string Endow { get; init; } = "";
+    public string Feast { get; init; } = "";
+    public string Manor { get; init; } = "";
+    public string Retire { get; init; } = "";
 }
 
 /// <summary>What a famous hero with a fortune puts into the town (downtime.json patron).</summary>
@@ -25,6 +28,30 @@ public sealed record BenefactionRules
     /// <summary>Fame for each gift, and the god's favour a gold of endowment buys at a shrine that already stands.</summary>
     public int Fame { get; init; } = 2;
     public double FavourPerGold { get; init; } = 0.01;
+}
+
+/// <summary>
+/// Where a rich hero's fortune goes besides the patron's gifts (downtime.json fortunes): a feast at a tavern, a manor in
+/// place of their first house, and at the last a rich veteran's retirement with an endowment to the town.
+/// </summary>
+public sealed record FortuneRules
+{
+    /// <summary>Spare gold before a hero throws a feast, the share of it they spend (at most most), and days between feasts.</summary>
+    public double FeastSpare { get; init; } = 400;
+    public double FeastShare { get; init; } = 0.15;
+    public double FeastMost { get; init; } = 400;
+    public int FeastEvery { get; init; } = 14;
+
+    /// <summary>A manor's price (plus a level), paid to the town as a land sale, and the loyalty it roots.</summary>
+    public double ManorCost { get; init; } = 1200;
+    public double ManorPerLevel { get; init; } = 80;
+    public double ManorLoyalty { get; init; } = 10;
+    public List<string> Manors { get; init; } = [];
+
+    /// <summary>A veteran this rich and seasoned may retire to teach, leaving this share of it to the town.</summary>
+    public double RetireGold { get; init; } = 8000;
+    public int RetireLevel { get; init; } = 10;
+    public double RetireShare { get; init; } = 0.5;
 }
 
 /// <summary>What heroes do with their gold between jobs (downtime.json).</summary>
@@ -44,6 +71,7 @@ public sealed record DowntimeRules
     public List<string> Holdings { get; init; } = [];
     public List<string> Trainers { get; init; } = [];
     public BenefactionRules Patron { get; init; } = new();
+    public FortuneRules Fortunes { get; init; } = new();
     public DowntimeLines Lines { get; init; } = new();
 }
 
@@ -73,6 +101,22 @@ public static class Downtime
             if (s.StakeId is int sid) Dividend(town, a, town.Building(sid));
             if (s.AwayUntil != null || (a.Id + town.Day) % 7 != 0) continue;
             double spare = a.Gold - r.Keep;
+            var f = r.Fortunes;
+            if (spare >= f.RetireGold && s.Level >= f.RetireLevel && Legacies.Veteran(town, a) && s.FiefId == null && (Bastions.Of(town, a) is not { } bas || bas.Members.Count > 2))
+            {
+                RichRetire(town, a, spare);
+                continue;
+            }
+            if (s.Holding != "" && !s.Manor && f.Manors.Count > 0 && spare >= ManorCost(town, a) && s.Loyalty >= 50)
+            {
+                BuyManor(town, a);
+                spare = a.Gold - r.Keep;
+            }
+            if (spare >= f.FeastSpare && (s.FeastDay is not int fd || town.Day - fd >= f.FeastEvery) && town.Taverns.Count > 0)
+            {
+                Feast(town, a, Math.Min(f.FeastMost, spare * f.FeastShare));
+                spare = a.Gold - r.Keep;
+            }
             if (s.Holding == "" && r.Holdings.Count > 0 && spare >= LandCost(town, a) && (a.SpouseId != null || s.Loyalty >= 60))
                 BuyLand(town, a);
             else if (spare >= r.Patron.Spare && s.Renown >= r.Patron.Renown && (s.GaveDay is not int g || town.Day - g >= r.Patron.Every))
@@ -82,6 +126,45 @@ public static class Downtime
             else if (s.StakeId == null && spare >= r.Stake && Business(town, a) is { } b)
                 BuyStake(town, a, b);
         }
+    }
+
+    public static double ManorCost(Town town, Agent a) => Rules(town).Fortunes.ManorCost + Rules(town).Fortunes.ManorPerLevel * a.Hero!.Level;
+
+    /// <summary>A round for the house and a roast for the street: the gold goes into a tavern's till, ties by id.</summary>
+    private static void Feast(Town town, Agent a, double purse)
+    {
+        var taverns = town.Taverns;
+        var hall = taverns[(int)(Voices.Hash("feast", a.Id, town.Day) % (uint)taverns.Count)];
+        double cost = Math.Floor(purse);
+        a.Gold -= cost;
+        hall.Cash += cost;
+        a.Hero!.FeastDay = town.Day;
+        Log(town, a, Rules(town).Lines.Feast, ("tavern", hall.Name), ("cost", Js.Str(cost)), importance: Importance.Routine);
+    }
+
+    /// <summary>The first house gives way to a manor of their own: the price is a land sale to the town, and the hero is rooted for good.</summary>
+    private static void BuyManor(Town town, Agent a)
+    {
+        var f = Rules(town).Fortunes;
+        var s = a.Hero!;
+        double cost = Js.Round(ManorCost(town, a));
+        a.Gold -= cost;
+        town.Book(TreasuryAccount.LandSales, cost);
+        s.Manor = true;
+        s.Holding = f.Manors[(int)(Voices.Hash("manor", a.Id) % (uint)f.Manors.Count)];
+        s.Loyalty = Math.Min(100, s.Loyalty + f.ManorLoyalty);
+        Log(town, a, Rules(town).Lines.Manor, ("holding", s.Holding), ("cost", Js.Str(cost)));
+    }
+
+    /// <summary>A rich veteran hangs up their sword to teach, and leaves a share of their fortune to the town.</summary>
+    private static void RichRetire(Town town, Agent a, double spare)
+    {
+        double gift = Math.Floor(spare * Rules(town).Fortunes.RetireShare);
+        a.Gold -= gift;
+        town.Book(TreasuryAccount.Patron, gift);
+        string name = a.Name;
+        Legacies.Retire(town, a);
+        town.Log(LedgerCategory.Social, Importance.Major, Stories.Cap(Rules(town).Lines.Retire.Replace("{hero}", name).Replace("{cost}", Js.Str(gift))), [a.Id]);
     }
 
     private static void BuyLand(Town town, Agent a)

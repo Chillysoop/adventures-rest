@@ -933,7 +933,11 @@ public static class Roads
             return;
         }
 
-        var v = new Expedition.Venture(town.Rng, content, members, site.Def) { Swell = Lairs.Swell(town, site) + party.Swell, Clock = party.DepartTick };
+        // A site above the company's level fields more of its foes in every fight: overreaching is how companies die.
+        double peril = Storyteller.Peril(town);
+        int over = Math.Max(0, site.Def.Tier - (int)Math.Floor(members.Average(m => m.Hero!.Level)));
+        int overreach = (int)Math.Round(over * content.World.Delve.Overreach * peril);
+        var v = new Expedition.Venture(town.Rng, content, members, site.Def) { Swell = Lairs.Swell(town, site) + party.Swell + overreach, Clock = party.DepartTick, Danger = peril };
         v.TakeJobs(Wayfaring.Assign(town, members), Wayfaring.Bonuses(town, members), Wayfaring.Dice(town, party.Id + 7919));
         if (party.Edge != 0) v.Hearten(party.Edge);
         if (party.BountyId is int tb && town.Bounties[tb - 1].Terms != "slay") v.Terms = Terms.Of(town, town.Bounties[tb - 1]);

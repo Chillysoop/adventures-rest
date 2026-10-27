@@ -262,6 +262,9 @@ public static partial class Expedition
         public int Gold;
         public int Swell;
         public int Xp;
+
+        /// <summary>How deadly the storyteller lets the dungeon be (<see cref="Storyteller.Peril"/>): parting blows on a retreat, the fallen left behind.</summary>
+        public double Danger { get; init; } = 1;
         private bool _skipNextCombat;
         private readonly Rng _rng;
         private readonly Content _content;
@@ -645,6 +648,7 @@ public static partial class Expedition
                 if (Scatter(foes)) break;
                 if (foes.Any(f => f.Hp > 0) && BreakOff(def.Boss))
                 {
+                    PartingBlows(foes);
                     int left = foes.Sum(f => f.Def.Hp);
                     FoeShare = left == 0 ? 0 : foes.Sum(f => Math.Max(0, f.Hp)) / (double)left;
                     var fallen = Party.Where(c => c.Down && !c.Dead).Select(c => c.Agent.GivenName).ToList();
@@ -674,6 +678,38 @@ public static partial class Expedition
             }
             AfterCombat();
             return won;
+        }
+
+        /// <summary>
+        /// Running is not free: foes still standing swing at the backs of those who flee, and a fallen friend may be cut down
+        /// before they can be dragged clear. The storyteller's peril scales both.
+        /// </summary>
+        private void PartingBlows(List<Foe> foes)
+        {
+            var rules = _content.World.Delve;
+            foreach (var f in foes)
+            {
+                // A rogue's cunning and a monk's step slip away from the blow.
+                var open = Standing.Where(c => Prowess.Power(_content, c.Sheet, "cunning-action") == null && !(c.Sheet.Cls.Id == "monk" && c.Sheet.Level >= 2)).ToList();
+                if (f.Hp <= 0 || open.Count == 0 || !_rng.Chance(Math.Min(1, rules.Parting * Danger))) continue;
+                var t = Victim(f, open);
+                int roll = _rng.D20();
+                if (roll == 1 || roll != 20 && roll + f.Def.Attack < t.ArmorClass) continue;
+                int dmg = Math.Max(1, f.Def.Dice.Roll(_rng, roll == 20));
+                Hurt(t, dmg);
+                Log(t.Down
+                    ? $"As they run, {The(f.Def)} catches {t.Agent.GivenName} across the back for {dmg}, and {t.Agent.GivenName} falls."
+                    : $"As they run, {The(f.Def)} catches {t.Agent.GivenName} across the back for {dmg}.");
+            }
+            if (Standing.Count == 0) return;
+            foreach (var c in Party.Where(c => c.Down && !c.Dead).ToList())
+            {
+                if (!_rng.Chance(Math.Min(1, rules.Dragged * Danger))) continue;
+                c.Dead = true;
+                Log($"{c.Agent.GivenName} is cut down before anyone can drag them clear.");
+                Mark("death", c, 1);
+                Speak("death", c);
+            }
         }
 
         /// <summary>Too hurt, or too many friends down, to win this one.</summary>
@@ -783,7 +819,16 @@ public static partial class Expedition
 
         private void Credit(Combatant c, int n)
         {
-            if (n > 0) Kills[c.Agent.Id] = Kills.Get(c.Agent.Id, 0) + n;
+            if (n <= 0) return;
+            Kills[c.Agent.Id] = Kills.Get(c.Agent.Id, 0) + n;
+            // The fiend's pact: a warlock who drops a foe takes its last breath as hit points to spare.
+            if (Prowess.Power(_content, c.Sheet, "dark-ones-blessing") is { } pact && !c.Down && !c.Dead)
+            {
+                int hp = Math.Max(1, Rng.Modifier(c.Agent.Abilities.Cha) + c.Sheet.Level);
+                if (c.Temp >= hp) return;
+                c.Temp = hp;
+                if (pact.Text != "") Log(pact.Text.Replace("{hero}", c.Agent.GivenName).Replace("{hp}", hp.ToString()));
+            }
         }
 
         /// <summary>Cover a foe's kind fights from in the first rounds.</summary>
@@ -1989,7 +2034,18 @@ public static partial class Expedition
             Gold += loot;
             string line = $"{Cap(site.Name)} is cleared. The hoard holds {loot} gold";
             // The deeps always keep something worth the climb down.
+            int items = Items.Count;
             line += Treasure(site, site.Under != "");
+            // Most hoards hold coin rather than a trinket: what a lesser find would have been is gold.
+            if (Items.Count == items && _content.Loot.NoItemGold > 0)
+            {
+                int more = (int)Math.Round(loot * _content.Loot.NoItemGold);
+                if (more > 0)
+                {
+                    Gold += more;
+                    line += $", and {more} more in coin and gems";
+                }
+            }
             Log($"{line}.");
             Mark("cleared");
             Speak("treasure");
@@ -2063,6 +2119,16 @@ public static partial class Expedition
             {
                 Log($"No one comes back from {siteName}.");
                 Mark("lost");
+            }
+            // A rout costs what they couldn't carry at a run.
+            if (outcome == ExpeditionOutcome.Retreated && Gold > 0 && !GoalMet && _content.World.Delve.RetreatDrop > 0)
+            {
+                int dropped = (int)Math.Round(Gold * Math.Min(1, _content.World.Delve.RetreatDrop * Danger));
+                if (dropped > 0)
+                {
+                    Gold -= dropped;
+                    Log($"In the rush out they leave {dropped} gold of the take behind.");
+                }
             }
             if (outcome != ExpeditionOutcome.Wiped) Haul();
             var hp = new OrderedMap<int, int>();
