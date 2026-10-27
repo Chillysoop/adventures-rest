@@ -30,8 +30,8 @@
   "heist": {
     "_doc": "Quiet jobs (terms with heist: fetch, rescue). Before each room the party's quietest tries to slip past (DC sneakDc + perTier a tier); a failure fights the room and raises the alarm, and at alarmMax the place wakes (wake more foes in every room after) and nobody slips past anything. The hoard on a fetch sits in a vault of layers[tier-1] locks, wards and hidden catches (kinds, in turn) at layerDc + perTier a tier, sharing the same alarm: at alarmMax inside the vault they run with bolted of the gold and no treasure.",
     "alarmMax": 3,
-    "sneakDc": 10,
-    "layerDc": 11,
+    "sneakDc": 12,
+    "layerDc": 13,
     "perTier": 2,
     "wake": 1,
     "layers": [1, 1, 2, 2, 3],

@@ -120,6 +120,10 @@ public sealed class HeroSheet
     public string Past { get; set; } = "";
     public int Level { get; set; }
     public int Xp { get; set; }
+
+    /// <summary>Score raises and feats taken (<see cref="Systems.Advances"/>), and the feats by id.</summary>
+    public int Advances { get; set; }
+    public List<string> Feats { get; } = [];
     public int MaxHp { get; set; }
     public int Hp { get; set; }
 

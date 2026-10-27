@@ -92,7 +92,7 @@ public partial class DiceRoll : Control
             _chips.Add((Chip(ref x, y, ch, beat.Die.ToString(), 14), beat.Die.ToString(), Ui.Ink));
             foreach (var term in _terms) _chips.Add((Chip(ref x, y, ch, TermText(term), 13), TermText(term), Ui.Ink));
             _totalChip = Chip(ref x, y, ch, $"= {beat.Total}", 15);
-            _dcChip = Chip(ref x, y, ch, $"DC {beat.Dc}", 13);
+            _dcChip = Chip(ref x, y, ch, $"{Against} {beat.Dc}", 13);
             _wordChip = Chip(ref x, y, ch, Word(beat.Result), 13);
             _w = x;
             _readout = Vector2.Zero;
@@ -183,6 +183,9 @@ public partial class DiceRoll : Control
         StoryResult.Partial => Ui.Gold,
         _ => Ui.Bad,
     };
+
+    /// <summary>An attack roll is against armour (AC); every other roll against a DC.</summary>
+    private string Against => _terms.Any(t => t.Label == "attack") ? "AC" : "DC";
 
     private static string TermText(Term x) => $"{(x.Value >= 0 ? "+" : "−")}{Math.Abs(x.Value)}  {x.Label}";
 
@@ -456,7 +459,7 @@ public partial class DiceRoll : Control
             {
                 float k = (float)Math.Min(1, (_t - _totalAt) / (0.2 * _k));
                 DrawChip(_totalChip, $"= {_b.Total}", 15, Ui.Gold, k);
-                DrawChip(_dcChip, $"DC {_b.Dc}", 13, Ui.Ink2, k);
+                DrawChip(_dcChip, $"{Against} {_b.Dc}", 13, Ui.Ink2, k);
             }
             if (_t >= _reveal)
             {
@@ -479,7 +482,7 @@ public partial class DiceRoll : Control
             DrawSetTransform(new Vector2(rx, 84), 0, new Vector2(pop, pop));
             DrawCentered(Ui.Display, (final ? _b.Total : shown).ToString(), Vector2.Zero, 52, tcol, outline: true);
             DrawSetTransform(Vector2.Zero, 0, Vector2.One);
-            DrawCentered(Ui.Medium, $"against DC {_b.Dc}", new Vector2(rx, 122), 14, final ? Ui.Ink : Ui.Ink2);
+            DrawCentered(Ui.Medium, $"against {Against} {_b.Dc}", new Vector2(rx, 122), 14, final ? Ui.Ink : Ui.Ink2);
         }
         if (_t >= _reveal)
         {

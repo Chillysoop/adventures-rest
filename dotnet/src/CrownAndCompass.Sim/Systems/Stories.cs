@@ -463,7 +463,7 @@ public static class Stories
     /// precedent:id (1 sets it, -1 forgets it) and calling:id (1: the story's hero takes it up, -1: it ends).
     /// </summary>
     public static readonly string[] EffectKeys =
-        ["gold", "mandate", "dread", "tension", "food", "timber", "loyalty", "wound", "favour", "standing", "seat", "foePower", "grudge", "delay", "festival", "reveal", "inspiration", "people", "leaves", "renown", "heat", "expose", "regard", "retire", "memorial", "esteem", "heroXp", "personal", "dismiss", "edge", "swell", "partyHurt", "rest", "slots", "loot", "partyLoyalty", "turnBack", "fine", "jail", "taint", "infamy", "exile", "goodwill", "goodwill2", "prosperity", "security", "contact", "band", "moves", "stir", "book", "lore", "recover", "minor", "egg", "ranger", "shelter", "settle", "pact", "pactFavour", "weregild", "owed", "curse", "magicItem", "seize", "suspicion", "foeHeat", "guild", "notable", "notable2"];
+        ["gold", "mandate", "dread", "tension", "food", "timber", "loyalty", "wound", "favour", "standing", "seat", "foePower", "grudge", "delay", "festival", "reveal", "inspiration", "people", "leaves", "renown", "heat", "expose", "regard", "retire", "memorial", "esteem", "heroXp", "personal", "dismiss", "edge", "swell", "partyHurt", "rest", "slots", "loot", "partyLoyalty", "turnBack", "fine", "jail", "taint", "infamy", "exile", "goodwill", "goodwill2", "prosperity", "security", "contact", "band", "moves", "stir", "book", "lore", "recover", "minor", "egg", "ranger", "shelter", "settle", "pact", "pactFavour", "weregild", "owed", "curse", "magicItem", "seize", "suspicion", "foeHeat", "guild", "notable", "notable2", "raiseFallen", "bigBad"];
 
     /// <summary>
     /// Every need a story or option can name; besides these, precedent:id, decree:id, season:id and
@@ -1738,6 +1738,33 @@ public static class Stories
                     {
                         Regard.Esteem(ea, v);
                         said.Add($"{ea.GivenName} thinks {(v > 0 ? "better" : "worse")} of the mayor");
+                    }
+                    break;
+                case "raiseFallen":
+                {
+                    // A wish: the heroes the town lost most lately breathe again, as many as it names.
+                    var back = new List<string>();
+                    foreach (int id in town.Chronicles.AsEnumerable().Reverse().SelectMany(c => c.Dead).Distinct())
+                    {
+                        if (back.Count >= (int)v) break;
+                        var d = town.Agent(id);
+                        if (!d.Dead || d.Hero == null || d.Hero.DefectedTo != null) continue;
+                        d.Dead = false;
+                        d.Departed = false;
+                        d.Hero.Hp = Math.Max(1, d.Hero.MaxHp / 2);
+                        d.Hero.PartyName = null;
+                        d.Hero.AwayUntil = null;
+                        back.Add(d.GivenName);
+                    }
+                    if (back.Count > 0) said.Add($"{Expedition.ListNames(back)} {(back.Count == 1 ? "breathes" : "breathe")} again");
+                    break;
+                }
+                case "bigBad":
+                    // A fraction off the greatest living menace (the big bad while it lives).
+                    if ((Saga.BigBad(town) is { Alive: true } bb ? bb : town.Saga.Menaces.Where(x => x.Alive).OrderByDescending(x => x.Power).ThenBy(x => x.Id).FirstOrDefault()) is { } foe)
+                    {
+                        foe.Power = Math.Max(1, foe.Power * (1 + v));
+                        said.Add($"{foe.Leader} is struck down to {Js.Str(Math.Round((1 + v) * 100))}% of its strength");
                     }
                     break;
                 case "heroXp":

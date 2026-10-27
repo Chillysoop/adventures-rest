@@ -67,6 +67,9 @@ public sealed record NotorietyRules
     public List<NotorietyTier> Fame { get; init; } = [];
     public List<NotorietyTier> Infamy { get; init; } = [];
     public Dictionary<string, DeedKind> Deeds { get; init; } = [];
+
+    /// <summary>Good names a hero of a class may be given instead of the deed's own.</summary>
+    public Dictionary<string, List<string>> ClassEpithets { get; init; } = [];
     public FameDeeds FameDeeds { get; init; } = new();
     public InfamyDeeds InfamyDeeds { get; init; } = new();
 
@@ -186,7 +189,11 @@ public static class Notoriety
         bool famous = s.Epithet == "" && fameNow >= r.EpithetTier && fameBefore < r.EpithetTier;
         if ((infamous || famous) && r.Deeds.TryGetValue(kind, out var deed) && deed.Epithets.Count > 0)
         {
-            string epithet = deed.Epithets[town.Rng.Range(0, deed.Epithets.Count)];
+            // A good name may be the deed's or the class's; a name another living hero wears is not given twice.
+            var worn = town.Heroes.Where(h => h != a).Select(h => h.Hero!.Epithet).ToHashSet();
+            var names = deed.Epithets.Concat(infamous ? [] : r.ClassEpithets.GetValueOrDefault(s.Cls.Id, [])).Where(e => !worn.Contains(e)).ToList();
+            if (names.Count == 0) names = deed.Epithets;
+            string epithet = names[town.Rng.Range(0, names.Count)];
             if (epithet == s.Epithet) return;
             string old = Loyalty.Styled(town, a);
             s.Epithet = epithet;

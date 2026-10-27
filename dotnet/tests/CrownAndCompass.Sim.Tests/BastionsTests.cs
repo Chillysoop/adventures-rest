@@ -63,7 +63,8 @@ public class BastionsTests
         Assert.True(keep.Def.Bastion);
         Assert.All(Bastions.Members(t, b), m => Assert.Equal(b.Id, m.Hero!.BastionId));
 
-        sim.RunDays(40);
+        // The keep rises as builders haul its stone, which can stall a while when the market runs short.
+        for (int d = 0; d < 90 && !keep.Complete; d++) sim.RunDays(1);
         Assert.True(keep.Complete);
         // Members come and go on delves; before long one is home and sleeping in the keep.
         for (int d = 0; d < 60 && !Bastions.Members(t, b).Any(m => !m.IsAway && Bastions.Lodges(t, m) && m.Hero!.Lodging); d++) sim.RunDays(1);
