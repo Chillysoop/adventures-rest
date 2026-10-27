@@ -67,14 +67,14 @@
       "seats": "elected", "mayor": "elected", "votes": ["taxes", "laws", "form"], "allowVotes": true, "decreeTimes": 2, "lawTimes": 0.5, "radicals": 0.5, "mandate": 0.05,
       "text": "Every household votes at the yearly moot: for the council, and for the mayor, who can lose." },
     { "id": "commune", "name": "Commune", "icon": "ui-trade", "kind": "Democratic", "liberty": 1, "tags": ["generous", "freedom"],
-      "seats": "elected", "electorate": "generous", "mayor": "chartered", "votes": ["taxes", "laws"], "allowVotes": true, "decreeTimes": 1.5, "lawTimes": 0.75, "radicals": 0.75, "dole": 0.5,
+      "seats": "elected", "barred": ["gentry"], "mayor": "chartered", "votes": ["taxes", "laws"], "allowVotes": true, "decreeTimes": 1.5, "lawTimes": 0.75, "radicals": 0.75, "dole": 0.5,
       "text": "The working folk choose the council and share the town's bread; the gentry have no vote." },
     { "id": "monarchy", "name": "Crown", "icon": "regalia-circlet", "kind": "Authoritarian", "liberty": -1, "tags": ["order", "caution"],
       "seats": "gentry", "mayor": "crowned", "votes": [], "allowVotes": false, "decreeTimes": 0.5, "lawTimes": 0.75, "radicals": 1.5, "mandate": 0.05,
       "text": "The mayor wears a crown and their heir succeeds them; the great houses sit on the council." },
     { "id": "tyranny", "name": "Iron rule", "icon": "face-fist", "kind": "Authoritarian", "liberty": -2, "tags": ["harsh", "harsh", "order"],
-      "seats": "none", "mayor": "crowned", "votes": [], "allowVotes": false, "decreeTimes": 0, "lawTimes": 0.25, "radicals": 2.5, "watch": 1.3,
-      "text": "No council, no votes: the mayor's word is law, the watch is everywhere, and the angry go underground." }
+      "seats": "officers", "mayor": "crowned", "votes": [], "allowVotes": false, "decreeTimes": 0, "lawTimes": 0.25, "radicals": 2.5, "watch": 1.3,
+      "text": "The council are the mayor's officers and vote as told; no town votes, the watch is everywhere, and the angry go underground." }
   ],
   "formChange": 25,
   "formGapDays": 60,

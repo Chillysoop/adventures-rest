@@ -788,6 +788,9 @@ public static class Politics
     /// <summary>Whether the town has a council at all.</summary>
     public static bool HasCouncil(Town town) => Form(town).Seats != "none";
 
+    /// <summary>Under iron rule the council are the mayor's officers: they vote as told.</summary>
+    public static bool Obedient(Town town) => Form(town).Seats == "officers";
+
     /// <summary>Times the Mandate a decree overruling the council costs.</summary>
     public static double DecreeTimes(Town town) => Form(town).DecreeTimes;
 

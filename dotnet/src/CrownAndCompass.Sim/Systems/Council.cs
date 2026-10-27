@@ -153,7 +153,7 @@ public static class Council
         PayWatch(town);
         DriftMandate(town);
         if (autoDecide) Laws.StandIn(town);
-        // Under iron rule there is no council: the mayor's word is law.
+        // A form with no council at all leaves the mayor's word as law.
         if (!Politics.HasCouncil(town)) return;
         FillSeats(town);
         foreach (var s in town.Seats) if (s.HolderId != null) LoyaltyDay(town, s);
@@ -473,7 +473,7 @@ public static class Council
         foreach (var s in town.Seats)
         {
             if (s.HolderId == null) continue;
-            if (s.Def.Id == m.Proposer)
+            if (s.Def.Id == m.Proposer || Politics.Obedient(town))
             {
                 votes.Add(new Vote(s.Def.Id, true));
                 continue;

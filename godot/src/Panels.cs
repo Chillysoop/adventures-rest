@@ -228,7 +228,7 @@ public partial class Main
                 $"{Ui.Img(m.Status == MotionStatus.Passed ? "vote-aye" : "vote-nay", 14)} {Ui.Esc(Ui.Cap(m.Text))}{(m.Decree ? " " + Ui.Img("decree", 13) : "")}  {Ui.C(Ui.Ink2, $"[font_size=11]day {m.ProposedTick / 24 + 1}[/font_size]")}")), 13);
         }
         p.Page("Blocs", "population");
-        RenderBlocs(p, t);
+        RenderBlocPage(p, t);
         p.Commit();
     }
 

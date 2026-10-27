@@ -86,7 +86,6 @@ public partial class Main
         var now = Politics.Form(t);
         p.Heading("Government", "tab-council");
         p.Card($"{Ui.Img(now.Icon, 18)} [b]{Ui.Esc(now.Name)}[/b]  {Tag(now.Kind, now.Liberty > 0 ? Ui.Good : now.Liberty < 0 ? Ui.Bad : Ui.Gold)}\n[font_size=12]{Ui.Esc(now.Text)}\n{InForce(t, "form")}[/font_size]", Ui.Gold);
-        p.Text(string.Join("   ", r.Forms.Where(f => f.Id != now.Id).Select(f => Ui.Tip($"{Ui.Img(f.Icon, 14)} {Ui.Esc(f.Name)}", $"{f.Kind}\n{f.Text}"))), 12);
         p.TipButtons(r.Forms.Where(f => f.Id != now.Id).Select(f =>
         {
             string id = f.Id;
@@ -124,7 +123,7 @@ public partial class Main
     }
 
     /// <summary>The Blocs page: the lens, each bloc, what they ask, the situations in town, and any radicals.</summary>
-    private void RenderBlocs(Pane p, Town t)
+    private void RenderBlocPage(Pane p, Town t)
     {
         var r = Politics.Rules(t);
         _lens ??= new BlocLens();

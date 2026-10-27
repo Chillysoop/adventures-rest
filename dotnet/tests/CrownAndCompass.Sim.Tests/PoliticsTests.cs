@@ -109,13 +109,13 @@ public class PoliticsTests
     }
 
     [Fact]
-    public void IronRuleSendsTheCouncilHomeAndNoMotionsCome()
+    public void UnderIronRuleTheCouncilVotesAsTold()
     {
         var sim = Town(seed: 3, government: "tyranny", days: 80);
         var t = sim.Town;
-        Assert.All(t.Seats, s => Assert.Null(s.HolderId));
-        Assert.Empty(t.Motions);
-        Assert.False(Politics.HasCouncil(t));
+        Assert.True(Politics.Obedient(t));
+        Assert.NotEmpty(t.Motions);
+        Assert.All(t.Motions, m => Assert.All(m.Votes, v => Assert.True(v.Yes)));
         Assert.True(Politics.WatchFactor(t) > 1);
     }
 

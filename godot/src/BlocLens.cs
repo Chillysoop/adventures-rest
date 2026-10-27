@@ -41,33 +41,29 @@ public partial class BlocLens : Control
         _sig = sig;
         _nodes.Clear();
         _edges.Clear();
-        float w = Math.Max(360, Size.X), h = CustomMinimumSize.Y;
+        float w = Math.Max(360, Size.X);
 
-        // Sources down the sides: laws on the left, situations and trust on the right.
-        var sources = pushes.SelectMany(x => x.Pushes.Select(p => (p.Law, p.What))).DistinctBy(p => p.Law).ToList();
-        var left = sources.Where(s => !s.Law.StartsWith("situation:", StringComparison.Ordinal) && s.Law != "trust").ToList();
-        var right = sources.Except(left).ToList();
-        void Column(List<(string Law, string What)> list, float x)
+        // Two columns: what pushes on the left (laws, then situations and trust), the blocs on the right, so every
+        // line runs from a cause to the folk it moves.
+        var sources = pushes.SelectMany(x => x.Pushes.Select(p => (p.Law, p.What))).DistinctBy(p => p.Law)
+            .OrderBy(s => s.Law.StartsWith("situation:", StringComparison.Ordinal) || s.Law == "trust" ? 1 : 0).ToList();
+        float h = Math.Max(240, 34 * Math.Max(sources.Count, blocs.Count) + 20);
+        if (Math.Abs(CustomMinimumSize.Y - h) > 1) CustomMinimumSize = new Vector2(0, h);
+        float lx = Math.Min(190, w * 0.36f), rx = w - Math.Min(170, w * 0.3f);
+        for (int i = 0; i < sources.Count; i++)
         {
-            for (int i = 0; i < list.Count; i++)
-            {
-                var (law, what) = list[i];
-                float y = h * (i + 1) / (list.Count + 1);
-                var hits = pushes.Select(p => (p.Bloc, Points: p.Pushes.Where(q => q.Law == law).Sum(q => q.Points))).Where(p => Math.Abs(p.Points) >= 0.5).ToList();
-                string tip = $"{what}\n" + string.Join("\n", hits.OrderByDescending(p => p.Points).Select(p => $"{(p.Points > 0 ? "▲" : "▼")} {Ui.Cap(p.Bloc.Voice)} {(p.Points > 0 ? "+" : "")}{Math.Round(p.Points)}"));
-                _nodes.Add(new Node(law, Main.LawIcon(t, law), what, new Vector2(x, y), 9, Ui.Ink2, tip));
-            }
+            var (law, what) = sources[i];
+            float y = h * (i + 0.5f) / sources.Count;
+            var hits = pushes.Select(p => (p.Bloc, Points: p.Pushes.Where(q => q.Law == law).Sum(q => q.Points))).Where(p => Math.Abs(p.Points) >= 0.5).ToList();
+            string tip = $"{what}\n" + string.Join("\n", hits.OrderByDescending(p => p.Points).Select(p => $"{(p.Points > 0 ? "▲" : "▼")} {Ui.Cap(p.Bloc.Voice)} {(p.Points > 0 ? "+" : "")}{Math.Round(p.Points)}"));
+            _nodes.Add(new Node(law, Main.LawIcon(t, law), what, new Vector2(lx, y), 9, Ui.Ink2, tip));
         }
-        Column(left, 150);
-        Column(right, w - 150);
 
-        // The blocs round an oval in the middle.
         double most = Math.Max(1, blocs.Select(b => Politics.Size(t, b)).DefaultIfEmpty(1).Max());
         for (int i = 0; i < blocs.Count; i++)
         {
             var b = blocs[i];
-            double a = -Math.PI / 2 + Math.PI * 2 * i / Math.Max(1, blocs.Count);
-            var at = new Vector2(w / 2 + (float)Math.Cos(a) * Math.Max(60, w / 2 - 220), h / 2 + (float)Math.Sin(a) * (h / 2 - 34));
+            var at = new Vector2(rx, h * (i + 0.5f) / blocs.Count);
             double f = Politics.Feeling(t, b.Id), size = Politics.Size(t, b);
             var cell = Politics.CellOf(t, b.Id);
             string why = string.Join("\n", pushes[i].Pushes.OrderByDescending(p => Math.Abs(p.Points)).Take(6).Select(p => $"{(p.Points > 0 ? "▲" : "▼")} {p.What} {(p.Points > 0 ? "+" : "")}{Math.Round(p.Points)}"));
@@ -75,7 +71,7 @@ public partial class BlocLens : Control
             string tip = $"{Ui.Cap(b.Voice)}: {Math.Round(f)}\n{Math.Round(size)} townsfolk\n" + (why != "" ? why + "\n" : "")
                 + (Math.Abs(choices) >= 1 ? $"{(choices > 0 ? "▲" : "▼")} Your choices {(choices > 0 ? "+" : "")}{Math.Round(choices)}\n" : "")
                 + $"Likes {string.Join(", ", b.Likes)}; dislikes {string.Join(", ", b.Dislikes)}" + (cell != null ? "\nRadicals at work!" : "");
-            _nodes.Add(new Node("bloc:" + b.Id, b.Icon, b.Voice, at, 14 + (float)(10 * Math.Sqrt(size / most)), Feel(f), tip));
+            _nodes.Add(new Node("bloc:" + b.Id, b.Icon, b.Voice, at, 9 + (float)(6 * Math.Sqrt(size / most)), Feel(f), tip));
             foreach (var p in pushes[i].Pushes) _edges.Add(new Edge(p.Law, "bloc:" + b.Id, p.Points));
         }
         QueueRedraw();
@@ -107,8 +103,10 @@ public partial class BlocLens : Control
             var c = e.Points > 0 ? Ui.Good : Ui.Bad;
             float alpha = _hover == "" ? 0.45f : lit ? 0.95f : 0.08f;
             float width = Math.Clamp((float)Math.Abs(e.Points) / 4f, 1, 5);
-            var mid = (a.At + b.At) / 2 + new Vector2(0, (b.At.Y - a.At.Y) * -0.15f);
-            DrawPolyline([a.At, mid, b.At], new Color(c, alpha), width, true);
+            var curve = new Curve2D();
+            curve.AddPoint(a.At, Vector2.Zero, new Vector2((b.At.X - a.At.X) * 0.45f, 0));
+            curve.AddPoint(b.At, new Vector2((a.At.X - b.At.X) * 0.45f, 0), Vector2.Zero);
+            DrawPolyline(curve.Tessellate(4), new Color(c, alpha), width, true);
         }
         foreach (var n in _nodes)
         {
@@ -121,19 +119,16 @@ public partial class BlocLens : Control
             DrawTextureRect(icon, new Rect2(n.At - new Vector2(s, s) / 2, new Vector2(s, s)), false, new Color(1, 1, 1, alpha));
             if (!n.Id.StartsWith("bloc:", StringComparison.Ordinal))
             {
-                // Laws read outward from their dot: to the left on the left, to the right on the right.
-                bool onLeft = n.At.X < Size.X / 2;
-                string label = n.Label.Length > 24 ? n.Label[..23] + "…" : n.Label;
+                // Causes read leftward from their dot.
+                string label = n.Label.Length > 26 ? n.Label[..25] + "…" : n.Label;
                 float tw = Ui.Body.GetStringSize(label, HorizontalAlignment.Left, -1, 11).X;
-                float x = onLeft ? n.At.X - n.Radius - 6 - tw : n.At.X + n.Radius + 6;
+                float x = Math.Max(2, n.At.X - n.Radius - 6 - tw);
                 DrawString(Ui.Body, new Vector2(x, n.At.Y + 4), label, HorizontalAlignment.Left, -1, 11, new Color(Ui.Ink2, alpha));
             }
             else
             {
-                string label = n.Label.StartsWith("the ", StringComparison.Ordinal) ? n.Label[4..] : n.Label;
-                var font = Ui.Body;
-                float tw = font.GetStringSize(label, HorizontalAlignment.Left, -1, 11).X;
-                DrawString(font, new Vector2(n.At.X - tw / 2, n.At.Y + n.Radius + 15), label, HorizontalAlignment.Left, -1, 11, new Color(Ui.Ink, alpha));
+                string label = Ui.Cap(n.Label.StartsWith("the ", StringComparison.Ordinal) ? n.Label[4..] : n.Label);
+                DrawString(Ui.Body, new Vector2(n.At.X + n.Radius + 8, n.At.Y + 4), label, HorizontalAlignment.Left, Math.Max(40, Size.X - n.At.X - n.Radius - 10), 11, new Color(Ui.Ink, alpha));
             }
         }
     }

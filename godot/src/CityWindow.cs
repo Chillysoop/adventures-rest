@@ -417,7 +417,7 @@ public partial class Main
             "Every choice shows the blocs it pleases or angers. Warm blocs: cheerier folk, houses grow sooner. Sour ones grumble in the street.");
         foreach (var b in speaking)
         {
-            double f = Blocs.Feeling(t, b.Id);
+            double f = Politics.Feeling(t, b.Id);
             var fc = f >= 15 ? Ui.Good : f <= -15 ? Ui.Bad : Ui.Ink2;
             string cares = Regard.Describe(t, new TemperDef { Likes = b.Likes, Dislikes = b.Dislikes });
             p.Text($"{Ui.Img(b.Icon == "" ? "ui-person" : b.Icon, 16)} {Ui.Tip($"[b]{Ui.Esc(Ui.Cap(b.Voice))}[/b]", $"{Ui.Cap(b.Voice)} {cares.Replace("; dislikes ", "; they dislike ").Replace("likes ", "like ")}.")}   [font_size=12]{Ui.Chips(
