@@ -823,6 +823,9 @@ public static class Politics
         }
         // Everyone who keeps a house speaks for the householders at least.
         if (list.Count < 2 && town.Content.Blocs.Of("householders") is { } h && list.All(x => x.Bloc.Id != h.Id)) list.Add((h, 0.1));
+        // One who still speaks for one interest only courts the biggest in town besides.
+        if (list.Count < 2 && Blocs(town).Where(b => list.All(x => x.Bloc.Id != b.Id)).OrderByDescending(b => Size(town, b)).ThenBy(b => b.Id, StringComparer.Ordinal).FirstOrDefault() is { } big)
+            list.Add((big, 0.1));
         return list;
     }
 
