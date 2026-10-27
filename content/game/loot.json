@@ -1,9 +1,16 @@
 {
-  "_doc": "Hoards (Expedition.Treasure). slots: what a hero or the town can carry home from one (hoards also hold draughts and siege pieces, \"hoardSlots\"). pulled: library items never found, with no fitting effect (Conner, 2026-10-23). offFit: a hoard's weight on a piece that doesn't belong in the site's country (enchantments.json found), against affinity for one that does.",
+  "_doc": "Hoards (Expedition.Treasure). A hoard holds an item at itemChancePerTier a site level (at most itemChanceMax), its rarity by hoardTiers (tier 2 uncommon, 3 rare, 4 very rare, 5 legendary; up: the chance of one finer); a hero takes no gift or forge order finer than their level's hoards hold (Content.Ready). slots: what a hero or the town can carry home from one (hoards also hold draughts and siege pieces, \"hoardSlots\"). pulled: library items never found, with no fitting effect (Conner, 2026-10-23). offFit: a hoard's weight on a piece that doesn't belong in the site's country (enchantments.json found), against affinity for one that does.",
   "slots": ["weapon", "armor", "shield", "trinket", "town"],
   "hoardSlots": ["consumable", "siege"],
   "weaponBonus": [0, 1, 1, 1, 2, 2, 3],
-  "itemChancePerTier": 0.15,
+  "itemChancePerTier": 0.08,
+  "itemChanceMax": 0.6,
+  "hoardTiers": [
+    { "from": 1, "tier": 2, "up": 0.2 },
+    { "from": 5, "tier": 3, "up": 0.2 },
+    { "from": 11, "tier": 4, "up": 0.25 },
+    { "from": 17, "tier": 5 }
+  ],
   "offFit": 0.35,
   "pulled": ["amulet-of-the-planes", "armor-of-vulnerability", "bag-of-beans", "bag-of-devouring", "cubic-gate", "decanter-of-endless-water", "dragon-orb", "dust-of-dryness", "feather-token", "feather-token-anchor", "feather-token-fan", "feather-token-tree", "manual-of-golems", "marvelous-pigments", "mysterious-deck", "potion-of-fire-giant-strength", "shield-of-missile-attraction", "sovereign-glue", "talisman-of-the-sphere", "universal-solvent", "well-of-many-worlds"]
 }

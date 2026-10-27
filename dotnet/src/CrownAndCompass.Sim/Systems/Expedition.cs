@@ -93,6 +93,14 @@ public static partial class Expedition
         public bool Down { get; set; }
         public bool Dead { get; set; }
 
+        /// <summary>The spell they hold by concentration this fight ("" for none), the foes it holds and the friends it lifts.</summary>
+        public string Holding { get; set; } = "";
+        public List<Foe> HoldsFoes { get; } = [];
+        public List<(Combatant On, int Hit, int Ac, int Haste)> Lifts { get; } = [];
+
+        /// <summary>Their place in this fight's order (d20 + Dexterity), against the foes'.</summary>
+        public int Initiative { get; set; }
+
         /// <summary>Spell slots left until the next long rest (pact slots: short rest), for heals, spells, smites and sendings.</summary>
         public int Slots { get; set; }
 
@@ -192,10 +200,13 @@ public static partial class Expedition
         public string Type => Lib?.Type is { Length: > 0 } t ? t : Def.Type;
     }
 
-    private sealed record Check(Combatant Who, int Roll, int Total, string With = "")
+    private sealed record Check(Combatant Who, int Roll, int Total, string With = "", int Edge = 0)
     {
-        /// <summary>The hero's name, with the friend or rival who swayed the roll.</summary>
-        public string Name => With == "" ? Who.Agent.GivenName : $"{Who.Agent.GivenName}, {With},";
+        /// <summary>The hero's name, with the friend or rival who swayed the roll, and whether their training gave them advantage or left them at a disadvantage.</summary>
+        public string Name =>
+            Who.Agent.GivenName
+            + (With == "" ? "" : $", {With},")
+            + (Edge > 0 ? $" (a {Who.Sheet.Cls.Name}'s work, advantage)" : Edge < 0 ? " (nobody trained for it, disadvantage)" : "");
     }
 
     private static readonly Dictionary<string, string> SkillAbility = new()
@@ -224,10 +235,10 @@ public static partial class Expedition
     }
 
     /// <remarks>Integer division matches the TS sim because hit dice are even (d6 to d12).</remarks>
-    public static int HeroMaxHp(HeroSheet sheet, int con)
+    public static int HeroMaxHp(Content content, HeroSheet sheet, int con)
     {
         int die = sheet.Cls.HitDie;
-        return Math.Max(1, die + Rng.Modifier(con) + (sheet.Level - 1) * Math.Max(1, die / 2 + 1 + Rng.Modifier(con)));
+        return Math.Max(1, die + Rng.Modifier(con) + (sheet.Level - 1) * Math.Max(1, die / 2 + 1 + Rng.Modifier(con)) + sheet.Level * Advances.HpPerLevel(content, sheet));
     }
 
 
@@ -292,7 +303,7 @@ public static partial class Expedition
             _rng = rng;
             _content = content;
             _site = site;
-            Party = heroes.Select(agent => new Combatant(agent) { Ac = Gear.Ac(content, agent) + Alchemy.WardAc(content, agent.Hero!, site) + Draughts.Edge(content, agent.Hero!).Ac, Attack = Gear.Attack(content, agent) + Draughts.Edge(content, agent.Hero!).Attack, Skill = Gear.Skill(content, agent.Hero!), Veteran = agent.Hero!.Expeditions >= content.World.Companies.Veteran, Beast = content.Passage.Mount(agent.Hero.Mount)?.Fights ?? 0, Powers = [.. Enchant.Worn(content, agent.Hero), .. Draughts.Powers(content, agent.Hero)] }).ToList();
+            Party = heroes.Select(agent => new Combatant(agent) { Ac = Gear.Ac(content, agent) + Alchemy.WardAc(content, agent.Hero!, site) + Draughts.Edge(content, agent.Hero!).Ac + Advances.Ac(content, agent.Hero!), Attack = Gear.Attack(content, agent) + Draughts.Edge(content, agent.Hero!).Attack + Advances.Attack(content, agent.Hero!), Skill = Gear.Skill(content, agent.Hero!) + Advances.Skill(content, agent.Hero!), Veteran = agent.Hero!.Expeditions >= content.World.Companies.Veteran, Beast = content.Passage.Mount(agent.Hero.Mount)?.Fights ?? 0, Powers = [.. Enchant.Worn(content, agent.Hero), .. Draughts.Powers(content, agent.Hero)] }).ToList();
             foreach (var c in Party) Refresh(c, true);
             // Greenhorns with nobody seasoned among them lose their nerve sooner.
             if (Party.Any(c => c.Sheet.Expeditions == 0) && !Party.Any(c => c.Veteran)) _caution = content.Roads.Retreat.GreenCaution;
@@ -375,10 +386,19 @@ public static partial class Expedition
                     best = bonus;
                 }
             }
+            // The right hero for the job rolls with advantage; a party with nobody trained for it rolls with disadvantage.
+            int trained = who!.Sheet.Cls.Skills.GetValueOrDefault(kind, 0);
+            var d = _content.Dungeons.Checks;
+            int edge = kind == SkillKind.Hazard ? 0 : trained >= d.Specialist ? 1 : trained <= d.Untrained ? -1 : 0;
             int roll = _rng.D20();
+            if (edge != 0)
+            {
+                int other = _rng.D20();
+                roll = edge > 0 ? Math.Max(roll, other) : Math.Min(roll, other);
+            }
             // A friend beside them steadies the hand; a rival in the party spoils it.
-            var (chem, with) = Regard.Chemistry(_content.Regard, who!.Agent, Standing.Select(c => c.Agent));
-            return new Check(who, roll, roll + best + chem, with);
+            var (chem, with) = Regard.Chemistry(_content.Regard, who.Agent, Standing.Select(c => c.Agent));
+            return new Check(who, roll, roll + best + chem, with, edge);
         }
 
         /// <summary>The mayor's word over the sending stone: a bonus (or a penalty) on every check and blow at the site.</summary>
@@ -399,8 +419,9 @@ public static partial class Expedition
             return Rng.Modifier(ab) + cls + (cls > 0 ? Proficiency(c.Sheet.Level) : 0) + c.Skill + Knack(c, kind);
         }
 
-        private static void Hurt(Combatant c, int dmg)
+        private void Hurt(Combatant c, int dmg)
         {
+            if (dmg > 0) Concentrate(c, dmg);
             int soak = Math.Min(c.Beast, dmg);
             c.Beast -= soak;
             dmg -= soak;
@@ -415,6 +436,7 @@ public static partial class Expedition
             {
                 c.Hp = 0;
                 c.Down = true;
+                if (c.Holding != "") LetGo(c, $"{c.Agent.GivenName} goes down, and the {Library.Prose(c.Holding)} fades.");
             }
         }
 
@@ -444,8 +466,23 @@ public static partial class Expedition
             return false;
         }
 
+        /// <summary>The last <see cref="Encounter"/> ended in a fight the party broke off from.</summary>
+        public bool EncounterLost;
+
+        /// <summary>
+        /// The line a wandering fight opens with: the room's own when it suits the creature met, else one of its
+        /// group's that does (chosen on the tale's own dice), else none.
+        /// </summary>
+        private string WanderText(EncounterDef e, MonsterDef def)
+        {
+            if (_site == null || _content.Group(_site.Group) is not { } g || g.Fits(e.Text, def.Id)) return e.Text;
+            var fit = g.LinesFor("wander", def.Id);
+            return fit.Count == 0 ? "" : fit[(int)(Seed % (uint)fit.Count)];
+        }
+
         public void Encounter(EncounterDef e)
         {
+            EncounterLost = false;
             if (e.Kind is "hazard" or "trap" or "puzzle" or "parley" && Way(e)) return;
             switch (e.Kind)
             {
@@ -465,17 +502,18 @@ public static partial class Expedition
                     if (pool.Count == 0) return;
                     var def = _rng.Pick(pool);
                     int n = Math.Clamp(e.Budget / Math.Max(1, def.Xp), 1, 6);
-                    Combat(new EncounterDef { Kind = "combat", Monster = def.Id, Count = [n, n], Text = e.Text }, false);
+                    if (!Combat(new EncounterDef { Kind = "combat", Monster = def.Id, Count = [n, n], Text = WanderText(e, def) }, false)) EncounterLost = true;
                     return;
                 }
                 case "trap":
                 {
                     var check = BestCheck(SkillKind.Trap);
+                    int dc = e.Dc + _content.Dungeons.Checks.Harder.GetValueOrDefault(e.Kind);
                     string who = check.Name;
-                    if (check.Total >= e.Dc)
+                    if (check.Total >= dc)
                     {
-                        Log($"{Cap(e.Text)}: {who} spots it and disarms it (d20 {check.Roll}, {check.Total} vs DC {e.Dc}).");
-                        Mark("trap", check, e.Dc);
+                        Log($"{Cap(e.Text)}: {who} spots it and disarms it (d20 {check.Roll}, {check.Total} vs DC {dc}).");
+                        Mark("trap", check, dc);
                         Xp += 25;
                     }
                     else
@@ -484,9 +522,9 @@ public static partial class Expedition
                         int dmg = 0;
                         for (int k = 0; k < Scale; k++) dmg += _rng.Roll(1, e.DamageDie) + _rng.Roll(1, e.DamageDie);
                         Hurt(victim, dmg);
-                        Log($"{Cap(e.Text)}: {who} misses it (d20 {check.Roll}, {check.Total} vs DC {e.Dc}) and {victim.Agent.GivenName} takes {dmg} damage" +
+                        Log($"{Cap(e.Text)}: {who} misses it (d20 {check.Roll}, {check.Total} vs DC {dc}) and {victim.Agent.GivenName} takes {dmg} damage" +
                             (victim.Down ? " and drops." : "."));
-                        Mark("trap", check, e.Dc);
+                        Mark("trap", check, dc);
                         if (victim.Down) AfterCombat();
                     }
                     return;
@@ -497,7 +535,7 @@ public static partial class Expedition
                     foreach (var c in Standing)
                     {
                         int roll = _rng.D20();
-                        if (roll + SkillBonus(c, SkillKind.Hazard) < e.Dc)
+                        if (roll + SkillBonus(c, SkillKind.Hazard) < e.Dc + _content.Dungeons.Checks.Harder.GetValueOrDefault(e.Kind))
                         {
                             int dmg = 0;
                             for (int k = 0; k < Scale; k++) dmg += _rng.Roll(1, e.DamageDie);
@@ -514,20 +552,21 @@ public static partial class Expedition
                 case "parley":
                 {
                     var check = BestCheck(e.Kind == "puzzle" ? SkillKind.Puzzle : SkillKind.Parley);
+                    int dc = e.Dc + _content.Dungeons.Checks.Harder.GetValueOrDefault(e.Kind);
                     string who = check.Name;
-                    if (check.Total >= e.Dc)
+                    if (check.Total >= dc)
                     {
                         int gold = _rng.Range(e.Gold[0], e.Gold[1] + 1);
                         Gold += gold;
                         Xp += 50;
                         if (e.Kind == "parley") _skipNextCombat = true;
-                        Log($"{Cap(e.Text)}. {who} handles it (d20 {check.Roll}, {check.Total} vs DC {e.Dc}): {gold} gold{(e.Kind == "parley" ? " and a safer path" : "")}.");
-                        Mark(e.Kind, check, e.Dc);
+                        Log($"{Cap(e.Text)}. {who} handles it (d20 {check.Roll}, {check.Total} vs DC {dc}): {gold} gold{(e.Kind == "parley" ? " and a safer path" : "")}.");
+                        Mark(e.Kind, check, dc);
                     }
                     else
                     {
-                        Log($"{Cap(e.Text)}. {who} gets nowhere (d20 {check.Roll}, {check.Total} vs DC {e.Dc}).");
-                        Mark(e.Kind, check, e.Dc);
+                        Log($"{Cap(e.Text)}. {who} gets nowhere (d20 {check.Roll}, {check.Total} vs DC {dc}).");
+                        Mark(e.Kind, check, dc);
                     }
                     return;
                 }
@@ -541,7 +580,7 @@ public static partial class Expedition
                         Log(spotted
                             ? $"{Cap(e.Text)}. {check.Name} notices the lid breathing (d20 {check.Roll}, {check.Total} vs DC 13). It's a mimic."
                             : $"{Cap(e.Text)}. Nobody notices the lid breathing (d20 {check.Roll}, {check.Total} vs DC 13) until it bites. It's a mimic!");
-                        Combat(new EncounterDef { Kind = "combat", Monster = "mimic", Count = [1, 1], Text = "the mimic" }, !spotted);
+                        if (!Combat(new EncounterDef { Kind = "combat", Monster = "mimic", Count = [1, 1], Text = "the mimic" }, !spotted)) EncounterLost = true;
                         if (Standing.Count == 0) return;
                     }
                     int gold = _rng.Range(e.Gold[0], e.Gold[1] + 1);
@@ -574,7 +613,8 @@ public static partial class Expedition
                 for (int i = 0; i < en; i++) foes.Add(NewFoe(ed));
             }
             string label = n == 1 ? (def.Named ? def.Name : $"{Article(def.Name)} {def.Name}") : $"{n} {def.Plural}";
-            if (def.Id != "mimic") Log($"{Cap(e.Text)}: {label}{(foes.Count > n ? $", with {foes.Count - n} more at its side" : "")}.");
+            string escorted = foes.Count > n ? $", with {foes.Count - n} more at its side" : "";
+            if (def.Id != "mimic") Log(e.Text == "" ? $"{Cap(label)} bar the way{escorted}." : $"{Cap(e.Text)}: {label}{escorted}.");
             Mark(def.Boss ? "boss" : "fight");
             if (def.Boss) Speak("boss");
 
@@ -586,18 +626,23 @@ public static partial class Expedition
             StartFight();
             foreach (var c in Party) c.FightUsed.Clear();
             bool monstersFirst = surprised || Ambush(foes);
+            int foeInit = RollInitiative(foes, label);
             if (def.Boss && (_strikeFirst || Goad(foes[0]))) HeroesAct(foes, 0);
             while (round < 20)
             {
                 round++;
                 _round = round;
-                if (!monstersFirst) HeroesAct(foes, round);
-                monstersFirst = false;
+                // In initiative order: the heroes quicker than the foes, the foes, then the rest of the heroes.
+                if (!monstersFirst) HeroesAct(foes, round, c => c.Initiative > foeInit);
                 if (foes.All(f => f.Hp <= 0 && !Rising(f, round))) break;
                 if (Scatter(foes)) break;
                 if (def.Boss) BossMoves(foes, round);
                 MonstersAct(foes, round);
                 if (Standing.Count == 0) break;
+                HeroesAct(foes, round, c => monstersFirst || c.Initiative <= foeInit);
+                monstersFirst = false;
+                if (foes.All(f => f.Hp <= 0 && !Rising(f, round))) break;
+                if (Scatter(foes)) break;
                 if (foes.Any(f => f.Hp > 0) && BreakOff(def.Boss))
                 {
                     int left = foes.Sum(f => f.Def.Hp);
@@ -655,10 +700,33 @@ public static partial class Expedition
             return true;
         }
 
-        private void HeroesAct(List<Foe> foes, int round)
+        /// <summary>
+        /// Everyone rolls initiative: each hero d20 + Dexterity (and Alert), the foes once as a band on their quickest.
+        /// The heroes act in their order; those who beat the foes go before them each round. Returns the foes' roll.
+        /// </summary>
+        private int RollInitiative(List<Foe> foes, string label)
         {
-            foreach (var c in Standing)
+            foreach (var c in Party.Where(c => !c.Dead))
+                c.Initiative = _rng.D20() + Rng.Modifier(c.Agent.Abilities.Dex) + Advances.Initiative(_content, c.Sheet);
+            int foeInit = _rng.D20() + foes.Select(f => Rng.Modifier(f.Lib?.Dex ?? 10)).DefaultIfEmpty(0).Max();
+            var quick = Standing.Where(c => c.Initiative > foeInit).OrderByDescending(c => c.Initiative).ThenBy(c => c.Agent.Id).ToList();
+            if (quick.Count > 0 && quick.Count < Standing.Count)
+                Log($"Initiative: {ListNames(quick.Select(c => $"{c.Agent.GivenName} ({c.Initiative})").ToList())} move{(quick.Count == 1 ? "s" : "")} before {TheBand(label)} ({foeInit}).");
+            return foeInit;
+        }
+
+        /// <summary>"3 goblins" or "a goblin" as "the goblins", "the goblin"; a name stays a name.</summary>
+        private static string TheBand(string label) =>
+            label.Length > 0 && char.IsDigit(label[0]) ? "the " + label[(label.IndexOf(' ') + 1)..]
+            : label.StartsWith("a ", StringComparison.Ordinal) ? "the " + label[2..]
+            : label.StartsWith("an ", StringComparison.Ordinal) ? "the " + label[3..]
+            : label;
+
+        private void HeroesAct(List<Foe> foes, int round, Func<Combatant, bool>? who = null)
+        {
+            foreach (var c in Standing.Where(c => who == null || who(c)).OrderByDescending(c => c.Initiative).ThenBy(c => c.Agent.Id).ToList())
             {
+                if (c.Down || c.Dead) continue;
                 var living = foes.Where(f => f.Hp > 0).ToList();
                 if (living.Count == 0) return;
                 var s = c.Sheet;
@@ -1720,7 +1788,11 @@ public static partial class Expedition
                     won = Combat(e, feat.First);
                     _strikeFirst = false;
                 }
-                else Encounter(e);
+                else
+                {
+                    Encounter(e);
+                    won = !EncounterLost;
+                }
                 Unfeature(feat);
                 MarkLost();
                 if (room != null)
@@ -1869,6 +1941,7 @@ public static partial class Expedition
                 return true;
             }
             Raise(site, $"{check.Name} kicks a pail in the dark (d20 {check.Roll}, {check.Total} vs DC {dc})");
+            Mark("sneak", check, dc);
             return false;
         }
 
@@ -1903,6 +1976,7 @@ public static partial class Expedition
                     continue;
                 }
                 Raise(site, $"{check.Name} fumbles {what} on the vault (d20 {check.Roll}, {check.Total} vs DC {dc})");
+                Mark("vault", check, dc);
                 if (Alarm >= h.AlarmMax) return false;
             }
             return true;
@@ -1925,11 +1999,14 @@ public static partial class Expedition
         private string Treasure(SiteDef site, bool sure)
         {
             string line = "";
-            // Item tiers stop at 5 (legendary); sites for higher levels draw from the top of the list.
-            int itemTier = Math.Min(site.Tier, 5);
-            var pool = _content.HoardItems.Where(it => it.Tier >= itemTier && it.Tier <= itemTier + 1).ToList();
-            if (pool.Count > 0 && (sure || _rng.Chance(_content.Loot.ItemChancePerTier * site.Tier)))
+            // The rarity follows the party's level (loot.json hoardTiers): legendaries wait for the far lairs.
+            if (sure || _rng.Chance(Math.Min(_content.Loot.ItemChanceMax, _content.Loot.ItemChancePerTier * site.Tier)))
             {
+                var band = _content.Loot.Band(site.Tier);
+                int itemTier = band.Up > 0 && _rng.Chance(band.Up) ? band.Tier + 1 : band.Tier;
+                var pool = _content.HoardItems.Where(it => it.Tier == itemTier).ToList();
+                if (pool.Count == 0) pool = _content.HoardItems.Where(it => it.Tier <= itemTier).ToList();
+                if (pool.Count == 0) goto Scroll;
                 var item = Hoarded(pool, site);
                 if (item.Slot == "consumable" && _content.Regalia.Item(item.Id) is not { Slot: Regalia.Hall })
                 {
@@ -1957,6 +2034,7 @@ public static partial class Expedition
                     line += $" and the {item.Name}, which {who.Agent.GivenName} claims";
                 }
             }
+            Scroll:
             string scroll = FindScroll();
             if (scroll != "") line += line == "" ? $" and {scroll}" : $", and {scroll}";
             if (sure && line != "") Log($"They bring back{line[4..]}.");

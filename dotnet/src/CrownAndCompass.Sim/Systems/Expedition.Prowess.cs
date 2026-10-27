@@ -16,6 +16,46 @@ public static partial class Expedition
 
         private ProwessRules Rules => _content.Prowess;
 
+        /// <summary>A caster now holds this spell by concentration, letting go of any other.</summary>
+        private void Hold(Combatant c, LibSpell sp)
+        {
+            if (!sp.Concentration) return;
+            if (c.Holding != "") LetGo(c, "");
+            c.Holding = sp.Name;
+        }
+
+        /// <summary>Hurt while holding a spell: a Constitution save (DC 10 or half the damage) or it is gone.</summary>
+        private void Concentrate(Combatant c, int dmg)
+        {
+            if (c.Holding == "" || c.Down || c.Dead) return;
+            int dc = Math.Max(Rules.ConcentrationDc, dmg / 2);
+            int roll = _rng.D20();
+            int total = roll + Rng.Modifier(c.Agent.Abilities.Con) + Advances.Concentration(_content, c.Sheet);
+            if (total >= dc) return;
+            LetGo(c, $"{c.Agent.GivenName} loses hold of {Library.Prose(c.Holding)} (d20 {roll}, {total} vs DC {dc}).");
+        }
+
+        /// <summary>The held spell ends: its aura stops, the foes it held go free, the friends it lifted lose the lift.</summary>
+        private void LetGo(Combatant c, string line)
+        {
+            _auras.RemoveAll(a => a.By == c);
+            foreach (var f in c.HoldsFoes)
+            {
+                f.HeldUntil = 0;
+                f.HinderUntil = 0;
+            }
+            foreach (var (on, hit, ac, haste) in c.Lifts)
+            {
+                if (on.HitBuff == hit) on.HitBuff = 0;
+                on.AcBuff = Math.Max(0, on.AcBuff - ac);
+                on.Haste = Math.Max(0, on.Haste - haste);
+            }
+            c.HoldsFoes.Clear();
+            c.Lifts.Clear();
+            c.Holding = "";
+            if (line != "") Log(line);
+        }
+
         /// <summary>Back to full after a long rest (slots, every use, the healing pool), or what a short rest brings back.</summary>
         private void Refresh(Combatant c, bool longRest)
         {
@@ -55,6 +95,9 @@ public static partial class Expedition
                 c.MarkOn = null;
                 c.Buffed = false;
                 c.Dodged = 0;
+                c.Holding = "";
+                c.HoldsFoes.Clear();
+                c.Lifts.Clear();
             }
             _auras.Clear();
             _buffs.Clear();
@@ -355,7 +398,10 @@ public static partial class Expedition
         {
             var s = c.Sheet;
             if (c.Form != null || _hushed || c.Slots <= (s.Cls.Healer ? Rules.KeepForHeals : 0)) return false;
-            var known = Prowess.Castable(_content, s).Where(k => k.Spell.Level > 0).ToList();
+            // A hold whose foes all broke free or fell is spent.
+            if (c.Holding != "" && c.HoldsFoes.Count > 0 && c.Lifts.Count == 0 && !_auras.Any(a => a.By == c) && c.HoldsFoes.All(f => f.Hp <= 0 || (!f.Held(round) && f.HinderUntil < round))) LetGo(c, "");
+            // One spell held by concentration at a time: while one holds, only spells that need none.
+            var known = Prowess.Castable(_content, s).Where(k => k.Spell.Level > 0 && !(k.Spell.Concentration && c.Holding != "")).ToList();
             if (known.Count == 0) return false;
             var boss = living.FirstOrDefault(f => f.Def.Boss);
             bool crowd = living.Count >= Rules.SpendFoes;
@@ -467,11 +513,13 @@ public static partial class Expedition
                 on = who.OrderBy(x => x.Sheet.MaxHp).ThenBy(x => x.Agent.Id).Take(p.Targets + (p.Upcast == 1 ? extra : 0)).ToList();
             else
                 on = who.OrderByDescending(x => x.Attack).ThenBy(x => x.Agent.Id).Take(p.Targets + extra).ToList();
+            Hold(c, sp);
             foreach (var x in on)
             {
                 x.HitBuff = Math.Max(x.HitBuff, p.Hit);
                 x.AcBuff += p.Ac;
                 x.Haste += p.Attacks;
+                if (sp.Concentration) c.Lifts.Add((x, p.Hit, p.Ac, p.Attacks));
                 if (p.Hp > 0) x.Temp = Math.Max(x.Temp, p.Hp + (p.Upcast > 1 ? extra : 0));
             }
             Log($"{c.Agent.GivenName} casts {Library.Prose(sp.Name)} on {(on.Count == who.Count && on.Count > 1 ? "the party" : ListNames(on.Select(x => x == c ? "themself" : x.Agent.GivenName).ToList()))}.");
@@ -538,7 +586,9 @@ public static partial class Expedition
         {
             int slot = Prowess.CastAt(sp, top);
             c.Slots--;
-            _auras.Add((c, Prowess.DiceAt(p, sp, slot) ?? new Dice(2, 8, 0), sp.DamageType, sp.Save, Dc(c), round + Math.Max(1, p.Rounds), Math.Max(1, p.Targets), sp.Name));
+            Hold(c, sp);
+            // Held by concentration, it lasts the fight; otherwise its own rounds.
+            _auras.Add((c, Prowess.DiceAt(p, sp, slot) ?? new Dice(2, 8, 0), sp.DamageType, sp.Save, Dc(c), sp.Concentration ? int.MaxValue : round + Math.Max(1, p.Rounds), Math.Max(1, p.Targets), sp.Name));
             Log($"{c.Agent.GivenName} calls up {Library.Prose(sp.Name)}.");
             Mark("spell", c);
         }
@@ -562,6 +612,7 @@ public static partial class Expedition
             int n = p.Targets + (p.Targets == 1 ? Math.Max(0, slot - sp.Level) * Math.Max(0, p.Upcast) : 0);
             var targets = Holdable(p, sp, top, living, round).Take(n).ToList();
             int dc = Dc(c);
+            Hold(c, sp);
             List<string> caught = [], free = [];
             foreach (var f in targets)
             {
@@ -580,6 +631,7 @@ public static partial class Expedition
                     f.HeldUntil = round + p.Rounds;
                     f.HeldBy = p.Condition;
                 }
+                if (sp.Concentration) c.HoldsFoes.Add(f);
                 caught.Add(f.Def.Name);
             }
             c.Slots--;
@@ -722,6 +774,9 @@ public static partial class Expedition
         }
 
         /// <summary>A spell class's everyday attack: the cantrip that suits the foe best, more dice (or rays) as they level.</summary>
+        /// <summary>The cantrip being thrown, for the tale's lines about it.</summary>
+        private string _cantrip = "";
+
         private bool CantripAttack(Combatant c, List<Foe> foes, int round)
         {
             var s = c.Sheet;
@@ -730,10 +785,13 @@ public static partial class Expedition
             var living = foes.Where(f => f.Hp > 0).ToList();
             var cantrips = Prowess.Castable(_content, s).Where(k => k.Play.Kind == "cantrip" && k.Spell.Dice != null).ToList();
             if (cantrips.Count == 0) return false;
-            var pick = cantrips
+            var weighed = cantrips
                 .Select(k => (k.Play, k.Spell, Target: Aim(c, living, k.Spell.DamageType, true, false, Prowess.Avg(k.Spell.Dice) * Prowess.CantripDice(_content, s.Level))))
                 .Select(x => (x.Play, x.Spell, x.Target, Value: Cantrip(c, x.Play, x.Spell, x.Target)))
-                .OrderByDescending(x => x.Value).ThenBy(x => x.Play.Id, StringComparer.Ordinal).First();
+                .OrderByDescending(x => x.Value).ThenBy(x => x.Play.Id, StringComparer.Ordinal).ToList();
+            // Among the cantrips about as good as the best, each caster has a favourite of their own.
+            var near = weighed.Where(x => x.Value >= weighed[0].Value * 0.85).OrderBy(x => x.Play.Id, StringComparer.Ordinal).ToList();
+            var pick = near[(int)(Voices.Hash("cantrip", c.Agent.Id) % (uint)near.Count)];
             var (play, sp, target) = (pick.Play, pick.Spell, pick.Target);
             int n = Prowess.CantripDice(_content, s.Level);
             int rays = play.Beams > 0 ? n : 1;
@@ -742,6 +800,8 @@ public static partial class Expedition
             int total = 0;
             int lastRoll = 0;
             var hit = new List<Foe>();
+            var first = target;
+            _cantrip = sp.Name;
             for (int r = 0; r < rays; r++)
             {
                 if (target.Hp <= 0)
@@ -787,16 +847,24 @@ public static partial class Expedition
                     else if (f.Hp <= 0 && f.Def.Boss) Told(c, f, lastRoll, SpellAttack(c), dealt);
                 }
             }
+            _cantrip = "";
+            // The first cantrip that lands in a fight gets its line, so the tale knows what each caster throws.
+            if (total > 0 && c.FightUsed.Add(CantripTold))
+                Log($"{c.Agent.GivenName}'s {Library.Prose(sp.Name)} {(first.Hp <= 0 ? "drops" : "strikes")} {The(first.Def)} for {total}.");
             return true;
         }
+
+        /// <summary>A mark in <see cref="Combatant.FightUsed"/> for "this fight's cantrip has been told".</summary>
+        private const int CantripTold = -100;
 
         /// <summary>The tale's line for a natural 20 or the blow that fells the master of the place.</summary>
         private void Told(Combatant c, Foe target, int roll, int atk, int dmg)
         {
             string name = c.Agent.GivenName;
+            string with = _cantrip == "" ? "" : $" with {Library.Prose(_cantrip)}";
             if (roll == 20)
             {
-                Log($"Natural 20! {name} hits {The(target.Def)} for {dmg}{(target.Hp <= 0 ? " and it goes down" : "")}.");
+                Log($"Natural 20! {name} hits {The(target.Def)}{with} for {dmg}{(target.Hp <= 0 ? " and it goes down" : "")}.");
                 Mark(target.Hp <= 0 && target.Def.Boss ? "kill" : "crit", c, 20, 20 + atk, target.Def.Ac);
                 if (c.Sheet.NicknameFor == "crit") Gag(c, "crit");
                 else
@@ -807,7 +875,7 @@ public static partial class Expedition
             }
             else if (target.Hp <= 0 && target.Def.Boss)
             {
-                Log($"{name} lands the killing blow on {The(target.Def)} (d20 {roll}{Sign(atk)}, {dmg} damage).");
+                Log($"{name} lands the killing blow on {The(target.Def)}{with} (d20 {roll}{Sign(atk)}, {dmg} damage).");
                 Mark("kill", c, roll, roll + atk, target.Def.Ac);
             }
         }

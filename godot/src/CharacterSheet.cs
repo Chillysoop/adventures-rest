@@ -109,9 +109,9 @@ public partial class Main
         int prof = Skills.HeroProficiency(hs.Level);
         var vitals = new List<SheetStat>
         {
-            new("ui-shield", "ARMOUR", Gear.Ac(c, a).ToString(), "Armour class: what a foe must roll to hit"),
+            new("ui-shield", "ARMOUR", (Gear.Ac(c, a) + Advances.Ac(c, hs)).ToString(), "Armour class: what a foe must roll to hit"),
             new("ui-heart", "HIT POINTS", $"{hs.Hp}/{hs.MaxHp}", "", hs.MaxHp > 0 ? hs.Hp / (double)hs.MaxHp : 0),
-            new("item-weapon", "ATTACK", Signed(Gear.Attack(c, a)), "Added to every attack roll"),
+            new("item-weapon", "ATTACK", Signed(Gear.Attack(c, a) + Advances.Attack(c, hs)), "Added to every attack roll"),
             new("d20", "PROFICIENCY", Signed(prof), "Added to trained skills; half to the rest"),
             new("ui-skull", "FOES SLAIN", hs.Kills.ToString(), $"{hs.Expeditions} expeditions"),
         };
@@ -138,6 +138,12 @@ public partial class Main
         if (Passage.Describe(carries & ~alone) is var more && more != "") kit.Add(Line("ui-road", Ui.Esc($"Takes the party over {more}")));
 
         var features = new List<string>();
+        foreach (var f in Advances.Feats(c, hs))
+        {
+            var gives = new[] { (f.Attack, "attack"), (f.Ac, "AC"), (f.Skill, "checks"), (f.Initiative, "initiative"), (f.Concentration, "concentration"), (f.HpPerLevel, "HP per level") }
+                .Where(x => x.Item1 != 0).Select(x => $"{Signed(x.Item1)} {x.Item2}");
+            features.Add(Ui.Tip(Line("ui-star", Ui.C(Ui.Gold, Ui.Esc(f.Name))), "Feat: " + string.Join(", ", gives)));
+        }
         if (Patrons.Of(c, hs) is { } pd)
         {
             var fc = hs.Favour >= 3 ? Ui.Good : hs.Favour <= -3 ? Ui.Bad : Ui.Ink2;

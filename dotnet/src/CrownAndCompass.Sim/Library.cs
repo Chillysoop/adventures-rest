@@ -139,6 +139,8 @@ public sealed record LibSpell
     /// <summary>The first damage type it deals ("fire"), the ability its targets save with ("dex"), and whether it is an attack roll.</summary>
     public string DamageType { get; init; } = "";
     public string Save { get; init; } = "";
+    /// <summary>Held by concentration: one at a time, lost when the caster goes down or fails a Constitution save on being hurt.</summary>
+    public bool Concentration { get; init; }
     public bool Attack { get; init; }
 }
 
@@ -674,6 +676,7 @@ public sealed class Library
             DamageType = Strings(e, "damageTypes").FirstOrDefault() ?? "",
             Save = Str(e, "save") is { Length: >= 3 } sv ? sv[..3].ToLowerInvariant() : "",
             Attack = Flag(e, "attack"),
+            Concentration = Flag(e, "concentration"),
         };
     }
 

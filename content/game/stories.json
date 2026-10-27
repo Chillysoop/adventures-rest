@@ -299,6 +299,392 @@
       "ignored": { "text": "Nobody sends for them. Their gear stays at {site}, for anyone who clears it to find.", "effects": {} }
     },
     {
+    "id": "ring-of-three-wishes",
+    "title": "{hero} holds a Ring of Three Wishes",
+    "stakes": "high",
+    "source": "found",
+    "needs": [
+      "hero"
+    ],
+    "stages": [
+      {
+        "id": "start",
+        "text": "{hero} sets a plain gold ring on the council table. Three tiny stars glow in the band. {heroName} found a wish, and the town gets to say what it is for.",
+        "options": [
+          {
+            "label": "Bring back our fallen",
+            "tags": [
+              "faith",
+              "valor"
+            ],
+            "prefer": 0.35,
+            "success": {
+              "text": "{heroName} speaks the words. In the graveyard the earth stirs, and the town's lost heroes walk home through the gate in the morning light.",
+              "effects": {
+                "raiseFallen": 3,
+                "mandate": 3,
+                "dread": -4
+              },
+              "next": "second"
+            }
+          },
+          {
+            "label": "Break the great enemy",
+            "tags": [
+              "valor",
+              "valor"
+            ],
+            "prefer": 0.35,
+            "success": {
+              "text": "{heroName} wishes the enemy broken. Far off, a fortress cracks to its roots, and something that was winning starts to lose.",
+              "effects": {
+                "bigBad": -0.4,
+                "dread": -6,
+                "mandate": 2
+              },
+              "next": "second"
+            }
+          },
+          {
+            "label": "Riches for the town",
+            "tags": [
+              "coin"
+            ],
+            "prefer": 0.15,
+            "success": {
+              "text": "The treasury doors will not shut for the gold piled behind them. Clerks weep. Merchants come from three kingdoms to see it.",
+              "effects": {
+                "gold": 3000,
+                "prosperity": 10
+              },
+              "next": "second"
+            }
+          },
+          {
+            "label": "Make {heroName} a legend",
+            "tags": [
+              "valor"
+            ],
+            "prefer": 0.1,
+            "success": {
+              "text": "{heroName} wishes to be what the songs say. They walk out of the hall taller, with a blade no smith alive could make.",
+              "effects": {
+                "heroXp": 2,
+                "renown": 10,
+                "magicItem": 5
+              },
+              "next": "second"
+            }
+          },
+          {
+            "label": "Wish beyond the safe words",
+            "ability": "int",
+            "dc": 15,
+            "aid": "hero",
+            "tags": [
+              "valor",
+              "guile"
+            ],
+            "prefer": 0.05,
+            "critical": {
+              "text": "{heroName} reshapes the world by a hair's breadth and the world agrees. The fallen rise, the enemy reels, and the town shines.",
+              "effects": {
+                "raiseFallen": 5,
+                "bigBad": -0.5,
+                "gold": 2000,
+                "mandate": 5
+              },
+              "next": "second"
+            },
+            "success": {
+              "text": "The wish takes, wider than any safe one. The fallen rise and the enemy staggers, but the ring's gold has gone grey.",
+              "effects": {
+                "raiseFallen": 3,
+                "bigBad": -0.3,
+                "wound": 20
+              }
+            },
+            "failure": {
+              "text": "The wish twists. What {heroName} asked for arrives backwards, and the ring crumbles to dust in their hand. They will never speak a wish again.",
+              "effects": {
+                "wound": 30,
+                "dread": 5,
+                "mandate": -3
+              }
+            },
+            "fumble": {
+              "text": "The words turn on {heroName}. Something on the far side of the wish answers, and {heroName} leaves the road a broken shell of the hero they were.",
+              "effects": {
+                "retire": 1,
+                "dread": 8,
+                "mandate": -5
+              }
+            }
+          },
+          {
+            "label": "Save the rest for a darker day",
+            "tags": [
+              "caution"
+            ],
+            "prefer": 0.0001,
+            "success": {
+              "text": "{heroName} turns the ring on their finger and keeps their counsel. The wishes wait.",
+              "effects": {
+                "loyalty": 2
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "second",
+        "text": "Two stars still glow in the band. {heroName} looks to the council for the second wish.",
+        "options": [
+          {
+            "label": "Bring back our fallen",
+            "tags": [
+              "faith",
+              "valor"
+            ],
+            "prefer": 0.35,
+            "success": {
+              "text": "{heroName} speaks the words. In the graveyard the earth stirs, and the town's lost heroes walk home through the gate in the morning light.",
+              "effects": {
+                "raiseFallen": 3,
+                "mandate": 3,
+                "dread": -4
+              },
+              "next": "third"
+            }
+          },
+          {
+            "label": "Break the great enemy",
+            "tags": [
+              "valor",
+              "valor"
+            ],
+            "prefer": 0.35,
+            "success": {
+              "text": "{heroName} wishes the enemy broken. Far off, a fortress cracks to its roots, and something that was winning starts to lose.",
+              "effects": {
+                "bigBad": -0.4,
+                "dread": -6,
+                "mandate": 2
+              },
+              "next": "third"
+            }
+          },
+          {
+            "label": "Riches for the town",
+            "tags": [
+              "coin"
+            ],
+            "prefer": 0.15,
+            "success": {
+              "text": "The treasury doors will not shut for the gold piled behind them. Clerks weep. Merchants come from three kingdoms to see it.",
+              "effects": {
+                "gold": 3000,
+                "prosperity": 10
+              },
+              "next": "third"
+            }
+          },
+          {
+            "label": "Make {heroName} a legend",
+            "tags": [
+              "valor"
+            ],
+            "prefer": 0.1,
+            "success": {
+              "text": "{heroName} wishes to be what the songs say. They walk out of the hall taller, with a blade no smith alive could make.",
+              "effects": {
+                "heroXp": 2,
+                "renown": 10,
+                "magicItem": 5
+              },
+              "next": "third"
+            }
+          },
+          {
+            "label": "Wish beyond the safe words",
+            "ability": "int",
+            "dc": 15,
+            "aid": "hero",
+            "tags": [
+              "valor",
+              "guile"
+            ],
+            "prefer": 0.05,
+            "critical": {
+              "text": "{heroName} reshapes the world by a hair's breadth and the world agrees. The fallen rise, the enemy reels, and the town shines.",
+              "effects": {
+                "raiseFallen": 5,
+                "bigBad": -0.5,
+                "gold": 2000,
+                "mandate": 5
+              },
+              "next": "third"
+            },
+            "success": {
+              "text": "The wish takes, wider than any safe one. The fallen rise and the enemy staggers, but the ring's gold has gone grey.",
+              "effects": {
+                "raiseFallen": 3,
+                "bigBad": -0.3,
+                "wound": 20
+              }
+            },
+            "failure": {
+              "text": "The wish twists. What {heroName} asked for arrives backwards, and the ring crumbles to dust in their hand. They will never speak a wish again.",
+              "effects": {
+                "wound": 30,
+                "dread": 5,
+                "mandate": -3
+              }
+            },
+            "fumble": {
+              "text": "The words turn on {heroName}. Something on the far side of the wish answers, and {heroName} leaves the road a broken shell of the hero they were.",
+              "effects": {
+                "retire": 1,
+                "dread": 8,
+                "mandate": -5
+              }
+            }
+          },
+          {
+            "label": "Save the rest for a darker day",
+            "tags": [
+              "caution"
+            ],
+            "prefer": 0.0001,
+            "success": {
+              "text": "{heroName} turns the ring on their finger and keeps their counsel. The wishes wait.",
+              "effects": {
+                "loyalty": 2
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "third",
+        "text": "One star is left. The last wish, and then the ring is only gold.",
+        "options": [
+          {
+            "label": "Bring back our fallen",
+            "tags": [
+              "faith",
+              "valor"
+            ],
+            "prefer": 0.35,
+            "success": {
+              "text": "{heroName} speaks the words. In the graveyard the earth stirs, and the town's lost heroes walk home through the gate in the morning light.",
+              "effects": {
+                "raiseFallen": 3,
+                "mandate": 3,
+                "dread": -4
+              }
+            }
+          },
+          {
+            "label": "Break the great enemy",
+            "tags": [
+              "valor",
+              "valor"
+            ],
+            "prefer": 0.35,
+            "success": {
+              "text": "{heroName} wishes the enemy broken. Far off, a fortress cracks to its roots, and something that was winning starts to lose.",
+              "effects": {
+                "bigBad": -0.4,
+                "dread": -6,
+                "mandate": 2
+              }
+            }
+          },
+          {
+            "label": "Riches for the town",
+            "tags": [
+              "coin"
+            ],
+            "prefer": 0.15,
+            "success": {
+              "text": "The treasury doors will not shut for the gold piled behind them. Clerks weep. Merchants come from three kingdoms to see it.",
+              "effects": {
+                "gold": 3000,
+                "prosperity": 10
+              }
+            }
+          },
+          {
+            "label": "Make {heroName} a legend",
+            "tags": [
+              "valor"
+            ],
+            "prefer": 0.1,
+            "success": {
+              "text": "{heroName} wishes to be what the songs say. They walk out of the hall taller, with a blade no smith alive could make.",
+              "effects": {
+                "heroXp": 2,
+                "renown": 10,
+                "magicItem": 5
+              }
+            }
+          },
+          {
+            "label": "Wish beyond the safe words",
+            "ability": "int",
+            "dc": 15,
+            "aid": "hero",
+            "tags": [
+              "valor",
+              "guile"
+            ],
+            "prefer": 0.05,
+            "critical": {
+              "text": "{heroName} reshapes the world by a hair's breadth and the world agrees. The fallen rise, the enemy reels, and the town shines.",
+              "effects": {
+                "raiseFallen": 5,
+                "bigBad": -0.5,
+                "gold": 2000,
+                "mandate": 5
+              }
+            },
+            "success": {
+              "text": "The wish takes, wider than any safe one. The fallen rise and the enemy staggers, but the ring's gold has gone grey.",
+              "effects": {
+                "raiseFallen": 3,
+                "bigBad": -0.3,
+                "wound": 20
+              }
+            },
+            "failure": {
+              "text": "The wish twists. What {heroName} asked for arrives backwards, and the ring crumbles to dust in their hand. They will never speak a wish again.",
+              "effects": {
+                "wound": 30,
+                "dread": 5,
+                "mandate": -3
+              }
+            },
+            "fumble": {
+              "text": "The words turn on {heroName}. Something on the far side of the wish answers, and {heroName} leaves the road a broken shell of the hero they were.",
+              "effects": {
+                "retire": 1,
+                "dread": 8,
+                "mandate": -5
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "ignored": {
+      "text": "Nobody answers {heroName}. They make one wish of their own in the night, for a full purse, and the ring goes quiet.",
+      "effects": {
+        "gold": 500
+      }
+    }
+  },
+    {
       "id": "deck-of-many-things", "title": "{hero} brings home a Deck of Many Things", "stakes": "high", "source": "found",
       "needs": ["hero"],
       "stages": [
