@@ -1,5 +1,5 @@
 {
-  "_doc": "Roads to victory (Systems/Victory.cs). Every road ends the big bad's threat in its own way, so none can be claimed before the big bad has shown itself (been crowned). Slay is the Saga's own finale (Saga.Win). Once its terms hold the mayor may claim it (Simulation.ClaimRoad): the big bad marches at once, and the terms must hold `hold` days more. Numbers: allies = allied settlements and powers; powers = minor powers allied; sworn = standing a settlement needs to count as under the banner; fameTier = notoriety.json fame tier index (3 Renowned, 4 Legendary); tier = city.json charter id; cleared = share of known sites cleared; income = trade gold over the last month.",
+  "_doc": "Roads to victory (Systems/Victory.cs). Every road ends the big bad's threat in its own way, so none can be claimed before the big bad has shown itself (been crowned). Slay is the Saga's own finale (Saga.Win). Once its terms hold the mayor may claim it (Simulation.ClaimRoad): the big bad marches at once, and the terms must hold `hold` days more. Numbers: allies = allied settlements and powers; powers = minor powers allied; sworn = standing a settlement needs to count as under the banner; fameTier = notoriety.json fame tier index (3 Renowned, 4 Legendary); tier = city.json charter id; cleared = share of known sites cleared; income = trade gold over the last month; liberty = the form of government's liberty at least (commonwealth) or at most (crown); moots = yearly moots held; content = share of the town (by bloc size) whose blocs feel well of the mayor; trust = the town's trust in the mayor's word; ruled = days under the present form; watch = the watch's strength.",
   "roads": [
     {
       "id": "slay", "name": "Slay the Big Bad", "icon": "act-slay", "kind": "Heroic",
@@ -33,6 +33,20 @@
       "title": "A golden age",
       "ending": "Through the worst {name} could do, {town} has known nothing but plenty. {name}'s own people slip away to its gates for bread and work, until {leader} rules an empty land and is heard of no more.",
       "hold": 120, "tier": "great_city", "mandate": 80, "unrest": 10
+    },
+    {
+      "id": "commonwealth", "name": "Free Commonwealth", "icon": "vote-aye", "kind": "Democratic",
+      "blurb": "A free town whose people choose their council and their mayor, content and trusting, year after year.",
+      "title": "The free commonwealth",
+      "ending": "{name} sends heralds to {town} to call for surrender, and the moot votes them down to a man. Word of a town where every household has its say runs through the wilds faster than {leader}'s riders, and the folk of {name}'s own lands slip away to it. A tyrant can't hold a land whose people have seen the alternative: {leader} is cast down by their own, and {town} is the free heart of the wilds.",
+      "hold": 60, "liberty": 1, "moots": 2, "content": 0.75, "trust": 60, "unrest": 20
+    },
+    {
+      "id": "crown", "name": "Iron Crown", "icon": "regalia-sceptre", "kind": "Authoritarian",
+      "blurb": "Rule by crown or iron: a town so firmly held that no bloc dares to stir and no foe finds a crack.",
+      "title": "The iron crown",
+      "ending": "{name}'s spies come to {town} looking for a malcontent to buy, a door left open, a councillor with a grudge, and find none: the watch is everywhere and the mayor's word is the only law. {leader} looks on a town that cannot be divided or frightened, and so do the wilds. One by one the halls that served {name} bend the knee to the crown of {town} instead.",
+      "hold": 60, "liberty": -1, "ruled": 120, "watch": 0.6, "unrest": 25
     },
     {
       "id": "adventurers", "name": "Capital of Adventurers", "icon": "compass", "kind": "Adventure",

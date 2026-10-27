@@ -44,6 +44,14 @@ public sealed record RoadDef
     // Merchant Crown: open trade routes and a month's trade gold.
     public int Routes { get; init; }
     public double Income { get; init; }
+
+    // Free Commonwealth and Iron Crown: the form's liberty, moots held, share of the town content, trust, days under the form, the watch.
+    public int Liberty { get; init; }
+    public int Moots { get; init; }
+    public double Content { get; init; }
+    public double Trust { get; init; }
+    public int Ruled { get; init; }
+    public double Watch { get; init; }
 }
 
 public sealed record VictoryRules
@@ -137,6 +145,22 @@ public static class Victory
             new("Sites cleared %", Js.Round(ClearedShare(town) * 100), Js.Round(d.Cleared * 100)),
             new("Companies at home", CompaniesHome(town), d.Companies),
             new("Bastions", town.Bastions.Count, d.Bastions),
+        ],
+        "commonwealth" =>
+        [
+            new("Free government", Politics.Form(town).Liberty, d.Liberty),
+            new("Moots held", town.Politics.Moots, d.Moots),
+            new("Town content %", Js.Round(Politics.Content(town) * 100), Js.Round(d.Content * 100)),
+            new("Trust", Js.Round(town.Politics.Trust), d.Trust),
+            new("Unrest", Js.Round(town.Taxes.Unrest), d.Unrest, AtMost: true),
+        ],
+        "crown" =>
+        [
+            new("Firm government", -Politics.Form(town).Liberty, -d.Liberty),
+            new("Days under it", Politics.Form(town).Liberty <= d.Liberty ? town.Day - town.Politics.FormDay : 0, d.Ruled),
+            new("Watch strength %", Js.Round(Council.WatchStrength(town) * 100), Js.Round(d.Watch * 100)),
+            new("Radical cells", town.Politics.Cells.Count, 0, AtMost: true),
+            new("Unrest", Js.Round(town.Taxes.Unrest), d.Unrest, AtMost: true),
         ],
         "merchant" =>
         [

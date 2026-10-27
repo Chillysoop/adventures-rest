@@ -113,7 +113,7 @@ public static class Council
             effect += 0.1 * Competence(town, cap);
             if (cap.Loyalty < LowLoyalty) effect *= 0.5;
         }
-        return Math.Min(0.85, town.Watch * 0.12 * effect * Factions.WatchFactor(town) * Planning.WatchFactor(town) * Kit.WatchFactor(town) + Clockwork.Catch(town) + Garrison.StreetWatch(town) + Army.StreetWatch(town));
+        return Math.Min(0.95, Politics.WatchFactor(town) * Math.Min(0.85, town.Watch * 0.12 * effect * Factions.WatchFactor(town) * Planning.WatchFactor(town) * Kit.WatchFactor(town) + Clockwork.Catch(town) + Garrison.StreetWatch(town) + Army.StreetWatch(town)));
     }
 
     /// <summary>Bonus mood while a festival runs.</summary>
@@ -151,9 +151,11 @@ public static class Council
     {
         if (town.FestivalDays > 0) town.FestivalDays--;
         PayWatch(town);
-        FillSeats(town);
         DriftMandate(town);
         if (autoDecide) Laws.StandIn(town);
+        // Under iron rule there is no council: the mayor's word is law.
+        if (!Politics.HasCouncil(town)) return;
+        FillSeats(town);
         foreach (var s in town.Seats) if (s.HolderId != null) LoyaltyDay(town, s);
 
         var pending = PendingMotion(town);
@@ -207,16 +209,12 @@ public static class Council
                 town.Log(LedgerCategory.Council, Importance.Notable, $"{h.Name} is gone from {town.Name}, and the council has no {s.Def.Title}.", [h.Id]);
             }
             if (pop < s.Def.UnlockPopulation) continue;
-            var seated = new HashSet<int?>(town.Seats.Select(x => x.HolderId));
-            string ab = s.Def.Ability;
-            var candidate = town.Workers
-                .Where(a => !seated.Contains(a.Id) && town.Tick - a.ArrivedTick >= 2 * SimTime.HoursPerDay)
-                .OrderByDescending(a => Score(a, ab))
-                .ThenBy(a => a.Id)
-                .FirstOrDefault();
+            var seated = new HashSet<int>(town.Seats.Where(x => x.HolderId != null).Select(x => x.HolderId!.Value));
+            // The ablest, the richest or the moot's choice, as the town's form of government seats them.
+            var candidate = Politics.Seat(town, Candidates(town, s, seated));
             if (candidate == null) continue;
             s.HolderId = candidate.Id;
-            s.Loyalty = 45 + town.Rng.Range(0, 20);
+            s.Loyalty = Politics.StartLoyalty(town, candidate, 45 + town.Rng.Range(0, 20));
             s.LowLoyaltyDays = 0;
             town.Log(
                 LedgerCategory.Council,
@@ -227,6 +225,17 @@ public static class Council
         }
     }
 
+    /// <summary>Townsfolk who could take a seat, the ablest first: settled two days, and not seated already.</summary>
+    public static List<Agent> Candidates(Town town, Seat s, IReadOnlySet<int> seated)
+    {
+        string ab = s.Def.Ability;
+        return town.Workers
+            .Where(a => !seated.Contains(a.Id) && town.Tick - a.ArrivedTick >= 2 * SimTime.HoursPerDay)
+            .OrderByDescending(a => Score(a, ab))
+            .ThenBy(a => a.Id)
+            .ToList();
+    }
+
     private static double Score(Agent a, string ab) =>
         a.Abilities[ab] + (a.Has(Trait.Ambitious) ? 2 : 0) + (a.Has(Trait.Lazy) ? -2 : 0) + Math.Min(3, a.Gold / 100);
 
@@ -235,7 +244,7 @@ public static class Council
         var res = town.Residents;
         double mood = res.Count > 0 ? Js.Sum(res, a => a.LastDayMood) / res.Count : 65;
         var speaker = FindSeat(town, SeatId.Speaker);
-        double drift = (mood - 70 - Frontier.Expect(town)) * 0.04 + Planning.Mandate(town) * 0.05 + Decor.Mandate(town) + Regalia.Mandate(town) + Mayoralty.Mandate(town);
+        double drift = (mood - 70 - Frontier.Expect(town)) * 0.04 + Planning.Mandate(town) * 0.05 + Decor.Mandate(town) + Regalia.Mandate(town) + Mayoralty.Mandate(town) + Politics.Mandate(town);
         if (speaker != null && speaker.HolderId != null) drift += speaker.Loyalty >= LowLoyalty ? 0.15 * Competence(town, speaker) : -0.5;
         // Goodwill fades: a mandate above its rest has to be kept earned.
         var rules = town.Content.Council;
@@ -247,7 +256,7 @@ public static class Council
     {
         var h = town.Agent(s.HolderId!.Value);
         // Loyalty eases back toward neutral; a popular mayor wins people over.
-        s.Loyalty = Clamp(s.Loyalty + (50 - s.Loyalty) * 0.02 + (town.Mandate - 50) * 0.01 + Regalia.Council(town), 0, 100);
+        s.Loyalty = Clamp(s.Loyalty + (50 - s.Loyalty) * 0.02 + (town.Mandate - 50) * 0.01 + Regalia.Council(town) + Politics.SeatLoyalty(town, h), 0, 100);
         if (s.Loyalty >= LowLoyalty)
         {
             s.LowLoyaltyDays = 0;
@@ -476,7 +485,7 @@ public static class Council
                 continue;
             }
             // How they lean, as a modifier on their d20 against 11: a seat that wants the motion with all its heart is +20.
-            double lean = town.Content.Council.Alignment[m.Kind][s.Def.Id] * 50 + voter.OpinionOf(m.ProposerId) * 0.3 + Guilds.Lean(town, s.Def.Id, m.Kind);
+            double lean = town.Content.Council.Alignment[m.Kind][s.Def.Id] * 50 + voter.OpinionOf(m.ProposerId) * 0.3 + Guilds.Lean(town, s.Def.Id, m.Kind) + Politics.Lean(town, voter, m.Kind);
             int mod = (int)Math.Round(Math.Clamp(lean / 2.5, -20, 20));
             int die = town.Rng.D20();
             votes.Add(new Vote(s.Def.Id, die == 20 || (die != 1 && die + mod >= VoteDc)) { Die = die, Lean = mod });
@@ -503,7 +512,7 @@ public static class Council
                 if (s == null || s.HolderId == null || v.Seat == m.Proposer) continue;
                 s.Loyalty = Clamp(s.Loyalty + (v.Yes == passed ? 3 : -3) - (m.Decree && v.Yes != passed ? 8 : 0), 0, 100);
             }
-            if (m.Decree) town.Mandate = Clamp(town.Mandate - town.Content.Council.DecreeMandate, 0, 100);
+            if (m.Decree) town.Mandate = Clamp(town.Mandate - town.Content.Council.DecreeMandate * Politics.DecreeTimes(town), 0, 100);
             Guilds.Ruled(town, m.Kind, passed, $"{(passed ? "signed" : "vetoed")} the motion that {m.Text}");
         }
 
@@ -529,6 +538,7 @@ public static class Council
     private static void Enact(Town town, Motion m)
     {
         var c = town.Content.Council;
+        Politics.Changed(town);
         switch (m.Kind)
         {
             case MotionKind.RaiseTax:

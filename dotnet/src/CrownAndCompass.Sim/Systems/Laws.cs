@@ -113,7 +113,7 @@ public static class Laws
         Rules(town).Punishment(town.Laws.GetValueOrDefault(crime, Rules(town).Default)) ?? Rules(town).Punishments[0];
 
     /// <summary>Times the chance an offender tries it, for the fear the punishment puts in them.</summary>
-    public static double Deter(Town town, string crime) => 1 - For(town, crime).Fear;
+    public static double Deter(Town town, string crime) => (1 - For(town, crime).Fear) * Politics.Deter(town);
 
     /// <summary>The council sets the punishment for a crime.</summary>
     public static bool Set(Town town, string crime, string punishment)

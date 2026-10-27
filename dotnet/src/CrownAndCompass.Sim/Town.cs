@@ -297,6 +297,7 @@ public static class TreasuryAccount
     public const string Watch = "Watch";
     public const string CouncilMotions = "Council motions";
     public const string Discrepancies = "Discrepancies";
+    public const string Laws = "Laws";
     public const string Defenses = "Defenses";
     public const string Patron = "Patron";
     public const string Scrying = "Scrying";
@@ -548,6 +549,9 @@ public sealed class Town
 
     /// <summary>The town's services weighed against its income, and the unrest when they go short (<see cref="Systems.Taxes"/>).</summary>
     public TaxState Taxes { get; } = new();
+
+    /// <summary>The form of government, the laws' standing with the blocs, town votes, situations, asks and radicals (<see cref="Systems.Politics"/>).</summary>
+    public PoliticsState Politics { get; } = new();
 
     /// <summary>The last month of the town's key numbers, for the top bar (<see cref="Systems.Trends"/>).</summary>
     public TrendState Trends { get; } = new();

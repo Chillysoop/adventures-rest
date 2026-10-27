@@ -1752,6 +1752,8 @@ public sealed class Content
     public TrendRules Trends { get; init; } = new();
     public MerchantRules Merchants { get; init; } = new();
     public Systems.BlocRules Blocs { get; init; } = new();
+    /// <summary>Laws' tags, policies, forms of government, town votes, situations, asks and radicals (content/game/politics.json).</summary>
+    public Systems.PoliticsRules Politics { get; init; } = new();
     /// <summary>Fame and infamy for heroes and companies (content/game/notoriety.json).</summary>
     public NotorietyRules Notoriety { get; init; } = new();
     /// <summary>Notable townsfolk and the information network (content/game/notables.json).</summary>
@@ -2071,6 +2073,7 @@ public sealed class Content
             Trends = Parse<TrendRules>("trends.json"),
             Merchants = Parse<MerchantRules>("merchants.json"),
             Blocs = Parse<Systems.BlocRules>("blocs.json"),
+            Politics = Parse<Systems.PoliticsRules>("politics.json"),
             Notoriety = Parse<NotorietyRules>("notoriety.json"),
             Notables = Parse<NotableRules>("notables.json"),
             Goals = Parse<Systems.GoalRules>("goals.json"),

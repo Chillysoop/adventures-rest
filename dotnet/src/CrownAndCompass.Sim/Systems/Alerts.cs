@@ -128,14 +128,16 @@ public static class Alerts
     public static readonly AlertKind Unmanned = new("unmanned", "Walls unmanned", "defence", AlertLevel.Decision, AlertWindow.Defence, "Gate");
     public static readonly AlertKind Strangers = new("strangers", "Strangers at work", "suspicion", AlertLevel.Decision, AlertWindow.Defence, "Gate");
     public static readonly AlertKind Notable = new("notable", "Notables", "np-shaking-hands", AlertLevel.Decision, AlertWindow.Notables);
+    public static readonly AlertKind Ask = new("ask", "A bloc asks", "vote-aye", AlertLevel.Decision, AlertWindow.Council, "Blocs>");
+    public static readonly AlertKind Radicals = new("radicals", "Radicals", "suspicion", AlertLevel.Urgent, AlertWindow.Council, "Blocs>");
 
 
     /// <summary>Every kind, in the order their icons sit on the strip within a level.</summary>
     public static readonly IReadOnlyList<AlertKind> Kinds =
-        [Siege, Sighted, Lurker, Captives, Overdue, Ride, Doom, Crisis, Sick, Fear, Hunger, Coffers, Underfunded, Unrest, Strike, Hostile, Motion, Guild, Balance, Fealty, Gathering, DarkQuest, Road, Clash, Traitor, Plot, Dark, Spent, Fields, Carts, Unmanned, Strangers, Stores, Story, Scry, Explorers, Fallen, LevelUp, Charter, GrandWork, Tourney, Bastion, Institution, Notable, Heroes, Honours, Courted, Envoy, Neighbour, Shadow, Treasure, Loot, Stalled, Bridge, Ruin, Work, Settlers, Below, Scholars, Trade, Wager, RareFind, Gifts, Tower, Patrol, Outpost, Housing, Rooms, Camp, Crowded, WarAsk];
+        [Siege, Sighted, Lurker, Captives, Overdue, Ride, Doom, Crisis, Sick, Fear, Hunger, Coffers, Underfunded, Unrest, Radicals, Strike, Hostile, Motion, Ask, Guild, Balance, Fealty, Gathering, DarkQuest, Road, Clash, Traitor, Plot, Dark, Spent, Fields, Carts, Unmanned, Strangers, Stores, Story, Scry, Explorers, Fallen, LevelUp, Charter, GrandWork, Tourney, Bastion, Institution, Notable, Heroes, Honours, Courted, Envoy, Neighbour, Shadow, Treasure, Loot, Stalled, Bridge, Ruin, Work, Settlers, Below, Scholars, Trade, Wager, RareFind, Gifts, Tower, Patrol, Outpost, Housing, Rooms, Camp, Crowded, WarAsk];
 
     /// <summary>The standing rules, each naming what needs the player now. No rng and no writes: the client calls them often.</summary>
-    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Trades, Hostility, Winter, Growth, Routes, Region, Courting, Undercity, Study, Loyalty, Armoury, Homes, Sites, Allies, Word, Crowds, Keepers, Notables, Outposts, Lists, Brought, Missing, Frontiers, Treasures];
+    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Trades, Hostility, Winter, Growth, Routes, Region, Courting, Undercity, Study, Loyalty, Armoury, Homes, Sites, Allies, Word, Crowds, Keepers, Notables, Outposts, Lists, Brought, Missing, Frontiers, Treasures, Blocs];
 
     public static List<Alert> Standing(Town town) => Rules.SelectMany(r => r(town)).ToList();
 
@@ -143,6 +145,16 @@ public static class Alerts
     public static List<Alert> Shown(Town town, SimulationOptions o) => Standing(town).Where(a => !Stewards.Quiet(town, o, a.Kind.Id)).ToList();
 
     private static string Days(int n) => n == 1 ? "1 day" : $"{n} days";
+
+    /// <summary>A bloc's ask waiting on the mayor's word, and radicals who have gone past slogans.</summary>
+    private static IEnumerable<Alert> Blocs(Town t)
+    {
+        if (Politics.Ask(t) is { } d && Systems.Blocs.Def(t, d.Bloc) is { } b)
+            yield return new($"ask:{d.Id}", Ask, $"{Cap(b.Voice)} ask", $"{Cap(b.Voice)} ask for {Politics.Describe(t, d.Law, d.Option).ToLowerInvariant()}. Promise it or turn them away in the Council window.");
+        foreach (var c in t.Politics.Cells.Where(c => c.Stage >= 1))
+            if (Systems.Blocs.Def(t, c.Bloc) is { } cb)
+                yield return new($"radicals:{c.Bloc}", Radicals, $"Radicals: {cb.Voice}", $"Radicals among {cb.Voice} are at work. Win their bloc back, or keep the watch strong and stay off the streets.");
+    }
 
     /// <summary>An enemy's envoys at a minor power's door: outbid them with gifts before it answers.</summary>
     private static IEnumerable<Alert> Courting(Town t)

@@ -16,7 +16,7 @@ public static class Brain
         // Count who is out where once and keep the count as each agent moves, rather than recounting the
         // whole town every time someone comes to a door.
         Crowds.Begin(town);
-        double festival = Council.FestivalMood(town) + Seasons.Mood(town) + Decrees.Mood(town) + Institutions.Mood(town) + Eggs.Mood(town) + Ruins.Mood(town) + Taxes.Mood(town) + Tournaments.Mood(town);
+        double festival = Council.FestivalMood(town) + Seasons.Mood(town) + Decrees.Mood(town) + Institutions.Mood(town) + Eggs.Mood(town) + Ruins.Mood(town) + Taxes.Mood(town) + Tournaments.Mood(town) + Politics.Mood(town);
         foreach (var a in town.Agents)
         {
             if (a.Departed || a.IsAway) continue;
@@ -24,7 +24,7 @@ public static class Brain
             Crowds.Leave(town, a);
             Execute(town, a, Choose(town, a));
             Crowds.Moved(town, a);
-            SampleMood(a, festival + (a.Activity == Activity.Praying ? town.Content.Shrines.PrayMood : 0) + Faith.Mood(town, a) + City.HomeMood(town, a) + Decor.Mood(town, a) + Crowds.Mood(town, a) + Army.Mood(town, a) + Sickness.Mood(town, a));
+            SampleMood(a, festival + (a.Activity == Activity.Praying ? town.Content.Shrines.PrayMood : 0) + Faith.Mood(town, a) + City.HomeMood(town, a) + Decor.Mood(town, a) + Crowds.Mood(town, a) + Army.Mood(town, a) + Sickness.Mood(town, a) + Politics.Relief(town, a));
         }
         Crowds.End(town);
     }

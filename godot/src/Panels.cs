@@ -195,10 +195,15 @@ public partial class Main
         var t = _sim.Town;
         p.Begin();
         StewardStrip(p, "council", "guilds");
-        ShowChamber(p, t);
-        RenderCouncillor(p, t);
+        if (Politics.HasCouncil(t))
+        {
+            ShowChamber(p, t);
+            RenderCouncillor(p, t);
+        }
+        else p.Card($"{Ui.Img(Politics.Form(t).Icon, 18)} [b]{Ui.Esc(Politics.Form(t).Name)}[/b]\n[font_size=12]No council sits: the mayor's word is law.[/font_size]", Ui.Bad);
         p.Page("Hall", "tab-council");
         RenderMotion(p, t);
+        RenderVotes(p, t);
         p.Meter("Mandate", t.Mandate, $"{Math.Round(t.Mandate)}", t.Mandate < 30);
         p.Chips(
             Ui.Chip("ui-time", "→ 50", Ui.Ink2, "Mandate fades back toward 50 unless you keep earning it", 13),
@@ -213,6 +218,7 @@ public partial class Main
         p.Page("Guilds", "ui-trade");
         RenderGuilds(p, t);
         p.Page("Laws", "decree");
+        RenderGovernment(p, t);
         RenderLaws(p, t);
         var history = t.Motions.Where(m => m.Status != MotionStatus.Pending).TakeLast(8).Reverse().ToList();
         if (history.Count > 0)
@@ -221,6 +227,8 @@ public partial class Main
             p.Text(string.Join("\n", history.Select(m =>
                 $"{Ui.Img(m.Status == MotionStatus.Passed ? "vote-aye" : "vote-nay", 14)} {Ui.Esc(Ui.Cap(m.Text))}{(m.Decree ? " " + Ui.Img("decree", 13) : "")}  {Ui.C(Ui.Ink2, $"[font_size=11]day {m.ProposedTick / 24 + 1}[/font_size]")}")), 13);
         }
+        p.Page("Blocs", "population");
+        RenderBlocs(p, t);
         p.Commit();
     }
 
@@ -385,7 +393,7 @@ public partial class Main
         double mood = Taxes.Mood(t) + r.Mood * unrest / 100;
         string taxTip = $"Taken from every sale, drink and hearth. Above {Math.Round(usual * 100)}% each point sours the townsfolk and puts settlers off; below it pleases them. Above {Math.Round(r.HeavyFrom * 100)}% it stirs unrest by itself: good for filling a war chest, not for long.";
         double heavy = Taxes.Heavy(t);
-        p.Row($"{Ui.Tip($"[b]Tax rate[/b]  {Tag($"{pct}%", rate > usual + 1e-9 ? Ui.Bad : rate < usual - 1e-9 ? Ui.Good : Ui.Ink)}", taxTip)}\n[font_size=12]{Ui.Chip("ui-heart", Ui.Signed(mood, "0.0"), null, "What the tax rate does to every townsperson's mood now", 13)}{(heavy > 0 ? " " + Ui.Chip("suspicion", $"+{Math.Round(heavy)}", Ui.Bad, "Unrest a heavy tax stirs by itself", 13) : "")}[/font_size]",
+        p.Row($"{Ui.Tip($"[b]Tax rate[/b]  {Tag($"{pct}%", rate > usual + 1e-9 ? Ui.Bad : rate < usual - 1e-9 ? Ui.Good : Ui.Ink)}", taxTip)}\n[font_size=12]{Ui.Chip("ui-heart", Ui.Signed(mood, "0.0"), null, "What the tax rate does to every townsperson's mood now", 13)}{(heavy > 0 ? " " + Ui.Chip("suspicion", $"+{Math.Round(heavy)}", Ui.Bad, "Unrest a heavy tax stirs by itself", 13) : "")}  {InForce(t, "tax")}{(Politics.Voted(t, "tax") ? "  " + Ui.Chip("vote-aye", "Vote", Ui.Gold, "The town votes on every change to taxes", 13) : "")}[/font_size]",
             ("−1%", rate > r.Min + 1e-9, false, () => Act(() => _sim.SetTax(rate - r.Step))),
             ("+1%", rate < r.Max - 1e-9, true, () => Act(() => _sim.SetTax(rate + r.Step))));
         double income = Taxes.Income(t), services = Taxes.Services(t), funding = Taxes.Funding(t);
@@ -415,8 +423,9 @@ public partial class Main
         {
             var now = Laws.For(t, c.Id);
             string crime = c.Id;
-            var choices = r.Punishments.Select(x => (x.Name, x.Id != now.Id, false, (Action)(() => Act(() => _sim.SetLaw(crime, x.Id))))).ToArray();
-            p.Row($"[b]{Ui.Esc(c.Name)}[/b]  {Tag(now.Name, Ui.Gold)}\n[font_size=12]{LawMoves(now)}[/font_size]", choices);
+            string law = "punish:" + c.Id;
+            p.Row($"[b]{Ui.Esc(c.Name)}[/b]  {Tag(now.Name, Ui.Gold)}\n[font_size=12]{LawMoves(now)}   {InForce(t, law)}[/font_size]");
+            p.TipButtons(r.Punishments.Where(x => x.Id != now.Id).Select(x => (Label(t, law, x.Name), Politics.Blocked(t, law, x.Id) == null, false, (Action)(() => Act(() => _sim.SetLaw(crime, x.Id))), $"{x.Text}\n{ChangeTip(t, law, x.Id)}")).ToArray());
         }
         p.Note("Carried out each time the watch catches a hero and the court finds them guilty.");
         RenderCourt(p, t);
