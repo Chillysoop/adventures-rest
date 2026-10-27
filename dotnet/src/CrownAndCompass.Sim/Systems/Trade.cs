@@ -158,6 +158,7 @@ public static class Trade
         if (s.Razed) return "they are gone";
         if (!Neighbours.Known(town, s)) return "the town hasn't met them";
         if (Reaches.Unreached(town, s) is { } high) return high;
+        if (Fleet.Overseas(town, s) is { } sea) return sea;
         if (Offers(town, s).Count == 0) return "they have nothing to sell";
         if (Shadows.Paying(s)) return "they pay tribute to an enemy and dare not trade";
         if (Open(town).Any(x => x.SettlementId == s.Id)) return "a route already runs there";
@@ -214,7 +215,7 @@ public static class Trade
     }
 
     /// <summary>Daily: each route's caravan comes home when its trip is done, sells and buys, and sets out again.</summary>
-    public static void Daily(Town town, bool autoMayor)
+    public static void Daily(Town town, bool autoMayor, SimulationOptions? options = null)
     {
         var r = Rules(town);
         foreach (var route in Open(town).OrderBy(x => x.Id).ToList())
@@ -233,8 +234,13 @@ public static class Trade
         }
         if (autoMayor) StandIn(town);
         Skyship.Daily(town, autoMayor);
-        Fleet.Daily(town, autoMayor);
-        Sky.Daily(town, autoMayor);
+        // The harbour's and the Sky Dock's ships are the harbourmaster's (steward area "fleet").
+        bool fleet = options != null ? Stewards.Hand(town, options, "fleet") : autoMayor;
+        using (options != null ? Stewards.For(town, options, "fleet") : new Stewards.Scope(town, town.Stewards.Asking, town.Stewards.Acting))
+        {
+            Fleet.Daily(town, fleet);
+            Sky.Daily(town, fleet);
+        }
         Reaches.Daily(town);
         AirRaids.Daily(town);
         Crystal.Daily(town, autoMayor);

@@ -73,7 +73,7 @@ public static class Voyages
 
     /// <summary>Whether a company can get to a site at all: one out on the open sea needs every member able to cross water, or a free ship.</summary>
     public static bool CanReach(Town town, IReadOnlyList<Agent> members, SiteState site) =>
-        !Offshore(town, site) || (Passage.Abilities(town, members) & Ways.Water) != 0 || Free(town).Any();
+        !Offshore(town, site) || (Passage.Abilities(town, members) & Ways.Sea) != 0 || Free(town).Any();
 
     // ---- A company aboard ----
 
@@ -84,7 +84,7 @@ public static class Voyages
     public static RouteMind Embark(Town town, Party party, IReadOnlyList<Agent> members, RouteMind mind, (double X, double Y) from, (double X, double Y) to)
     {
         // Those who fly or walk on water, or ride the Sky Dock's airship, need no ship.
-        if ((mind.Ways & Ways.Water) != 0 || party.Airship) return mind;
+        if ((mind.Ways & Ways.Sea) != 0 || party.Airship) return mind;
         if (!town.Terrain.Any(f => f.Kind.Ship && Crosses(f, from, to))) return mind;
         var ship = Free(town).FirstOrDefault();
         if (ship == null) return mind;
@@ -103,13 +103,13 @@ public static class Voyages
             party.Said.Add(Line(town, rng, outcome, ship, where?.Name ?? "the open sea", foe.Name, heroes));
             if (outcome == "wrecked")
             {
-                town.Ships.Remove(ship);
+                Fleet.Sink(town, ship, rng);
                 party.ShipId = null;
                 pace = Js.Round(pace * 1.5 * 100) / 100;
                 party.Said.Add($"They make the rest of the way in {ship.Name}'s boats.");
             }
         }
-        return mind with { Ways = mind.Ways | Ways.Water, Carrier = ship.Name, Sail = pace };
+        return mind with { Ways = mind.Ways | Ways.Water | Ways.Sea, Carrier = ship.Name, Sail = pace };
     }
 
     /// <summary>Whether the town's own ship would carry a company from here to there: the way crosses open sea and a ship is free.</summary>
@@ -190,6 +190,7 @@ public static class Voyages
         if (Fleet.Aloft(town, s)) return "an airship flies from the Sky Dock";
         if (Fleet.Harbour(town) == null) return "needs a harbour";
         if (!Moored(town, s)) return s.Hull < Fleet.Def(town, s).Hull * 0.25 ? "needs patching first" : "already at sea";
+        if (Fleet.Manned(town) < Rules(town).ManMost) return "not enough hands at the harbour";
         if (job is not ("patrol" or "scout" or "strike")) return "no such job";
         if (job != "patrol" && !Fleet.ToSea(town)) return "the river doesn't reach the sea";
         if (marines.Count > Fleet.Def(town, s).Marines) return $"carries {Fleet.Def(town, s).Marines} marines at most";
@@ -215,6 +216,7 @@ public static class Voyages
         var s = town.Ships.FirstOrDefault(x => x.Id == shipId);
         marines ??= [];
         if (s == null || Refuse(town, s, job, regionId, siteId, marines) != null) return false;
+        if (job == "patrol" && Stewards.Intercept(town, "fleet", new StewardAsk { Area = "fleet", Kind = "patrol", Title = $"Send {s.Name} to patrol the home waters", Why = $"• {Fleet.Holds(town).Count} corsair holds standing", I1 = s.Id })) return false;
         var rng = Dice(town, s.Id);
         int days = job == "patrol" ? V(town).PatrolDays : Days(town, s, town.Regions[regionId], rng);
         town.Market.Seed(Good.Food, -Rations(town, s, days));
@@ -303,7 +305,7 @@ public static class Voyages
     {
         foreach (var a in f.Marines.Select(town.Agent).Where(a => !a.Dead && a.Hero != null)) a.Hero!.AwayUntil = town.Tick + (2 + (region?.Ring ?? 0)) * SimTime.HoursPerDay;
         s.Flight = null;
-        town.Ships.Remove(s);
+        Fleet.Sink(town, s, Dice(town, s.Id + 17));
     }
 
     /// <summary>Home from a job: a scout's charts, a bombardment's toll on the site, and the marines back in town.</summary>

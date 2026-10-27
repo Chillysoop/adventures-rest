@@ -111,6 +111,8 @@ public static class Stewards
         new("defence", "Defence", "Castellan", "tab-defence", "Walls, towers, sellswords, wardens; answers demands and tribute", true, Ability.Str, ["fealty", "spent"], []),
         new("frontier", "Fields and gate", "Warden of the Marches", "order-guard", "Guard flags over the fields beyond the walls, the gate law", true, Ability.Wis,
             ["fields", "unmanned", "strangers"], []),
+        new("fleet", "Fleet", "Harbourmaster", "inst-harbour", "Builds and patches ships, keeps the sea runs going, patrols when corsairs are about; the airships too", true, Ability.Wis,
+            ["ship", "idle", "corsairs"], ["ship", "patch", "run", "patrol"]),
         new("lairs", "Cleared lairs", "Marshal of Holds", "post-patrol", "Towers or patrols on cleared lairs, reinforcing them", true, Ability.Str, ["patrol", "outpost", "tower"], []),
         new("stories", "Story events", "Chronicler", "lore", "Answers story events, sendings and tourneys", false, Ability.Cha, ["story", "tourney", "wager", "levelup"], []),
     ];
@@ -147,7 +149,7 @@ public static class Stewards
             "defence" or "frontier" or "lairs" => o.AutoDefense,
             "stories" => o.AutoStories,
             "planning" => o.AutoPlanning,
-            "research" or "realm" or "order" => o.AutoHelpers,
+            "research" or "realm" or "order" or "fleet" => o.AutoHelpers,
             _ => false,
         };
         return auto ? StewardMode.Steward : StewardMode.Player;
@@ -342,6 +344,10 @@ public static class Stewards
         "envoy" => World.SendEnvoy(town, a.I1),
         "route" => Enum.TryParse<Good>(a.S1, out var ex) && Enum.TryParse<Good>(a.S2, out var im) && Trade.OpenRoute(town, a.I1, ex, im) != null,
         "wagon" => Trade.AddWagon(town, a.I1),
+        "ship" => Fleet.Build(town, a.S1) != null,
+        "patch" => Fleet.Repair(town, a.I1),
+        "run" => Enum.TryParse<Good>(a.S1, out var cargo) && Fleet.Send(town, a.I1, a.I2, cargo),
+        "patrol" => a.S1 == "sky" ? Sky.Send(town, a.I1, "patrol") : Voyages.Send(town, a.I1, "patrol"),
         "aid" => Neighbours.Aid(town, a.I1),
         "works" => Neighbours.Fund(town, a.I1, a.S1),
         "roadpatrol" => a.I1 >= 0 && a.I1 < town.Settlements.Count && Wilds.PatrolRoad(town, town.Settlements[a.I1]) != null,

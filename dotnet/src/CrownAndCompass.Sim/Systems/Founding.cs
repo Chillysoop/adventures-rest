@@ -45,9 +45,26 @@ public sealed record FoundingDef
     /// <summary>"" none, "garrison" a manned keep at the charter, "ruin" an old keep to win back, "either" by the seed.</summary>
     public string Keep { get; init; } = "";
 
+    /// <summary>The town starts with its harbour standing (and so its first boat).</summary>
+    public bool Quay { get; init; }
+
+    /// <summary>A causeway the tide covers: shut to raiders and walkers while it is in (<see cref="Founding.Flooded"/>).</summary>
+    public FoundingTideDef? Tide { get; init; }
+
     /// <summary>The site when a neighbour holds it ({name} the settlement), or when foes do.</summary>
     public string Held { get; init; } = "";
     public string Foes { get; init; } = "";
+}
+
+/// <summary>The tide over an island's causeway (founding.json kinds' <c>tide</c>).</summary>
+public sealed record FoundingTideDef
+{
+    /// <summary>Hours the causeway lies under water each tide; tides come every <see cref="Every"/> hours and slip later day by day.</summary>
+    public double High { get; init; } = 4;
+    public double Every { get; init; } = 12.4;
+
+    /// <summary>Defence raiders who will not wait for the ebb face, wading or rowing in (times the night's defence).</summary>
+    public double Raid { get; init; } = 0.5;
 }
 
 /// <summary>What becomes of the town sites the player passed over (founding.json <c>hold</c>).</summary>
@@ -233,7 +250,7 @@ public static class Founding
         if (Explore.RegionAt(town, px, py) is { } g && g.Theme.Sea) return "open water";
         foreach (var f in town.Terrain)
         {
-            if (f.Kind.Barrier == "water" && Roads.Contains(f, px, py)) return "open water";
+            if (f.Kind.Barrier is "water" or "sea" && Roads.Contains(f, px, py)) return "open water";
             if (f.Kind.Barrier == "sheer" && Roads.Contains(f, px, py)) return "sheer peaks";
         }
         foreach (var s in town.Sites)
@@ -355,6 +372,18 @@ public static class Founding
 
     /// <summary>What caravans earn, as a multiple.</summary>
     /// <summary>Tiles farther the town's watchtowers see from its high ground.</summary>
+    /// <summary>
+    /// Whether the tide covers the town's causeway at this hour: a pure function of the seed and the tick, two tides
+    /// a day slipping later each day. Raiders wait for the ebb (<see cref="Threat.RaidTonight"/>) or wade in against the watch.
+    /// </summary>
+    public static bool Flooded(Town town, int tick)
+    {
+        if (town.Founding == null || Of(town).Tide is not { } t) return false;
+        double phase = Hash(town.Seed, 71) * t.Every;
+        double at = (tick + phase) % t.Every;
+        return at < t.High;
+    }
+
     public static double Sight(Town town) => town.Founding == null ? 0 : Of(town).Sight;
 
     public static double Trade(Town town) => town.Founding == null ? 1 : Of(town).Trade;
@@ -623,6 +652,11 @@ public static class Founding
         if (town.Founding == null) return;
         var def = Of(town);
         town.Watch += def.Watch;
+        if (def.Quay && town.Content.Building("harbour") is var quay && Land.Find(town, quay, null) is { } wharf)
+        {
+            wharf.Zone = Zone.Civic;
+            town.AddBuilding(quay, wharf, null, quay.Name, true);
+        }
         if (Keep(town) != "garrison") return;
         var keep = town.Content.Building("keep");
         if (Land.Find(town, keep, null) is not { } lot) return;
