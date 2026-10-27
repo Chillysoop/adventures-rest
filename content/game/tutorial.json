@@ -475,10 +475,10 @@
       "teaches": []
     },
     {
-      "id": "ward-voices",
-      "title": "Every ward has a voice",
-      "text": "The wards judge your choices too.\n• Market Ward: profit. Temple wardens: mercy. Wharf crews: free hands\n• Choices show which wards they please or anger\n• Warm wards grow sooner; sour ones grumble\nSee each ward in [b]City[/b].",
-      "point": "tab:City:Wards",
+      "id": "blocs",
+      "title": "Blocs speak up",
+      "text": "Townsfolk band into [b]blocs[/b] by work, home and faith, wherever they live.\n• Stallholders: profit. Temple wardens: mercy. Wharf crews: free hands\n• Each choice shows which blocs it pleases or angers\n• Warm blocs: cheerier folk, houses grow sooner\nSee them in [b]City[/b].",
+      "point": "tab:City:Neighbourhoods",
       "when": "day:60",
       "teaches": []
     },
@@ -714,7 +714,7 @@
       "id": "undercity",
       "title": "Under the streets",
       "text": "Digging broke into the [b]undercity[/b]; each charter opens a deeper level.\n• Left alone it [b]stirs[/b], until something comes up at night\n• [b]City[/b]: send the watch on [b]patrol[/b] for a little gold\n• Or a bounty: heroes delve with no road\n• Cleared: quiet for a season",
-      "point": "tab:City:Wards",
+      "point": "tab:City",
       "until": "tab:City",
       "when": "count:Undercity",
       "teaches": ["command:PatrolUndercity"]
@@ -788,11 +788,11 @@
       "teaches": ["key:Enter"]
     },
     {
-      "id": "wards",
-      "title": "New wards",
-      "text": "A new charter opens land round the old town.\n• Wards aren't drawn: a quarter becomes one from what's built\n• Shops: Market Ward. Workshops: Trades. Shrines: Temple. Fine houses: Castle Hill\nSee them in [b]City[/b].",
-      "point": "tab:City:Wards",
-      "when": "alert:charter",
+      "id": "neighbourhoods",
+      "title": "Neighbourhoods",
+      "text": "Where buildings cluster, a [b]neighbourhood[/b] forms and names itself.\n• A few shops near homes: dearer, happier. A whole market: noisy\n• No shop within reach: folk grumble\n• Workshops next door: cheap and gloomy\n• Temples and fine houses raise a street\nSee them in [b]City[/b], outlined on the map.",
+      "point": "tab:City:Neighbourhoods",
+      "when": "neighbourhoods",
       "teaches": []
     },
     {
@@ -957,6 +957,7 @@
     {"id": "last-ride", "title": "The last ride", "text": "Your champions are strong enough to face the big bad.\n• [b]War[/b] → [b]Ride[/b] sends them for its seat\n• No company goes there on its own: the call is yours\n• Its host always marches in the end: meet it at the walls or on the road", "point": "tab:War", "until": "tab:War", "when": "alert:ride", "teaches": ["command:CallLastRide"]},
     {"id": "wall-works", "title": "Towers and barracks on the wall", "text": "Towers and wall barracks go where you put them.\n• Pick one on the build bar or in [b]Defence[/b] → Walls\n• Click a stretch of the wall\n• One of each to a stretch\n• Towers watch and shoot; barracks house the watch", "point": "tab:Defence:Walls", "when": "day:60", "teaches": ["command:BuildOnWall"]},
     {"id": "rare-finds", "title": "A rare find", "text": "Heroes brought home a [b]rare[/b] or finer magic item.\n• The tile wears its rarity: [color=#5b8fe0]rare[/color], [color=#a86ae0]very rare[/color], [color=#e09a3a]legendary[/color], [color=#e0503a]artifact[/color]\n• [b]Click[/b] it: the hero who carries it, or its card in the [b]Armory[/b]\n• Nobody can use it? Give it to a hero who can", "point": "alerts", "when": "alert:treasure", "teaches": []},
+    {"id": "scholars-quarter", "title": "A scholars' quarter", "text": "Build arcane works close together and they become a [b]scholars' quarter[/b].\n• Library, mage tower, alchemists' quarter, observatory, apothecary\n• Three within a few streets of each other\n• The quarter adds lore every day ([b]Library[/b] shows it)", "point": "buildbar", "when": "scholarly", "teaches": []},
     {"id": "dungeon-maps", "title": "Dungeons remember", "text": "Every lair is a map of rooms.\n• Rooms a company clears stay cleared for the next\n• Wait too long and they retake rooms, set traps, hide the hoard\n• Companies sneak, talk, besiege or storm, by who they are\n• Dark halls, chasms and water need the right hero\n• [b]▶ Hear the tale[/b] in [b]Chronicles[/b] shows the map", "point": "tab:Chronicles", "when": "count:Chronicles", "teaches": []},
     {"id": "laws-and-blocs", "title": "Laws move the blocs", "text": "Every law pleases some blocs and angers others.\n• [b]Council[/b] → [b]Laws[/b]: hover a law for its blocs\n• Curfew, tithe and dole are sliders, each with a daily cost\n• A change costs [b]Mandate[/b]; turning it back soon costs double\n• It takes effect over 10 days", "point": "tab:Council:Laws", "when": "day:25", "teaches": ["command:SetPolicy"]},
     {"id": "government", "title": "How the town is governed", "text": "Pick a form of government in [b]Council[/b] → [b]Laws[/b].\n• [b]Free town[/b] or [b]Commune[/b]: the people vote on laws and elect the council at the yearly moot\n• [b]Crown[/b] or [b]Iron rule[/b]: decrees are cheap, but angry blocs breed radicals\n• Each leads to its own road to victory\n• Put matters to a [b]town vote[/b], or take them back", "point": "tab:Council:Laws", "when": "day:50", "teaches": ["command:SetGovernment", "command:SetTownVote"]},

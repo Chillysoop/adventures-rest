@@ -4,7 +4,7 @@
   "step": 0.01,
   "moodPerPoint": 0.6,
   "days": 7,
-  "income": ["Sales tax", "Ale tax", "Hearth tax", "Rent", "Land sales", "Town businesses", "Trade", "Orchards", "Tribute", "Institutions", "Grand works", "The region", "Wards", "Bastions"],
+  "income": ["Sales tax", "Ale tax", "Hearth tax", "Rent", "Land sales", "Town businesses", "Trade", "Orchards", "Tribute", "Institutions", "Grand works", "The region", "Bastions"],
   "services": ["Laws", "Upkeep", "Watch", "Institutions", "Outposts", "Clockwork", "Decorations", "Undercity"],
   "scale": 250,
   "rise": 3,

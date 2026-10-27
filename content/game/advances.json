@@ -1,0 +1,16 @@
+{
+  "_doc": "Heroes' ability score improvements (Systems/Advances.cs): at each of levels (and a class's extra levels) a hero raises their key ability by 2 (to cap) while it is under keyBelow, then takes the first feat that fits them and they lack, else raises Constitution. Feats: classes or cards limit who takes them; hpPerLevel adds to hit points, attack/ac/skill to rolls in delves, initiative to the order in fights, concentration to holding a spell when struck.",
+  "levels": [4, 8, 12, 16, 19],
+  "extra": { "fighter": [6, 14], "rogue": [10] },
+  "cap": 20,
+  "keyBelow": 20,
+  "feats": [
+    { "id": "war-caster", "name": "War Caster", "cards": ["healer", "striker", "face"], "spell": true, "concentration": 5 },
+    { "id": "shield-master", "name": "Shield Master", "cards": ["tank"], "ac": 1 },
+    { "id": "sharpshooter", "name": "Sharpshooter", "classes": ["ranger", "rogue", "monk", "cartographer"], "attack": 1 },
+    { "id": "alert", "name": "Alert", "initiative": 5 },
+    { "id": "tough", "name": "Tough", "hpPerLevel": 2 },
+    { "id": "observant", "name": "Observant", "cards": ["scout", "face"], "skill": 2 },
+    { "id": "lucky", "name": "Lucky", "skill": 1, "attack": 1 }
+  ]
+}

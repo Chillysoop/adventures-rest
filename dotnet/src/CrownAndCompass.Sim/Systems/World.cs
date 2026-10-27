@@ -679,6 +679,15 @@ public static class World
             group != null && group.Texts.TryGetValue(k, out var own) && own.Count > 0 ? rng.Pick(own)
             : theme.Texts.TryGetValue(k, out var lines) && lines.Count > 0 ? rng.Pick(lines) : k;
 
+        // The group's line for its master, kept to the ones that fit the creature; one draw either way, so the world's dice run as before.
+        string BossText(string monster)
+        {
+            if (group == null || !group.Texts.TryGetValue("boss", out var own) || own.Count == 0) return Text("boss");
+            int k = rng.Range(0, own.Count);
+            var fit = group.LinesFor("boss", monster);
+            return fit.Contains(own[k]) ? own[k] : fit.Count > 0 ? fit[k % fit.Count] : $"the master of {name}";
+        }
+
         var habitats = kind.Habitats.Count > 0 ? kind.Habitats.ToList() : theme.Habitats.ToList();
         var probe = new SiteDef { Id = id, Name = name, Boss = new EncounterDef { Kind = "combat" }, Habitats = habitats, Group = group?.Id ?? "" };
         if (content.Wanderers(probe, [crLo, crHi]).Count == 0)
@@ -687,7 +696,7 @@ public static class World
             probe = probe with { Habitats = habitats };
         }
 
-        int dc = 11 + (level + 1) / 2;
+        int dc = content.Dungeons.Checks.Dc + (level + 1) / 2;
         int die = level <= 1 ? 6 : level <= 3 ? 8 : level <= 6 ? 10 : 12;
         var deck = new List<EncounterDef>();
         foreach (var k in kind.Deck)
@@ -733,7 +742,7 @@ public static class World
             Count = [1, 1],
             Escort = escorts.Count > 0 ? rng.Pick(escorts).Id : null,
             EscortCount = escorts.Count > 0 ? [1, 1 + level / 3] : null,
-            Text = Text("boss"),
+            Text = BossText(boss.Id),
         };
 
         return new SiteDef

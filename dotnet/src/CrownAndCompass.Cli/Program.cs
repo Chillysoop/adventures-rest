@@ -180,7 +180,7 @@ var teller = Storyteller.Of(town);
 Print($"Told by {teller.Name} ({teller.Title}): {town.Enemy.Raids} raids and {town.Enemy.Sieges} sieges by the warband; {town.Moods.Inspirations} inspirations and {town.Moods.Breaks} breaks among the townsfolk.");
 if (Saga.Summary(town) != "") Print(Saga.Summary(town));
 if (Endless.On(town)) Print($"Endless: era {Endless.EraNumber(town)}; " + string.Join("; ", town.Saga.Endless.Eras.Select(e => $"era {e.Number} ended day {e.Day} by {e.Road} against {e.Foe}")));
-Print($"A {City.Tier(town).Name.ToLowerInvariant()} of about {City.Souls(town)} souls.");
+Print($"A {City.Tier(town).Name.ToLowerInvariant()} of about {City.Souls(town)} souls; neighbourhoods: {string.Join(", ", town.City.Quarters.Select(q => q.Name))}.");
 Print($"Government: {Politics.Form(town).Name}; trust {Js.ToFixed(town.Politics.Trust, 0)}; moots {town.Politics.Moots}; blocs: " + string.Join(", ", Politics.Blocs(town).Select(b => $"{b.Id} {Js.ToFixed(Politics.Size(town, b), 0)} at {Js.ToFixed(Politics.Feeling(town, b.Id), 0)}")) + $"; situations: {string.Join(", ", town.Politics.Situations.Keys.Order())}; radical cells: {town.Politics.Cells.Count}.");
 Print("Treasury books, all time: " + string.Join(", ", town.Accounts.OrderBy(kv => kv.Value).Select(kv => $"{kv.Key} {Js.ToFixed(kv.Value, 0)}")));
 Print("Vacant zoned lots: " + string.Join(", ", Planning.Paintable.Select(z => $"{z} {Planning.VacantZoned(town, z)}")) + $"; unpainted open ground {Land.OpenGround(town) / (Land.Res * Land.Res)} tiles");

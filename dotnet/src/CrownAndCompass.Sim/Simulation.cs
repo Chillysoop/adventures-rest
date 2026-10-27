@@ -294,6 +294,7 @@ public sealed class Simulation
         Curses.Daily(t);
         Downtime.Daily(t);
         Notoriety.Daily(t);
+        Advances.Daily(t);
         Notables.Daily(t);
         Heraldry.Daily(t);
         Eggs.Daily(t);

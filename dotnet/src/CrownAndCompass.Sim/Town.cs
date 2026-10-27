@@ -314,7 +314,6 @@ public static class TreasuryAccount
     public const string Honours = "Honours";
     public const string Charters = "Charters";
     public const string HearthTax = "Hearth tax";
-    public const string Wards = "Wards";
     public const string Decorations = "Decorations";
     public const string Broadsheet = "Broadsheet";
     public const string Clockwork = "Clockwork";
@@ -355,7 +354,7 @@ public enum Outcome
 
 public sealed class Town
 {
-    /// <summary>Tiles on a side: the old town in the middle, then the walled ring, then the outer wards (<see cref="Systems.City"/>).</summary>
+    /// <summary>Tiles on a side: the old town in the middle, then the walled ring, then the outskirts (<see cref="Systems.City"/>).</summary>
     public const int Grid = 96;
 
     /// <summary>What the player named the town on New game (<see cref="SimulationOptions.TownName"/>), Briarford by default.</summary>

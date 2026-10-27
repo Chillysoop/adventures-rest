@@ -1,5 +1,5 @@
 {
-  "_doc": "Ready-made enemy groups (Systems/World.cs PickGroup, Content.Group). Each holds sites of its own in the themes it names: a generated site goes to a fitting group with this chance when one of its bosses suits the level. Its wanderers and escorts are drawn from foes (falling back to the site's habitats when none fit the level), its boss from bosses, a cleared site is retaken by its own bosses, and a menace rising from it carries the group's lineage (history.json, subject group:<id>, or an existing enemy's lineage for a group that is a version of it).",
+  "_doc": "Ready-made enemy groups (Systems/World.cs PickGroup, Content.Group). Each holds sites of its own in the themes it names: a generated site goes to a fitting group with this chance when one of its bosses suits the level. Its wanderers and escorts are drawn from foes (falling back to the site's habitats when none fit the level), its boss from bosses, a cleared site is retaken by its own bosses, and a menace rising from it carries the group's lineage (history.json, subject group:<id>, or an existing enemy's lineage for a group that is a version of it). A group's \"fit\" names the foes each of its lines describes; a line with no entry fits any foe. A fight's opening line is drawn from those that fit the creature met.",
   "chance": 0.3,
   "groups": [
     {
@@ -17,6 +17,12 @@
         "hazard": ["the sluice gates open and the flood comes through", "bad air pooled in the low tunnels"],
         "parley": ["a smuggler who will sell out the rat-men for safe passage"],
         "boss": ["the master of the drains, on a throne of refuse"]
+      },
+      "fit": {
+        "a tide of rats pours out of a side culvert": ["giant-rat", "giant-rat-diseased", "swarm-of-rats", "plague-rat-swarm", "wererat", "rat-king"],
+        "smugglers hauling crates through the dark": ["bandit", "tough", "spy", "bandit-captain", "wererat"],
+        "something heavy slides through the sludge": ["gray-ooze", "ochre-jelly", "longreach", "otyugh", "black-pudding"],
+        "the master of the drains, on a throne of refuse": ["rat-king", "wererat", "bandit-captain", "otyugh"]
       }
     },
     {
@@ -34,6 +40,10 @@
         "puzzle": ["the parish roll lists people nobody can find", "two of the same miller, in two different houses"],
         "parley": ["a child who says her mother came home wrong"],
         "boss": ["the one behind every borrowed face"]
+      },
+      "fit": {
+        "villagers who smile too long and answer too quickly": ["doppelganger", "velvet-whisperer", "velvet-notary", "spy", "velvet-masque", "velvet-chancellor"],
+        "the reeve's men, with orders to keep strangers out": ["guard", "tough", "bandit", "spy"]
       }
     },
     {
@@ -50,6 +60,12 @@
         "wander": ["white shapes on the white slope", "wolves whose breath freezes the air", "giant footprints across the pass"],
         "hazard": ["an avalanche comes down the gully", "a whiteout on the narrowest ledge"],
         "boss": ["the thing that melts the snow from below"]
+      },
+      "fit": {
+        "white shapes on the white slope": ["yeti", "polar-bear", "great-yeti", "ice-mephit"],
+        "wolves whose breath freezes the air": ["winter-wolf"],
+        "giant footprints across the pass": ["frost-giant", "yeti", "great-yeti"],
+        "the thing that melts the snow from below": ["remorhaz", "rime-lindworm"]
       }
     },
     {
@@ -67,6 +83,11 @@
         "trap": ["a pit dug by the hive to catch the careless", "egg sacs that burst when touched"],
         "hazard": ["a tunnel that collapses behind them"],
         "boss": ["the brood-queen, swollen with eggs"]
+      },
+      "fit": {
+        "the walls click and move": ["chitterkin", "hivebound", "insect-giant-centipede", "giant-fire-beetle", "insatiable-brood"],
+        "a swarm boils out of a side tunnel": ["swarm-of-insects", "chitterkin", "insatiable-brood"],
+        "the brood-queen, swollen with eggs": ["chitterkin-brood-queen", "insatiable-brood"]
       }
     },
     {
@@ -84,6 +105,11 @@
         "trap": ["a silk tripline strung with bells", "a floor of web over a pit"],
         "puzzle": ["an altar that wants an offering of silk and blood"],
         "boss": ["the high priestess, whose shadow has eight legs"]
+      },
+      "fit": {
+        "robed worshippers chanting under the webs": ["cultist", "cultist-fanatic", "priest", "drider"],
+        "spiders as big as ponies on the walls": ["giant-spider", "giant-wolf-spider", "mistweaver-spider", "silkhound", "ettercap", "drider", "jorogumo"],
+        "the high priestess, whose shadow has eight legs": ["jorogumo", "priest", "drider"]
       }
     },
     {
@@ -101,6 +127,11 @@
         "hazard": ["a well gone bad", "the sickness takes one of them on the road"],
         "parley": ["a pilgrim who wants to turn back"],
         "boss": ["the saint who leads the procession"]
+      },
+      "fit": {
+        "a line of pilgrims ringing bells, coughing as they go": ["cultist", "plague-saint", "pestilence-herald"],
+        "the dead walking with grubs glowing in their chests": ["zombie", "wormhost", "ghoul", "ogre-zombie", "corpse-cart"],
+        "the saint who leads the procession": ["plague-saint", "pestilence-herald"]
       }
     },
     {
@@ -119,6 +150,11 @@
         "puzzle": ["a fortune-teller's game that must be won honestly"],
         "parley": ["a juggler who wants out of the act"],
         "boss": ["the ringmaster, in the centre ring"]
+      },
+      "fit": {
+        "performers in masks that do not come off": ["masked-reveller", "carnival-ringmaster", "green-hag", "sea-hag", "night-hag"],
+        "dolls that sit up as they pass": ["sawdust-marionette", "bedshade", "flickerling"],
+        "the ringmaster, in the centre ring": ["carnival-ringmaster"]
       }
     },
     {
@@ -136,6 +172,11 @@
         "puzzle": ["a relic that is plainly painted wood"],
         "parley": ["a priest who has begun to doubt"],
         "boss": ["the prophet, mid-sermon"]
+      },
+      "fit": {
+        "worshippers who stare at the newcomers": ["cultist", "cultist-fanatic", "priest-acolyte", "velvet-confessor", "false-prophet"],
+        "acolytes with brimstone on their breath": ["cultist-fanatic", "priest-acolyte", "imp", "quasit", "velvet-confessor"],
+        "the prophet, mid-sermon": ["false-prophet", "cultist-fanatic", "rakshasa"]
       }
     },
     {
@@ -153,6 +194,11 @@
         "trap": ["snares strung across the trail", "a net pit baited with meat"],
         "parley": ["a handler who would set the beasts free for a price"],
         "boss": ["the broker, among the cages"]
+      },
+      "fit": {
+        "an escaped beast, still wearing its collar": ["mastiff", "owlbear", "griffon", "manticore", "mirage-lynx", "chimera"],
+        "trappers carrying a cage between them": ["poacher", "beast-handler", "bandit", "bandit-captain"],
+        "the broker, among the cages": ["beast-broker", "beast-handler", "bandit-captain"]
       }
     },
     {
@@ -170,6 +216,11 @@
         "hazard": ["the tide comes in through the halls", "a whirlpool in the flooded nave"],
         "puzzle": ["a drowned throne that opens to the right tide"],
         "boss": ["the hierophant, and the arms rising behind"]
+      },
+      "fit": {
+        "drowned sailors walk out of the surf": ["ghoul", "brinebound", "merrow", "brine-changeling"],
+        "cultists chanting to something under the water": ["cultist", "brine-changeling", "sahuagin-warrior", "tide-hierophant"],
+        "the hierophant, and the arms rising behind": ["tide-hierophant", "kraken"]
       }
     },
     {
@@ -188,6 +239,11 @@
         "puzzle": ["a machine half-built, with one part missing"],
         "hazard": ["a forge left burning for years"],
         "boss": ["the maker who never left"]
+      },
+      "fit": {
+        "tools that pick themselves up off the benches": ["animated-armor", "animated-flying-sword", "tally-engine", "robot-drone", "malspell"],
+        "clerks of brass counting everything they see": ["tally-engine", "homunculus", "seeker-engine", "robot-drone"],
+        "the maker who never left": ["rogue-artificer"]
       }
     },
     {
@@ -205,6 +261,11 @@
         "puzzle": ["a list of names, with the town's mages on it"],
         "parley": ["an accused hedge witch who begs for help"],
         "boss": ["the witchfinder, writ in hand"]
+      },
+      "fit": {
+        "hunters with silvered chains, asking after mages": ["witch-hunter", "scout", "warrior-infantry", "witchfinder-general", "knight"],
+        "a cart of accused on the way to trial": ["guard", "priest-acolyte", "witch-hunter", "warrior-infantry"],
+        "the witchfinder, writ in hand": ["witchfinder-general", "witch-hunter"]
       }
     },
     {
@@ -222,6 +283,10 @@
         "hazard": ["the old battle replays around them"],
         "parley": ["a ghost captain who wants to know who won"],
         "boss": ["the knight who never left the field"]
+      },
+      "fit": {
+        "a ghostly line of spears in the mist": ["skeleton", "specter", "ghost", "banner-wraith", "wight"],
+        "a horn blows, and the dead form ranks": ["skeleton", "warhorse-skeleton", "banner-wraith", "revenant", "wight"]
       }
     },
     {
@@ -239,6 +304,11 @@
         "hazard": ["spore clouds thick as smoke"],
         "puzzle": ["a sick heart-tree that might be healed"],
         "boss": ["the druid who poisoned the grove to save it"]
+      },
+      "fit": {
+        "twig-things that rattle through the brambles": ["thornling", "awakened-shrub"],
+        "trees that lean in as they pass": ["awakened-tree", "elder-ironwood"],
+        "the druid who poisoned the grove to save it": ["fallen-druid", "thorn-matron"]
       }
     },
     {
@@ -256,6 +326,11 @@
         "trap": ["a chain drawn across the road"],
         "parley": ["villagers who will help, if they are protected after"],
         "boss": ["the warlord in the requisitioned manor"]
+      },
+      "fit": {
+        "a patrol demanding papers and a toll": ["warrior-infantry", "scout", "toll-gate-brigand", "knight", "warrior-veteran"],
+        "tax collectors with an escort of pikes": ["brass-tax-collector", "warrior-infantry"],
+        "the warlord in the requisitioned manor": ["highway-baron", "knight", "guard-captain"]
       }
     },
     {
@@ -273,6 +348,11 @@
         "trap": ["old mantraps in the leaves"],
         "parley": ["a servant who still keeps the lodge"],
         "boss": ["the lord of the lodge, under the moon"]
+      },
+      "fit": {
+        "hounds that bay without a sound": ["wolf", "dire-wolf", "mastiff", "black-shuck", "werewolf"],
+        "a hunting horn from nowhere": ["spectral-huntsman", "dullahan", "lodge-lord"],
+        "the lord of the lodge, under the moon": ["lodge-lord", "werewolf"]
       }
     },
     {
@@ -290,6 +370,11 @@
         "trap": ["a powder keg under the jetty, fuse already lit"],
         "parley": ["a pressed sailor who wants to go home", "a quartermaster who thinks the captain cheats"],
         "boss": ["the corsair captain, on the deck of the flagship"]
+      },
+      "fit": {
+        "a press-gang looking for new hands": ["pirate", "bandit", "tough", "spy", "scout"],
+        "corsairs sharing out a prize on the beach": ["pirate", "bandit", "tough"],
+        "the corsair captain, on the deck of the flagship": ["pirate-captain", "bandit-captain"]
       }
     },
     {
@@ -307,6 +392,11 @@
         "hazard": ["the temple floods on the last note of the hymn"],
         "puzzle": ["bells that must be rung in the drowned god's order"],
         "boss": ["the Choir's cantor, who has not breathed in years"]
+      },
+      "fit": {
+        "choristers singing underwater, and something singing back": ["cultist", "priest-acolyte", "merrow", "sahuagin-warrior"],
+        "drowned sailors with the Choir's mark on their brows": ["ghoul", "ghast"],
+        "the Choir's cantor, who has not breathed in years": ["wight", "sea-hag"]
       }
     },
     {
@@ -323,6 +413,11 @@
         "trap": ["a cargo net strung across the landing, weighted to drop"],
         "parley": ["a pressed rigger who wants to go home", "a quartermaster who thinks the admiral cheats"],
         "boss": ["the armada's admiral, on the deck of a ship moored to the rock"]
+      },
+      "fit": {
+        "a boarding crew swinging over from a sky-sloop": ["pirate", "tough", "scout", "spy", "bandit-captain", "pirate-captain", "warrior-veteran", "tough-boss"],
+        "pirates on griffons circling the isle": ["griffon", "hippogriff", "pirate"],
+        "the armada's admiral, on the deck of a ship moored to the rock": ["bandit-captain", "warrior-veteran", "tough-boss", "pirate-captain", "mage", "archmage"]
       }
     },
     {
@@ -338,6 +433,11 @@
         "hazard": ["lightning called down on the iron path"],
         "puzzle": ["storm-bells that must be rung in thunder's order"],
         "boss": ["the high stormcaller, the sky answering every word"]
+      },
+      "fit": {
+        "cultists chanting with copper rods raised to the sky": ["cultist", "cultist-fanatic", "priest"],
+        "a bound wind loose among the stones": ["air-elemental", "invisible-stalker", "djinni"],
+        "the high stormcaller, the sky answering every word": ["cultist-fanatic", "priest"]
       }
     }
   ]

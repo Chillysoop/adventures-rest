@@ -50,7 +50,7 @@ public enum DefenseWork
     /// <summary>Stone walls round the old town, once it is a town (GDD rule C4).</summary>
     StoneWall,
 
-    /// <summary>The city wall round the four inner wards, once it is a city.</summary>
+    /// <summary>The city wall round the old town and the streets about it, once it is a city.</summary>
     CityWall,
 
     /// <summary>A stone gatehouse with a portcullis on the south road, once the stone walls stand.</summary>
@@ -736,7 +736,7 @@ public static class Threat
             default:
                 d.CityWall = PalisadeState.Building;
                 d.CityWallReadyTick = ready;
-                town.Log(LedgerCategory.War, Importance.Notable, $"Work begins on the city wall, a ring of stone round the four inner wards. It will take {spec.Days} days.");
+                town.Log(LedgerCategory.War, Importance.Notable, $"Work begins on the city wall, a ring of stone round the old town and the streets about it. It will take {spec.Days} days.");
                 break;
         }
         return true;

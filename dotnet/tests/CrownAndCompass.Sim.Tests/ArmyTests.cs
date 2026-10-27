@@ -62,7 +62,6 @@ public class ArmyTests
     {
         var sim = Town("drill_yard");
         var t = sim.Town;
-        double before = Threat.Defense(t);
         double gold = t.Treasury;
         var r = sim.RaiseRegiment("swordsmen", 10)!;
         Assert.NotNull(r);
@@ -79,7 +78,8 @@ public class ArmyTests
         sim.RunDays(3);
         Assert.Equal(10, r.Soldiers.Count);
         Assert.True(r.Drill > 0);
-        Assert.True(Threat.Defense(t) > before);
+        // The regiment adds to the town's defence (heroes riding out in these days may take more off the whole).
+        Assert.True(Army.Defense(t) > 0);
         Assert.True(t.AccountsYesterday.Get(TreasuryAccount.Army, 0) < 0);
 
         // In the working hours they drill at the hall.
@@ -256,7 +256,9 @@ public class ArmyTests
         var t = sim.Town;
         sim.RaiseRegiment("swordsmen", 12, ArmyPost.Patrol);
         sim.RaiseRegiment("archers", 10, ArmyPost.Walls);
-        sim.RaiseLevy(5);
+        // Conscription, so a small town with no volunteers still calls its levy.
+        sim.SetServiceLaw(ServiceLaw.Conscription);
+        Assert.NotNull(sim.RaiseLevy(5));
         sim.RunDays(2);
         var loaded = SaveGame.Read(SaveGame.Write(sim));
         Assert.Equal(SaveGame.StateJson(sim), SaveGame.StateJson(loaded));

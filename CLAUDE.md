@@ -64,7 +64,8 @@
 - Density (`Systems/Density.cs`, city.json `densities` and `sprawl`): low/medium/high per plan cell (`LandPlan.Density`), painted
   with homes and shops (`PaintZone(..., density)`, also over built land of the zone). `BuildingDef.Density` is the least a building
   needs (townhouse/manor medium, tall_house high); `HousingDef.Dense` is the house it grows into on high land; high land drops
-  the lane between buildings. The stand-in mayor zones denser out to `reach * sqrt(population)` tiles, capped by `WardDef.Densest`.
+  the lane between buildings. The stand-in mayor zones denser out to `reach * sqrt(population)` tiles, capped past the city
+  wall's ring by `neighbourhood.outerDensest`.
 - Growth and construction (city.json `growth`, `construction`, `Systems/Construction.cs`): painting lays no streets. Buildings
   site on street fronts or off them beside what's built (`Streets.Growth`, nearest the built town first), and the feet going to
   them wear lanes (`Streets.Wear`). The townsfolk's builds on painted land wait for a free crew (`Construction.Room`), and a site
@@ -129,9 +130,15 @@
   line is drawn (the stand-in draws the default), no zone paints under a drawn line (`City.OnDrawnWall`), and the land sets its
   cost (`WallLines.Terrain`/`Stretch` over `Hills.Height`, city.json `wallLines.high`/`steep`). Towers and wall barracks go on
   the stretch the player clicks (`Simulation.BuildOnWall`, `Defenses.TowerAt`/`BarracksAt`). Shots: `--draw-wall 0:x,y;x,y;... --gate 0:x,y` (tiles from the centre).
-- Wards (city.json `wards`, `unsettled`, `rings`): never laid out by hand. The charter opens rings (`City.RingOpen`); a quarter
-  (ring + side) with `founding` finished buildings becomes the ring's ward its buildings draw most (`WardDef.Draws`, `City.Form`,
-  `CityState.Sectors`). The map outlines a ward round its own buildings. `City.Migrate` maps old saves' wards to their quarters.
+- No wards (Conner, 2026-10-27): build anywhere your zones are painted. Neighbourhoods (`Systems/Neighbourhood.cs`, city.json
+  `neighbourhood`): what stands round a spot sets its land price, rent and mood (per plan cell, a pure function of the finished
+  buildings): a few shops near help, many are noise, none within `shops.reach` is a long walk; Industry, Poor (tenements),
+  Holy and Fine lean by `kinds`. Buildings' `site` rules ask the ground (`landAtLeast`/`landAtMost`, `water`, `near`;
+  `Neighbourhood.Sited`). Named neighbourhoods (`CityState.Quarters`) form daily where `founding` buildings cluster and name
+  themselves by character; stories bind them with the `neighbourhood` / `neighbourhood:<character>` needs and `{neighbourhood}`.
+  Client: the Neighbourhoods lens (outlines and figures), City › Neighbourhoods. Arcane works together make a scholars'
+  quarter (lore). Blocs (`Systems/Blocs.cs`, `content/game/blocs.json`): town-wide interests (stallholders, temple wardens...),
+  each townsperson a member of several by degree (work, home, faith); they judge choices like heroes do (`Blocs.Judge`).
 - Crowds (`Systems/Crowds.cs`, numbers in `content/game/crowds.json`): every building townsfolk go out to has a `capacity`
   in buildings.json (`CrowdsTests` fails one that serves them without). Outings (drinking, praying, `Activity.Visiting` a
   bathhouse/theatre/market hall/library/arena) go through `Crowds.Enter`: a full door turns them to the next place near or back
@@ -158,7 +165,7 @@
 - Decorations (`content/game/decor.json`, `Systems/Decor.cs`, client `Map/Decorator.cs`, `Map/DecorView.cs`): free positions in
   tiles from the town's corner and any angle (radians, model front +Z turned by it). Every piece needs a small effect in
   another system, capped in decor.json. Pieces claim plan cells (`Decor.Cells`, `LandPlan.Decor`): `Land.Fits` and lanes go
-  round them, and they never stand on a lane. Appeal adds to house contentment (`Decor.Comfort`) and to ward land prices
+  round them, and they never stand on a lane. Appeal adds to house contentment (`Decor.Comfort`) and to land prices round it
   (`Decor.Prestige`). `--beautify D` dresses a town for screenshots; `--decor oak --decor-at x,y,a` shows the tool.
 - UI text (`docs/ui-text.md`, kit in `godot/src/UiKit.cs`): Conner wants little text. Icon before word (`Ui.Chip`), one point a
   line (`Ui.Bullets`), explanations in hovers (`Ui.Tip`, `Ui.Brief`; `Pane.Note` briefs itself), colour by meaning, short labels.

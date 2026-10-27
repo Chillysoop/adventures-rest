@@ -43,7 +43,8 @@
   },
   "companies": {
     "minMembers": 3,
-    "maxMembers": 4,
+    "core": 4,
+    "maxMembers": 6,
     "levelSpread": 2,
     "setOutChance": 0.3,
     "outleveled": 0.35,

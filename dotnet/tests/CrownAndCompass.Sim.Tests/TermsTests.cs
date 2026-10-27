@@ -86,7 +86,10 @@ public class TermsTests
         Assert.True(t.Stories.Precedents.ContainsKey("captives-freed"));
 
         string again = "";
-        for (int i = 0; i < 20 && again == ""; i++) again = Captives.Take(t, site, farm.Workers.Count > 0 ? farm : t.Buildings.First(b => b.Complete && b.Workers.Count > 0 && b.Workers.All(id => t.Buildings.All(o => o.OwnerId != id))));
+        // Any building with a hand the raiders can carry off: no property, no seat.
+        bool Takeable(Building b) => b.Complete && b.Workers.Any(id => t.Agent(id) is { Departed: false, Hero: null } && t.Seats.All(x => x.HolderId != id) && t.Buildings.All(o => o.OwnerId != id));
+        var next = Takeable(farm) ? farm : t.Buildings.First(Takeable);
+        for (int i = 0; i < 20 && again == ""; i++) again = Captives.Take(t, site, next);
         Assert.NotEqual("", again);
         var second = Captives.At(t, site.Def.Id)!;
         // Nobody goes for them: the clock runs out.

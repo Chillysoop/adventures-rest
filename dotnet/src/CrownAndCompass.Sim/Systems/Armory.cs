@@ -218,6 +218,7 @@ public static class Armory
     {
         if (a.Hero == null || a.Dead || a.Departed) return "gone";
         if (a.Hero.AwayUntil != null) return "out of town";
+        if (it.Tier > town.Content.Loot.Ready(a.Hero.Level)) return "not ready for it yet";
         if (Use(town, a, it) <= 0) return IsStone(town, it) ? "already carries one" : "no use for it";
         return null;
     }

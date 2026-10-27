@@ -414,7 +414,7 @@ public static class Quests
         // Masters of arms who retired here train the newcomers.
         sheet.Xp += Legacies.MentorXp(town, level);
         sheet.Xp += (int)Math.Floor(Research.Xp(town) * XpToNext(level));
-        sheet.MaxHp = Expedition.HeroMaxHp(sheet, a.Abilities.Con);
+        sheet.MaxHp = Expedition.HeroMaxHp(town.Content, sheet, a.Abilities.Con);
         sheet.Hp = sheet.MaxHp;
         Gear.Equip(town.Content.Library, sheet);
         Annals.Raise(town, a, sheet, people);
@@ -565,24 +565,19 @@ public static class Quests
             if (leader == null) continue;
 
             var members = new List<Agent> { leader };
-            int levels = leader.Hero!.Level;
-            // A company rides with its own first, then newcomers it has room for.
+            var rules = town.Content.World.Companies;
+            // A company rides with its own first, then heroes who cover a part nobody plays yet, then newcomers it has room for.
             var recruits = pool
                 .Where(h => h.Id != leader.Id && Muster.Rides(town, leader, h))
-                .OrderByDescending(h => h.Hero!.PartyName != null)
-                .ThenByDescending(h => leader.OpinionOf(h.Id))
+                .OrderByDescending(h => leader.OpinionOf(h.Id))
                 .ThenByDescending(h => h.Hero!.Level)
-                .ThenBy(h => h.Id)
-                .ToList();
-            foreach (var r in recruits)
-            {
-                if (members.Count >= 4 || (members.Count >= 3 && levels >= 3 * tier + 2)) break;
-                if (leader.OpinionOf(r.Id) < -10 || r.OpinionOf(leader.Id) < -10) continue;
-                if (!Muster.Rides(town, leader, r, members.Count(m => m.Hero!.PartyName == null))) continue;
-                if (Interest(town, r, bounty, members.Count + 1) < 0.5) continue;
-                members.Add(r);
-                levels += r.Hero!.Level;
-            }
+                .ThenBy(h => h.Id);
+            Muster.Fill(members, recruits, rules.Core, rules.MaxMembers,
+                r => leader.OpinionOf(r.Id) >= -10 && r.OpinionOf(leader.Id) >= -10
+                    && Muster.Rides(town, leader, r, members.Count(m => m.Hero!.PartyName == null))
+                    && Interest(town, r, bounty, members.Count + 1) >= 0.5,
+                () => members.Count >= 3 && members.Sum(m => m.Hero!.Level) >= 3 * tier + 2);
+            int levels = members.Sum(m => m.Hero!.Level);
             // Heroes won't walk into a site they can't handle; the bounty waits for a stronger company.
             if (levels < 3 * tier || members.Count < 3) continue;
             if (!Passage.CanReach(town, members, s)) continue;
@@ -882,8 +877,9 @@ public static class Quests
         {
             s.Level++;
             int before = s.MaxHp;
-            s.MaxHp = Expedition.HeroMaxHp(s, a.Abilities.Con);
+            s.MaxHp = Expedition.HeroMaxHp(town.Content, s, a.Abilities.Con);
             s.Hp += s.MaxHp - before;
+            var took = Advances.Catch(town, a);
             // Crossing into a new tier of play: the realm, then the world, start to know the name.
             string fame = s.Level switch
             {
@@ -892,7 +888,7 @@ public static class Quests
                 17 => " The whole world knows the name.",
                 _ => "",
             };
-            town.Log(LedgerCategory.Quest, fame != "" ? Importance.Major : Importance.Notable, $"{a.Name} reaches level {s.Level}.{fame}", [a.Id]);
+            town.Log(LedgerCategory.Quest, fame != "" ? Importance.Major : Importance.Notable, $"{a.Name} reaches level {s.Level}{(took.Count > 0 ? $" and takes {Expedition.ListNames(took)}" : "")}.{fame}", [a.Id]);
             Notoriety.Leveled(town, a, s.Level);
             Moments.Leveled(town, a, s.Level, before);
         }

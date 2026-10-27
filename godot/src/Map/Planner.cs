@@ -9,8 +9,8 @@ namespace CrownAndCompass.Client.Map;
 /// (drag to paint, [ and ] or Shift+wheel to size it), and the townsfolk site their own buildings inside
 /// the paint. A building tool shows its footprint under the cursor: click to place it facing the nearest lane,
 /// or press and drag to turn it to face any way (Shift+wheel turns it too). Right-click puts the tool down.
-/// The wards are outlined and named; land in a ward not yet laid out is shaded and can't be painted.
-/// The paint itself is drawn on the ground by <see cref="TownView"/>; this draws the wards, the brush and the ghost.
+/// The neighbourhoods are outlined and named; land past the charter's reach can't be painted.
+/// The paint itself is drawn on the ground by <see cref="TownView"/>; this draws the neighbourhoods, the brush and the ghost.
 /// </summary>
 public partial class Planner(MapView map) : Control
 {
@@ -287,7 +287,7 @@ public partial class Planner(MapView map) : Control
     {
         if (Tool == null || map.Sim == null || _hover is not Vector2 h) return;
         var town = map.Sim.Town;
-        Wards(town);
+        Quarters(town);
         if (Tool.Wall is int wr || Tool.Gate is int)
         {
             WallTool(town, h);
@@ -457,24 +457,18 @@ public partial class Planner(MapView map) : Control
     }
 
     /// <summary>
-    /// The wards as they have grown, not as a plan: each formed ward outlined round its own buildings with its name at their
-    /// middle (unsettled ground shows nothing), and the line past which the charter doesn't yet let the town zone.
+    /// The neighbourhoods as they have grown, not as a plan: each outlined round its own buildings with its name at their
+    /// middle, and the line past which the charter doesn't yet let the town zone.
     /// </summary>
-    private void Wards(Town town)
+    private void Quarters(Town town)
     {
         var border = new Color("f6eedb", 0.45f);
-        foreach (var id in town.City.OpenWards)
+        foreach (var (q, hull) in QuarterHulls(town))
         {
-            var pts = new List<Vector2>();
-            foreach (var lot in town.Lots)
-                if (lot.BuildingId != null && City.WardOf(town, lot).Id == id)
-                    foreach (var c in Geo.LotCorners(lot, 0.35f)) pts.Add(c - new Vector2(Geo.Margin, Geo.Margin));
-            if (pts.Count < 3) continue;
-            var hull = Hull(pts);
             var screen = hull.Select(Screen).ToArray();
             DrawPolyline([.. screen, screen[0]], border, 2, true);
             var mid = new Vector2(hull.Average(p => p.X), hull.Average(p => p.Y));
-            Label(map.ToScreen(FromTown(mid.X, mid.Y), 0.6f), City.Ward(town, id).Name.ToUpperInvariant(), 13, new Color("f6eedb"));
+            Label(map.ToScreen(FromTown(mid.X, mid.Y), 0.6f), q.Name.ToUpperInvariant(), 13, new Color("f6eedb"));
         }
         // The charter's reach: zoning stops at the edge of the last ring it opens.
         int ring = 0;
@@ -495,8 +489,24 @@ public partial class Planner(MapView map) : Control
             $"more land to zone once the town is a {City.TierName(town, City.RingTier(town, ring + 1)).ToLowerInvariant()}", 11, new Color("cfc6b4", 0.85f));
     }
 
+    /// <summary>Each neighbourhood's outline round its own buildings, in town tiles.</summary>
+    public static List<(Quarter Quarter, List<Vector2> Hull)> QuarterHulls(Town town)
+    {
+        var pts = new Dictionary<int, List<Vector2>>();
+        foreach (var b in town.Buildings)
+        {
+            if (!b.Complete || Neighbourhood.Of(town, b) is not { } q) continue;
+            if (!pts.TryGetValue(q.Id, out var list)) pts[q.Id] = list = [];
+            foreach (var c in Geo.LotCorners(town.Lot(b.LotId), 0.35f)) list.Add(c - new Vector2(Geo.Margin, Geo.Margin));
+        }
+        var hulls = new List<(Quarter, List<Vector2>)>();
+        foreach (var q in town.City.Quarters)
+            if (pts.TryGetValue(q.Id, out var list) && list.Count >= 3) hulls.Add((q, Hull(list)));
+        return hulls;
+    }
+
     /// <summary>The convex hull of points, anticlockwise (Andrew's monotone chain).</summary>
-    private static List<Vector2> Hull(List<Vector2> pts)
+    public static List<Vector2> Hull(List<Vector2> pts)
     {
         var p = pts.OrderBy(v => v.X).ThenBy(v => v.Y).ToList();
         var h = new List<Vector2>();
