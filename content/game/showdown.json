@@ -1,0 +1,47 @@
+{
+  "_doc": "Showdowns (Systems/Showdowns.cs, Expedition.Showdown.cs): now and then a company reaching the master of a meaningful place (a menace's seat or holding, a group's lair, the deeps, a named master, or a site of minTier or more) stops at the door and the mayor may take command. Never with the stand-in mayor (auto stories): those fights stay off the grid. Talk first (persuade, deceive, intimidate against the master's wits; wins before losses), then a grid fight on SRD rules: initiative, speed in squares, reach, opportunity attacks, difficult ground, cover from pillars, and every spell, power, item and potion the heroes have. Any hero can be left to fight on their own (auto) or taken over.",
+  "chance": 0.5,
+  "minTier": 4,
+  "waitHours": 24,
+  "grid": { "w": 12, "h": 8 },
+  "speed": 6,
+  "fastClasses": { "monk": 2, "barbarian": 2 },
+  "smallRaces": { "halfling": -1, "gnome": -1 },
+  "fly": 8,
+  "ranged": 12,
+  "thrown": 4,
+  "spellRange": 24,
+  "blastRadius": 2,
+  "dodgeAc": 2,
+  "pillars": [2, 5],
+  "ground": {
+    "dark": { "cells": 0 },
+    "chasm": { "kind": "chasm", "cells": 6 },
+    "flooded": { "kind": "water", "cells": 14 },
+    "rubble": { "kind": "rubble", "cells": 10 },
+    "webbed": { "kind": "web", "cells": 8 },
+    "narrow": { "kind": "wall", "cells": 10 }
+  },
+  "talk": {
+    "_doc": "Each way is a check by the hero the player picks (or the party's best) against 10 + the master's ability modifier + tier/2. wins successes before losses failures settle it: persuade talks the master into leaving (half the hoard), intimidate makes it yield and run (the whole hoard), deceive wins the party the first blow with the master's guards sent away. losses failures and the master strikes first.",
+    "wins": 3,
+    "losses": 2,
+    "minInt": 6,
+    "loot": 0.5,
+    "ways": [
+      { "id": "persuade", "name": "Persuade", "icon": "talk-persuade", "ability": "cha", "against": "wis", "text": "{hero} tries to talk {boss} round" },
+      { "id": "deceive", "name": "Deceive", "icon": "talk-deceive", "ability": "cha", "against": "wis", "text": "{hero} spins {boss} a lie" },
+      { "id": "intimidate", "name": "Intimidate", "icon": "talk-intimidate", "ability": "str", "against": "cha", "text": "{hero} stares {boss} down" }
+    ],
+    "lines": {
+      "open": "{boss} looks the party over from its seat.",
+      "won": "{hero} wins the point (d20 {roll}, {total} vs DC {dc}).",
+      "lost": "{boss} isn't having it (d20 {roll}, {total} vs DC {dc}).",
+      "persuade": "{boss} agrees to quit the place by the next moon and lets them take half the hoard.",
+      "intimidate": "{boss} breaks, throws down the keys to the hoard and flees.",
+      "deceive": "{boss} believes it and sends the guards away. The party strikes first.",
+      "fail": "Enough talk: {boss} attacks.",
+      "attack": "The party attacks without a word, and strikes first."
+    }
+  }
+}

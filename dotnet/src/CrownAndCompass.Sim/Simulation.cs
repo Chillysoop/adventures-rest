@@ -57,6 +57,9 @@ public sealed record SimulationOptions
     /// <summary>Let the stand-in mayor answer story events; off when a player steps into them.</summary>
     public bool AutoStories { get; init; } = true;
 
+    /// <summary>A mayor at the table to play boss showdowns (<see cref="Systems.Showdowns"/>); off, every boss fight stays off the grid.</summary>
+    public bool Showdowns { get; init; }
+
     /// <summary>The stand-in mayor answers exploring companies' reports (with AutoBounties); off, they wait for the player.</summary>
     public bool AutoExplore { get; init; } = true;
 
@@ -124,6 +127,7 @@ public sealed class Simulation
         Charter();
         Systems.Boons.Found(Town);
         Goals.Begin(Town);
+        Town.ShowdownsOn = Options.Showdowns;
     }
 
     public void Step()
@@ -133,7 +137,9 @@ public sealed class Simulation
         Economy.Hourly(t);
         Property.Hourly(t);
         Social.Hourly(t);
+        t.Duels = t.ShowdownsOn && !Options.AutoStories;
         Roads.Hourly(t);
+        Showdowns.Hourly(t);
         Sendings.Hourly(t, Hand("stories"));
         // Finds wait on the player under a steward who asks: only a steward left to it answers them.
         Explore.Hourly(t, Stewards.Mode(t, Options, "bounties") == StewardMode.Steward && Stewards.Sub(t, Options, "bounties", Options.AutoExplore));
@@ -658,6 +664,42 @@ public sealed class Simulation
 
     /// <summary>How damage from storms, fires and enemies is mended: "crews", "first" or "hire".</summary>
     public bool SetRepairs(string way) => Construction.SetRepairs(Town, way);
+
+    /// <summary>The boss showdown waiting on the mayor, if any (<see cref="Showdowns"/>).</summary>
+    public Expedition.Venture.Showdown? Showdown => Town.Duel?.Fight;
+
+    /// <summary>Talk the master round: "persuade", "deceive" or "intimidate", by a hero (0: the party's best at it); "attack" ends the talk.</summary>
+    public bool ShowdownTalk(string way, int heroId = 0)
+    {
+        if (Town.Duel is not { } live) return false;
+        bool ok = way == "attack" ? live.Fight.Phase == "talk" : live.Fight.Talk(way, heroId);
+        if (way == "attack") live.Fight.Attack();
+        Showdowns.Close(Town);
+        return ok;
+    }
+
+    /// <summary>Move the commanded hero whose turn it is to a square of the showdown's grid.</summary>
+    public bool ShowdownMove(int x, int y) => Town.Duel is { } live && live.Fight.Move(x, y) && Settled();
+
+    /// <summary>Have the commanded hero whose turn it is do something (<see cref="Expedition.Venture.Showdown.Actions"/>), aimed at a square.</summary>
+    public bool ShowdownAct(string action, int x = -1, int y = -1) => Town.Duel is { } live && live.Fight.Act(action, x, y) && Settled();
+
+    /// <summary>Take command of a hero in the showdown, or leave them to fight on their own.</summary>
+    public bool ShowdownCommand(int heroId, bool command)
+    {
+        if (Town.Duel is not { } live) return false;
+        live.Fight.Command(heroId, command);
+        return Settled();
+    }
+
+    /// <summary>Let the showdown play itself out to the end.</summary>
+    public void ShowdownAuto() => Showdowns.Auto(Town);
+
+    private bool Settled()
+    {
+        Showdowns.Close(Town);
+        return true;
+    }
 
     /// <summary>Send the champions for the big bad's seat: the last battle (<see cref="Saga.Champions"/>).</summary>
     public bool CallLastRide() => Saga.CallLastRide(Town);

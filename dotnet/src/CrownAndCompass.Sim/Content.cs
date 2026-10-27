@@ -1827,6 +1827,9 @@ public sealed class Content
     /// <summary>Dungeon maps, room features, reactions between trips, approaches and deeps (content/game/dungeons.json).</summary>
     public Systems.DungeonRules Dungeons { get; init; } = new();
 
+    /// <summary>Boss showdowns on a grid: talk, then SRD fights the mayor may command (content/game/showdown.json).</summary>
+    public Systems.ShowdownRules Showdown { get; init; } = new();
+
     /// <summary>Adventurers' word of the town and what it does to who comes (content/game/word.json).</summary>
     public Systems.WordRules Word { get; init; } = new();
 
@@ -2104,6 +2107,7 @@ public sealed class Content
             Bestiary = Parse<Systems.BestiaryRules>("bestiary.json"),
             Wounds = Parse<WoundRules>("wounds.json"),
             Dungeons = Parse<Systems.DungeonRules>("dungeons.json"),
+            Showdown = Parse<Systems.ShowdownRules>("showdown.json"),
             Word = Parse<WordRules>("word.json"),
             Omens = Parse<OmenRules>("omens.json"),
             Weather = Parse<WeatherRules>("weather.json"),

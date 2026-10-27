@@ -397,6 +397,8 @@ public partial class Main
         try
         {
             var sim = SaveGame.ReadFile(path, out var client);
+            // A campaign saved before showdowns existed plays them from now on.
+            if (!sim.Options.AutoStories) Sim.Systems.Showdowns.Enable(sim.Town);
             Adopt(sim);
             RestoreClientData(client);
             // A loaded town opens paused: Space (or a speed) picks up where it left off.

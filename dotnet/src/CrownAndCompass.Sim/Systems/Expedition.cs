@@ -208,7 +208,7 @@ public static partial class Expedition
     };
 
     /// <summary>'the goblin', but just 'Grukk Bloodtusk' for a named foe.</summary>
-    private static string The(MonsterDef d) => d.Named ? d.Name : $"the {d.Name}";
+    internal static string The(MonsterDef d) => d.Named ? d.Name : $"the {d.Name}";
 
     public static int Proficiency(int level) => 2 + (level - 1) / 4;
 
@@ -659,54 +659,67 @@ public static partial class Expedition
         {
             foreach (var c in Standing)
             {
-                var living = foes.Where(f => f.Hp > 0).ToList();
-                if (living.Count == 0) return;
-                var s = c.Sheet;
-                string name = c.Agent.GivenName;
-                // Swallowed whole, or frozen by a gaze or a roar: no turn.
-                if (_held.ContainsKey(c) || (_dazed.TryGetValue(c, out int dazed) && round <= dazed)) continue;
-                if (c.Form != null && c.Shape <= 0) EndShape(c);
-                c.Sneaked = c.Smote = c.Struck = false;
-
-                // A badly hurt hero downs a potion (a bonus action) and fights on.
-                if (c.Potions > 0 && c.Hp < s.MaxHp * 0.35 && c.Form == null)
-                {
-                    c.Potions--;
-                    int drunk = Potion();
-                    c.Hp = Math.Min(s.MaxHp, c.Hp + drunk);
-                    Log(Voices.Variant(_content, "potion", "{name} gulps a {potion} (+{hp} hp).", Seed, ("name", name), ("potion", PotionName()), ("hp", drunk.ToString())));
-                    if (c.Potions == 0 && c.Sheet.Potions >= 3) Gag(c, "potion");
-                }
-                else BonusAction(c, foes, living, round);
-
-                Regen(c);
-                if (ItemAction(c, foes, living, round)) continue;
-
-                // Healers keep the party alive before they swing; casters spend a slot when the fight calls for one.
-                if (HealTurn(c)) continue;
-                if (TurnUndead(c, foes, round) || Rite(c, foes, round)) continue;
-                if (CastTurn(c, foes, living, round)) continue;
-
-                // A caster with a scroll reads it when the foes crowd in or the master of the place shows itself.
-                if (c.Scrolls > 0 && Scrolls.Reads(s.Cls) && !_hushed && c.Form == null && (living.Count >= 3 || living.Any(f => f.Def.Boss)))
-                {
-                    var sr = _content.Shrines.Scroll;
-                    c.Scrolls--;
-                    var targets = living.OrderByDescending(f => f.Def.Boss).Take(sr.Targets).ToList();
-                    int dmg = Math.Max(1, (Sim.Dice.Parse(sr.Dice) ?? new Dice(3, 6, 0)).Roll(_rng));
-                    int felled = 0;
-                    foreach (var f in targets)
-                    {
-                        Hit(f, Spell(f, dmg), "force", true, false, foes, round);
-                        if (f.Hp <= 0) felled++;
-                    }
-                    Credit(c, felled);
-                    Log($"{name} reads a spell scroll aloud and it burns away, striking {targets.Count} of them for {dmg} damage{(felled > 0 ? $", dropping {felled}" : "")}.");
-                    continue;
-                }
-
-                StrikeTurn(c, foes, round);
+                if (!foes.Any(f => f.Hp > 0)) return;
+                HeroTurn(c, foes, round);
             }
+        }
+
+        /// <summary>One hero's turn in a fight: a potion or a bonus action, then an item, a heal, a rite, a spell, a scroll or blows.</summary>
+        private void HeroTurn(Combatant c, List<Foe> foes, int round)
+        {
+            var living = foes.Where(f => f.Hp > 0).ToList();
+            if (living.Count == 0) return;
+            var s = c.Sheet;
+            string name = c.Agent.GivenName;
+            // Swallowed whole, or frozen by a gaze or a roar: no turn.
+            if (_held.ContainsKey(c) || (_dazed.TryGetValue(c, out int dazed) && round <= dazed)) return;
+            if (c.Form != null && c.Shape <= 0) EndShape(c);
+            c.Sneaked = c.Smote = c.Struck = false;
+
+            // A badly hurt hero downs a potion (a bonus action) and fights on.
+            if (c.Potions > 0 && c.Hp < s.MaxHp * 0.35 && c.Form == null)
+            {
+                c.Potions--;
+                int drunk = Potion();
+                c.Hp = Math.Min(s.MaxHp, c.Hp + drunk);
+                Log(Voices.Variant(_content, "potion", "{name} gulps a {potion} (+{hp} hp).", Seed, ("name", name), ("potion", PotionName()), ("hp", drunk.ToString())));
+                if (c.Potions == 0 && c.Sheet.Potions >= 3) Gag(c, "potion");
+            }
+            else BonusAction(c, foes, living, round);
+
+            Regen(c);
+            if (ItemAction(c, foes, living, round)) return;
+
+            // Healers keep the party alive before they swing; casters spend a slot when the fight calls for one.
+            if (HealTurn(c)) return;
+            if (TurnUndead(c, foes, round) || Rite(c, foes, round)) return;
+            if (CastTurn(c, foes, living, round)) return;
+
+            // A caster with a scroll reads it when the foes crowd in or the master of the place shows itself.
+            if (c.Scrolls > 0 && Scrolls.Reads(s.Cls) && !_hushed && c.Form == null && (living.Count >= 3 || living.Any(f => f.Def.Boss)))
+            {
+                ReadScroll(c, foes, living.OrderByDescending(f => f.Def.Boss).Take(_content.Shrines.Scroll.Targets).ToList(), round);
+                return;
+            }
+
+            StrikeTurn(c, foes, round);
+        }
+
+        /// <summary>A caster reads a spell scroll at these foes, and it burns away.</summary>
+        private void ReadScroll(Combatant c, List<Foe> foes, List<Foe> targets, int round)
+        {
+            var sr = _content.Shrines.Scroll;
+            c.Scrolls--;
+            targets = targets.Take(sr.Targets).ToList();
+            int dmg = Math.Max(1, (Sim.Dice.Parse(sr.Dice) ?? new Dice(3, 6, 0)).Roll(_rng));
+            int felled = 0;
+            foreach (var f in targets)
+            {
+                Hit(f, Spell(f, dmg), "force", true, false, foes, round);
+                if (f.Hp <= 0) felled++;
+            }
+            Credit(c, felled);
+            Log($"{c.Agent.GivenName} reads a spell scroll aloud and it burns away, striking {targets.Count} of them for {dmg} damage{(felled > 0 ? $", dropping {felled}" : "")}.");
         }
 
         private int Potion() => Math.Max(1, (Sim.Dice.Parse(_content.Shrines.Potion.Dice) ?? new Dice(2, 4, 2)).Roll(_rng));
@@ -900,7 +913,16 @@ public static partial class Expedition
 
         private void MonstersAct(List<Foe> foes, int round)
         {
-            var rng = _rng;
+            FoesRoundStart(foes, round);
+            int powers = 0;
+            foreach (var f in foes.ToList()) FoeReady(f, foes, round, ref powers);
+            foreach (var f in foes.ToList())
+                if (!FoeAttacks(f, foes, round)) return;
+        }
+
+        /// <summary>The foes' side of a new round: the fallen that rise, lingering spells, and the swallowed digested.</summary>
+        private void FoesRoundStart(List<Foe> foes, int round)
+        {
             Rise(foes, round);
             Auras(foes, round);
             // The swallowed are digested, until their swallower dies or they cut their way out.
@@ -915,95 +937,103 @@ public static partial class Expedition
                 }
                 Hurt(c, chew);
             }
-            int powers = 0;
-            foreach (var f in foes.ToList())
+        }
+
+        /// <summary>The start of a foe's turn: regeneration, and its power on its first turn (a few of a crowd's a fight).</summary>
+        private void FoeReady(Foe f, List<Foe> foes, int round, ref int powers)
+        {
+            if (f.Hp <= 0 || f.Spent == round) return;
+            if (f.Ways["regen"] is { } regen && f.Hp < f.Def.Hp)
             {
-                if (f.Hp <= 0 || f.Spent == round) continue;
-                if (f.Ways["regen"] is { } regen && f.Hp < f.Def.Hp)
+                // Fire or acid on a troll: its wounds stay open this turn.
+                if (f.Seared == round)
                 {
-                    // Fire or acid on a troll: its wounds stay open this turn.
-                    if (f.Seared == round)
-                    {
-                        if (f.Told.Add("seared")) Log(Cap(Prowess.Line(_content, "seared", ("type", _searedBy.GetValueOrDefault(f, "fire")), ("foe", The(f.Def)))));
-                    }
-                    else
-                    {
-                        f.Hp = Math.Min(f.Def.Hp, f.Hp + Math.Max(1, (int)Math.Round(f.Def.Hp * regen.Share)));
-                        Tell(f, regen);
-                    }
+                    if (f.Told.Add("seared")) Log(Cap(Prowess.Line(_content, "seared", ("type", _searedBy.GetValueOrDefault(f, "fire")), ("foe", The(f.Def)))));
                 }
-                if (f.Held(round)) continue;
-                // The power on its first turn, or its second for every other one of a crowd, a few of them a fight.
-                if (f.Ways.Power != null && !f.Powered && Standing.Count > 0 && powers < f.Ways["power"]!.Most && round == (f.Def.Boss ? 1 : 1 + foes.IndexOf(f) % 2))
+                else
                 {
-                    powers++;
-                    UsePower(f, round);
-                    continue;
+                    f.Hp = Math.Min(f.Def.Hp, f.Hp + Math.Max(1, (int)Math.Round(f.Def.Hp * regen.Share)));
+                    Tell(f, regen);
                 }
             }
-            foreach (var f in foes.ToList())
+            if (f.Held(round)) return;
+            // The power on its first turn, or its second for every other one of a crowd, a few of them a fight.
+            if (f.Ways.Power != null && !f.Powered && Standing.Count > 0 && powers < f.Ways["power"]!.Most && round == (f.Def.Boss ? 1 : 1 + foes.IndexOf(f) % 2))
             {
-                int pack = Pack(f, foes);
-                if (f.Ways["pack"] is { } pk && foes.Any(o => o != f && o.Hp > 0)) pack = Math.Max(pack, pk.Hit);
-                for (int k = 0; k < Math.Max(1, f.Def.Attacks); k++)
+                powers++;
+                UsePower(f, round);
+                return;
+            }
+        }
+
+        /// <summary>
+        /// One foe's blows this round, at whoever it picks among those it can reach (everyone, off the grid). Returns
+        /// false once nobody in the party is left standing.
+        /// </summary>
+        private bool FoeAttacks(Foe f, List<Foe> foes, int round, Func<Combatant, bool>? reach = null)
+        {
+            var rng = _rng;
+            int pack = Pack(f, foes);
+            if (f.Ways["pack"] is { } pk && foes.Any(o => o != f && o.Hp > 0)) pack = Math.Max(pack, pk.Hit);
+            for (int k = 0; k < Math.Max(1, f.Def.Attacks); k++)
+            {
+                if (f.Hp <= 0 || f.Spent == round || f.Held(round)) break;
+                var targets = reach == null ? Standing : Standing.Where(reach).ToList();
+                if (targets.Count == 0) return Standing.Count > 0;
+                var t = Victim(f, targets);
+                int frenzy = 0;
+                // A frenzied beast goes for whoever is bleeding most.
+                if (f.Ways["frenzy"] is { } fz && targets.Where(c => c.Hp < c.Sheet.MaxHp / 2).OrderBy(c => c.Hp).ThenBy(c => c.Agent.Id).FirstOrDefault() is { } bleeding)
                 {
-                    if (f.Hp <= 0 || f.Spent == round || f.Held(round)) break;
-                    var targets = Standing;
-                    if (targets.Count == 0) return;
-                    var t = Victim(f, targets);
-                    int frenzy = 0;
-                    // A frenzied beast goes for whoever is bleeding most.
-                    if (f.Ways["frenzy"] is { } fz && targets.Where(c => c.Hp < c.Sheet.MaxHp / 2).OrderBy(c => c.Hp).ThenBy(c => c.Agent.Id).FirstOrDefault() is { } bleeding)
+                    t = bleeding;
+                    frenzy = fz.Hit;
+                    Tell(f, fz, t.Agent.GivenName);
+                }
+                int roll = rng.D20();
+                if (roll == 1) continue;
+                int caught = _snared.TryGetValue(t, out var sn) && round <= sn.Until ? 2 : 0;
+                int hindered = f.HinderUntil >= round ? f.Hinder : 0;
+                if (roll == 20 || roll + f.Def.Attack + pack + frenzy + caught - hindered >= t.ArmorClass)
+                {
+                    int dmg = Math.Max(1, f.Def.Dice.Roll(rng, roll == 20));
+                    if (round == 1 && f.Ways["charge"] is { } charge)
                     {
-                        t = bleeding;
-                        frenzy = fz.Hit;
-                        Tell(f, fz, t.Agent.GivenName);
+                        dmg += (int)Math.Round(dmg * charge.Share);
+                        Tell(f, charge, t.Agent.GivenName);
                     }
-                    int roll = rng.D20();
-                    if (roll == 1) continue;
-                    int caught = _snared.TryGetValue(t, out var sn) && round <= sn.Until ? 2 : 0;
-                    int hindered = f.HinderUntil >= round ? f.Hinder : 0;
-                    if (roll == 20 || roll + f.Def.Attack + pack + frenzy + caught - hindered >= t.ArmorClass)
+                    dmg = Guard(t, f, Taken(t, f, dmg, round));
+                    Hurt(t, dmg);
+                    Relentless(t);
+                    Rebuke(t, f, round);
+                    if (f.Ways["drain"] is { } drain)
                     {
-                        int dmg = Math.Max(1, f.Def.Dice.Roll(rng, roll == 20));
-                        if (round == 1 && f.Ways["charge"] is { } charge)
+                        f.Hp = Math.Min(f.Def.Hp, f.Hp + (int)Math.Round(dmg * drain.Share));
+                        Tell(f, drain, t.Agent.GivenName);
+                    }
+                    if (!t.Down && !Free(t) && f.Ways["swallow"] is { } sw && !_held.ContainsKey(t) && !_held.Values.Any(h => h.By == f))
+                    {
+                        _held[t] = (f, round + sw.Rounds, Math.Max(1, dmg / 2));
+                        Log(Cap(Knacks.Fill(sw.Text, The(f.Def), t.Agent.GivenName)));
+                    }
+                    else if (!t.Down && !Free(t) && f.Ways["grapple"] is { } gr)
+                    {
+                        _snared[t] = (round + gr.Rounds, gr.Hit);
+                        Tell(f, gr, t.Agent.GivenName);
+                    }
+                    if (t.Down)
+                    {
+                        Log($"{Cap(The(f.Def))} {(roll == 20 ? "crits" : "hits")} {t.Agent.GivenName} for {dmg}. {t.Agent.GivenName} goes down.");
+                        Mark("down", t);
+                        if (t.Sheet.NicknameFor == "down") Gag(t, "down");
+                        else
                         {
-                            dmg += (int)Math.Round(dmg * charge.Share);
-                            Tell(f, charge, t.Agent.GivenName);
-                        }
-                        dmg = Guard(t, f, Taken(t, f, dmg, round));
-                        Hurt(t, dmg);
-                        Relentless(t);
-                        Rebuke(t, f, round);
-                        if (f.Ways["drain"] is { } drain)
-                        {
-                            f.Hp = Math.Min(f.Def.Hp, f.Hp + (int)Math.Round(dmg * drain.Share));
-                            Tell(f, drain, t.Agent.GivenName);
-                        }
-                        if (!t.Down && !Free(t) && f.Ways["swallow"] is { } sw && !_held.ContainsKey(t) && !_held.Values.Any(h => h.By == f))
-                        {
-                            _held[t] = (f, round + sw.Rounds, Math.Max(1, dmg / 2));
-                            Log(Cap(Knacks.Fill(sw.Text, The(f.Def), t.Agent.GivenName)));
-                        }
-                        else if (!t.Down && !Free(t) && f.Ways["grapple"] is { } gr)
-                        {
-                            _snared[t] = (round + gr.Rounds, gr.Hit);
-                            Tell(f, gr, t.Agent.GivenName);
-                        }
-                        if (t.Down)
-                        {
-                            Log($"{Cap(The(f.Def))} {(roll == 20 ? "crits" : "hits")} {t.Agent.GivenName} for {dmg}. {t.Agent.GivenName} goes down.");
-                            Mark("down", t);
-                            if (t.Sheet.NicknameFor == "down") Gag(t, "down");
-                            else
-                            {
-                                Gags.Add(new Gag(t.Agent.Id, "down"));
-                                Speak("down", t);
-                            }
+                            Gags.Add(new Gag(t.Agent.Id, "down"));
+                            Speak("down", t);
                         }
                     }
                 }
             }
+            return true;
         }
 
         /// <summary>Anyone left at 0 hp makes death saves unless a cleric can reach them.</summary>
@@ -1717,6 +1747,16 @@ public static partial class Expedition
                 else if (e.Kind == "combat")
                 {
                     if (boss && Approach == "sneak" && Alarm < _content.Bounties.Heist.AlarmMax) _strikeFirst = true;
+                    if (boss && Duel)
+                    {
+                        // A showdown: the meeting is played on the grid (Showdowns), and the delve ends at the door.
+                        AtDoor = true;
+                        DoorRoom = room;
+                        _doorLine = line;
+                        _doorStart = start;
+                        _doorFeat = feat;
+                        return ExpeditionOutcome.Retreated;
+                    }
                     won = Combat(e, feat.First);
                     _strikeFirst = false;
                 }

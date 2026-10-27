@@ -946,7 +946,6 @@ public static class Roads
         Country.Wear(town, party.Start, party.Out);
 
         var outcome = ExpeditionOutcome.Wiped;
-        double leave = v.Clock;
         if (!v.Wiped)
         {
             v.Clock = arrive;
@@ -974,10 +973,29 @@ public static class Roads
                 }
                 bool parley = Menaces.At(town, site.Def.Id) == null && site.Def.Id != content.Enemy.Outpost.Id && Captives.At(town, site.Def.Id) == null;
                 v.Choose(site.Def, v.Map.Mapped || v.Tracked, parley);
+                v.Duel = Showdowns.Due(town, party, site, v);
                 if (!v.Wiped) outcome = v.Delve(site.Def, content.Roads.Retreat.Retries);
+                if (v.AtDoor)
+                {
+                    // At the master's door: the trip waits on the showdown.
+                    Showdowns.Begin(town, party, site, v, new Arrival(troubled, spot, members));
+                    return;
+                }
             }
-            leave = v.Clock;
         }
+        Leave(town, party, v, outcome, new Arrival(troubled, spot, members));
+    }
+
+    /// <summary>What the road home needs to know of the road out.</summary>
+    internal sealed record Arrival(List<(double X, double Y)> Troubled, (double X, double Y) Spot, List<Agent> Members);
+
+    /// <summary>The delve is over: the road home, the homecoming, the result.</summary>
+    internal static void Leave(Town town, Party party, Expedition.Venture v, ExpeditionOutcome outcome, Arrival arrival)
+    {
+        var content = town.Content;
+        var site = Quests.Site(town, party.SiteId)!;
+        var (troubled, spot, members) = arrival;
+        double leave = v.Clock;
         party.Halts.AddRange(v.Halts);
         party.LeaveTick = (int)Math.Ceiling(leave);
 

@@ -227,6 +227,10 @@ public sealed class Party
 
     /// <summary>The venture has been settled (on reaching the site); <see cref="Result"/> waits for the homecoming.</summary>
     public bool Resolved { get; set; }
+
+    /// <summary>Waiting at its site's master for a showdown to be played (<see cref="Showdowns"/>); <see cref="Dueled"/>: it has had its one.</summary>
+    public bool AtTheDoor { get; set; }
+    public bool Dueled { get; set; }
     public ExpeditionResult? Result { get; set; }
 
     /// <summary>They found the site empty and turned back.</summary>

@@ -787,6 +787,9 @@ public sealed class Town
 
     public List<Agent> Heroes => Agents.Where(a => !a.Departed && a.Hero != null).ToList();
 
+    /// <summary>The showdown waiting on the mayor, as a list of one or none (the tutorial counts it: <c>count:Showdowns</c>).</summary>
+    public List<Systems.Showdowns.Live> Showdowns => Duel != null ? [Duel] : [];
+
     /// <summary>The callings heroes hold (<see cref="Systems.Callings"/>); the tutorial watches it.</summary>
     public IReadOnlyList<int> Callings => Stories.Callings.Keys;
 
@@ -841,6 +844,17 @@ public sealed class Town
         lot.OwnerId = ownerId;
         return b;
     }
+
+    /// <summary>Boss showdowns are played in this campaign (<see cref="SimulationOptions.Showdowns"/>, or turned on for an older save: <see cref="Systems.Showdowns.Enable"/>).</summary>
+    public bool ShowdownsOn;
+
+    /// <summary>A mayor is at the table to play showdowns (set by the simulation from its options each hour).</summary>
+    [NotSaved]
+    internal bool Duels;
+
+    /// <summary>The showdown waiting on the mayor (<see cref="Systems.Showdowns"/>).</summary>
+    [NotSaved]
+    internal Systems.Showdowns.Live? Duel;
 
     /// <summary>While the townsfolk choose their hour (Brain.Hourly): the places open to visitors by kind, and how many are out at each (<see cref="Systems.Crowds"/>).</summary>
     [NotSaved]
