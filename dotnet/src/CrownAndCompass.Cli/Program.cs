@@ -32,6 +32,7 @@ string storyteller = "rising";
 string founding = "";
 double? homeX = null, homeY = null;
 bool hardcore = false;
+string government = "";
 bool roads = false;
 bool claim = false;
 bool endless = false;
@@ -123,6 +124,9 @@ for (int i = 0; i < args.Length; i++)
             string off = i + 1 < args.Length ? args[++i] : "";
             roadsOff.AddRange(off == "all" ? Content.Default().Victory.Roads.Select(r => r.Id) : off.Split(','));
             break;
+        case "--government":
+            government = i + 1 < args.Length ? args[++i] : "";
+            break;
         case "--people":
             people = Number(args, ref i);
             break;
@@ -133,7 +137,7 @@ for (int i = 0; i < args.Length; i++)
 }
 
 var past = legends != null && File.Exists(legends) ? Legends.Read(File.ReadAllText(legends)) : [];
-var sim = load != null ? SaveGame.ReadFile(load, out _) : new Simulation(new SimulationOptions { Seed = seed, Legends = past, AutoCouncil = !handTaxes, Storyteller = storyteller, RoadsOff = roadsOff, Endless = endless, Boons = boons, Founding = founding, HomeX = homeX, HomeY = homeY, Hardcore = hardcore });
+var sim = load != null ? SaveGame.ReadFile(load, out _) : new Simulation(new SimulationOptions { Seed = seed, Legends = past, AutoCouncil = !handTaxes, Storyteller = storyteller, RoadsOff = roadsOff, Endless = endless, Boons = boons, Founding = founding, HomeX = homeX, HomeY = homeY, Hardcore = hardcore, Government = government });
 var town = sim.Town;
 seed = town.Seed;
 var minImportance = all ? Importance.Routine : Importance.Notable;
@@ -177,6 +181,7 @@ Print($"Told by {teller.Name} ({teller.Title}): {town.Enemy.Raids} raids and {to
 if (Saga.Summary(town) != "") Print(Saga.Summary(town));
 if (Endless.On(town)) Print($"Endless: era {Endless.EraNumber(town)}; " + string.Join("; ", town.Saga.Endless.Eras.Select(e => $"era {e.Number} ended day {e.Day} by {e.Road} against {e.Foe}")));
 Print($"A {City.Tier(town).Name.ToLowerInvariant()} of about {City.Souls(town)} souls; neighbourhoods: {string.Join(", ", town.City.Quarters.Select(q => q.Name))}.");
+Print($"Government: {Politics.Form(town).Name}; trust {Js.ToFixed(town.Politics.Trust, 0)}; moots {town.Politics.Moots}; blocs: " + string.Join(", ", Politics.Blocs(town).Select(b => $"{b.Id} {Js.ToFixed(Politics.Size(town, b), 0)} at {Js.ToFixed(Politics.Feeling(town, b.Id), 0)}")) + $"; situations: {string.Join(", ", town.Politics.Situations.Keys.Order())}; radical cells: {town.Politics.Cells.Count}.");
 Print("Treasury books, all time: " + string.Join(", ", town.Accounts.OrderBy(kv => kv.Value).Select(kv => $"{kv.Key} {Js.ToFixed(kv.Value, 0)}")));
 Print("Vacant zoned lots: " + string.Join(", ", Planning.Paintable.Select(z => $"{z} {Planning.VacantZoned(town, z)}")) + $"; unpainted open ground {Land.OpenGround(town) / (Land.Res * Land.Res)} tiles");
 Print("Demand: " + string.Join(", ", town.Content.Buildings.Where(d => d.Buildable && d.IsBusiness).Select(d => $"{d.Id} {Js.ToFixed(Property.Demand(town, d.Id), 2)}")));

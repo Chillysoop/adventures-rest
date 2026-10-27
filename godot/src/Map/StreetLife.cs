@@ -76,7 +76,7 @@ public partial class Crowd
         }
         foreach (var bloc in Blocs.Speaking(town))
         {
-            if (Blocs.Feeling(town, bloc.Id) > -15) continue;
+            if (Politics.Feeling(town, bloc.Id) > -15) continue;
             // A grumbler at the door of the first member's home.
             var member = town.Workers.Where(a => a.HomeId != null && Blocs.Degree(town, bloc, a) >= 0.5).OrderBy(a => a.Id).FirstOrDefault();
             if (member == null) continue;

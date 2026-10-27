@@ -144,11 +144,11 @@ public static class Blocs
     /// <summary>Mood a townsperson carries from how their blocs feel, each by how much they belong.</summary>
     public static double Mood(Town town, Agent a)
     {
-        if (town.City.Blocs.Count == 0) return 0;
         double sum = 0, weight = 0;
         foreach (var b in Rules(town).Blocs)
         {
-            double f = Feeling(town, b.Id);
+            // Choices remembered plus the laws standing now (Politics.Standing).
+            double f = Politics.Feeling(town, b.Id);
             if (f == 0) continue;
             double d = Degree(town, b, a);
             sum += f * d;

@@ -85,6 +85,9 @@ public sealed record SimulationOptions
     /// <summary>Hardcore: the mayor's death ends the campaign (<see cref="Systems.Mayoralty"/>).</summary>
     public bool Hardcore { get; init; }
 
+    /// <summary>The form of government the town starts under (politics.json forms id; "" for the charter). CLI <c>--government</c>.</summary>
+    public string Government { get; init; } = "";
+
     /// <summary>The town's name as the player typed it on New game; blank keeps Briarford.</summary>
     public string TownName { get; init; } = "";
 
@@ -211,6 +214,7 @@ public sealed class Simulation
         Sickness.Daily(t);
         Moods.Daily(t);
         Council.Daily(t, Stewards.Mode(t, Options, "council") == StewardMode.Steward);
+        Politics.Daily(t, Stewards.Mode(t, Options, "council") == StewardMode.Steward);
         double pace = Director.Daily(t);
         using (Asking("defence"))
         {
@@ -477,7 +481,8 @@ public sealed class Simulation
     public bool ChooseInstitution(string institutionId, string option) => Institutions.Choose(Town, institutionId, option);
 
     /// <summary>The player's lever: set the tax rate (a share, e.g. 0.12); higher fills the treasury and sours the town.</summary>
-    public bool SetTax(double rate) => Taxes.Set(Town, rate);
+    /// <summary>Set the tax rate: for Mandate, or by a town vote where the form puts taxes to one (<see cref="Politics.Change"/>).</summary>
+    public bool SetTax(double rate) => Politics.Change(Town, "tax", Js.Str(Js.Round(Math.Clamp(rate, Town.Content.Taxes.Min, Town.Content.Taxes.Max) * 100) / 100));
 
     /// <summary>The player's other lever: sign or veto the motion before the council.</summary>
     public bool DecideMotion(int motionId, bool sign) => Council.Decide(Town, motionId, sign);
@@ -603,10 +608,22 @@ public sealed class Simulation
     public Building? BuildTemple() => Shrines.BuildTemple(Town);
 
     /// <summary>Write a punishment for a crime into the law book (laws.json).</summary>
-    public bool SetLaw(string crime, string punishment) => Laws.Set(Town, crime, punishment);
+    public bool SetLaw(string crime, string punishment) => Politics.Change(Town, "punish:" + crime, punishment);
 
     /// <summary>Hold every trial under a truth spell from laws.json "trial" (Zone of Truth), or "" for none.</summary>
-    public bool SetTrialMagic(string spell) => Laws.SetTrialMagic(Town, spell);
+    public bool SetTrialMagic(string spell) => Politics.Change(Town, "trial", spell);
+
+    /// <summary>Set a policy's level (curfew, tithe, dole).</summary>
+    public bool SetPolicy(string policy, string level) => Politics.Change(Town, "policy:" + policy, level);
+
+    /// <summary>Change the town's form of government.</summary>
+    public bool SetGovernment(string form) => Politics.Change(Town, "form", form);
+
+    /// <summary>Put a matter to the town vote, or take it back.</summary>
+    public bool SetTownVote(string matter, bool on) => Politics.SetVote(Town, matter, on);
+
+    /// <summary>Promise a bloc what it asks, or turn it away.</summary>
+    public bool AnswerBloc(int askId, bool promise) => Politics.Answer(Town, askId, promise);
 
     /// <summary>Send the watch against a faction the town has exposed.</summary>
     public bool CrackDown(string factionId) => Factions.CrackDown(Town, factionId);
@@ -664,7 +681,7 @@ public sealed class Simulation
     public bool CallLastRide() => Saga.CallLastRide(Town);
 
     /// <summary>The gate law: "open", "watched" or "shut" (<see cref="Frontier"/>). Needs a standing wall.</summary>
-    public bool SetGate(string id) => Frontier.SetGate(Town, id);
+    public bool SetGate(string id) => Politics.Change(Town, "gate", id);
 
     /// <summary>Rebuild a rope bridge raiders cut, in stone that can't be cut again.</summary>
     public bool RebuildBridge(int featureId) => Bridges.Rebuild(Town, featureId);
@@ -802,7 +819,7 @@ public sealed class Simulation
     public Regiment? RaiseLevy(int size, ArmyPost post = ArmyPost.Walls) => Army.RaiseLevy(Town, size, post);
 
     /// <summary>The levy law: volunteers only, or conscription.</summary>
-    public bool SetServiceLaw(ServiceLaw law) => Army.SetService(Town, law);
+    public bool SetServiceLaw(ServiceLaw law) => Politics.Change(Town, "service", law.ToString().ToLowerInvariant());
 
     /// <summary>Whether the levy is paid a wage while it serves.</summary>
     public bool SetLevyPay(bool paid) => Army.SetLevyPay(Town, paid);
@@ -890,6 +907,7 @@ public sealed class Simulation
         Quests.InitSites(t);
         World.Generate(t, Options.HomeX, Options.HomeY);
         Council.InitCouncil(t);
+        Politics.Init(t, Options.Government);
         Threat.InitThreat(t);
         Factions.InitFactions(t);
         Powers.Init(t);

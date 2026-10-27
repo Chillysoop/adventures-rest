@@ -83,6 +83,9 @@ public sealed class MayoraltyState
     /// <summary>Died where nobody could carry the body home: no raising.</summary>
     public bool Lost { get; set; }
 
+    /// <summary>Turned out at the moot rather than dead.</summary>
+    public bool Ousted { get; set; }
+
     /// <summary>The day the mayor in office took it up.</summary>
     public int Since { get; set; }
     public int Raised { get; set; }
@@ -201,6 +204,29 @@ public static class Mayoralty
         town.Log(LedgerCategory.Story, Importance.Major, $"Mayor {m.Name} is dead ({cause}). {after}");
     }
 
+    /// <summary>
+    /// The town turns the mayor out at the moot. Like a death, but no raising: the council names a successor from the
+    /// rolled candidates, and in Hardcore the campaign is lost.
+    /// </summary>
+    public static void Unseat(Town town, string cause)
+    {
+        var s = town.Mayoralty;
+        var m = town.Stories.Mayor;
+        if (Dead(town)) return;
+        s.FallenDay = town.Day;
+        s.Cause = cause;
+        s.Lost = true;
+        s.Ousted = true;
+        s.PartyId = null;
+        if (s.Hardcore)
+        {
+            town.Log(LedgerCategory.Council, Importance.Major, $"Mayor {m.Name} {cause}. The charter was sworn to them alone, and the town has turned them out.");
+            Saga.Fall(town, $"Mayor {m.Name} {cause}, and {town.Name} turned them out.");
+            return;
+        }
+        town.Log(LedgerCategory.Council, Importance.Major, $"Mayor {m.Name} {cause}. The town must name another.");
+    }
+
     /// <summary>An assassin's blow that would have fallen on someone else may be for the mayor, walking the streets.</summary>
     internal static bool Marked(Town town) => Exposed(town) && Dice(town, 1).Chance(Rules(town).Assassin * (1 - Regalia.Ward(town)));
 
@@ -273,6 +299,7 @@ public static class Mayoralty
     public static string? RaiseRefused(Town town)
     {
         if (!Dead(town) || town.Mayoralty.Hardcore) return "not dead";
+        if (town.Mayoralty.Ousted) return "voted out";
         if (town.Mayoralty.Lost) return "no body";
         if (Shrines.Temple(town) == null) return "needs a temple";
         if (town.Treasury < RaiseCost(town)) return "not enough gold";
@@ -327,10 +354,12 @@ public static class Mayoralty
         s.FallenDay = null;
         s.Cause = "";
         s.Lost = false;
+        bool ousted = s.Ousted;
+        s.Ousted = false;
         s.Wounds = 0;
         s.Since = town.Day;
         s.Stance = Rules(town).Start;
-        town.Log(LedgerCategory.Council, Importance.Major, $"The council names {m.Name} mayor of {town.Name} in {old}'s place.");
+        town.Log(LedgerCategory.Council, Importance.Major, $"{(ousted ? "The town elects" : "The council names")} {m.Name} mayor of {town.Name} in {old}'s place.");
         if (xp > 0) Stories.GainXp(town, xp);
         return true;
     }

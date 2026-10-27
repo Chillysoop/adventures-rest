@@ -216,6 +216,14 @@
   the hero) or a tower built over `buildDays` (`SiteState.TowerDue`, then `Held`), tested now and then on the site's own dice
   (`Lairs.Tested`, `Reinforce`, alert `tower`). A knight's fief is theirs: `Loyalty.Choose` sets `HeroSheet.FiefWay`
   (tower/ride/rent) and the town gets no buttons there. Shots: `--tower rising|standing|tested`.
+- Politics (`Systems/Politics.cs`, `content/game/politics.json`, client `godot/src/Government.cs`, `BlocLens.cs`): every law carries
+  tags (politics.json `laws`, policy levels, forms) that move the blocs by their likes (`Politics.Standing`, phased in over
+  `phaseDays`). Player law changes go through `Politics.Change` (Mandate, doubled for turning back within `flipDays`, or a
+  referendum where the form or `SetTownVote` puts the matter to the town); the stand-in and the council's motions set laws
+  directly. Forms of government (charter, free town, commune, crown, iron rule) decide who seats the council (`Politics.Seat`),
+  the yearly moot (an elected mayor below `keep` is turned out: `Mayoralty.Unseat`), decree cost and the watch. Councillors
+  speak for 2+ blocs (`SeatBlocs`: loyalty and vote lean). Situations, bloc asks and promises (`Trust`), and radicals from
+  furious blocs roll on their own dice. Roads `commonwealth` and `crown`. New laws add a key to `Politics.Keys`/`Current`/`Apply`.
 - Painted zones (`Systems/Wilds.cs`, `content/game/wilds.json`; client `MapView.Brush`, `Overlay.DrawWilds`, the Explore and Patrol
   quick orders, Bounties folds): the mayor paints cells of the wilds. Explore paint posts an ordinary survey commission
   (`Explore.PostZone`, `Commission.ZoneId`) again after each trip until every cell is `Seen`, then fades. Patrol paint stays until

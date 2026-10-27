@@ -84,6 +84,8 @@ public sealed class Options
 
     /// <summary>--storyteller id: who tells a new town's story; --storytellers opens the main menu's choice of them.</summary>
     public string? Storyteller;
+    /// <summary>--government id: a new town's form of government (politics.json forms), for shots.</summary>
+    public string? Government;
     public bool Storytellers;
 
     /// <summary>--founding id: where a new town is founded (founding.json); --sites shows New game's choice of sites.</summary>
@@ -304,6 +306,7 @@ public sealed class Options
                 case "--settings": o.Settings = true; break;
                 case "--settings-tab": o.Settings = true; o.SettingsTab = Next(); break;
                 case "--storyteller": o.Storyteller = Next(); break;
+                case "--government": o.Government = Next(); break;
                 case "--storytellers": o.Storytellers = o.Title = true; break;
                 case "--founding": o.Founding = Next(); break;
                 case "--home":

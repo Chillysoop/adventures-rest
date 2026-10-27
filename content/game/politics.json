@@ -1,0 +1,148 @@
+{
+  "_doc": "Town politics (Systems/Politics.cs). Every law in force carries tags (order, harsh, freedom, coin, faith, mercy, generous, guile, caution, valor); each bloc warms by step per tag it likes and cools per tag it dislikes, so a bloc's standing comes from the laws in force as well as one-off choices. A change phases in over phaseDays. Changing a law costs change Mandate (taxes taxChange a point, at most taxMost; all times the form's lawTimes), times flipTimes again for each change to the same law within flipDays. Laws a form puts to the town vote are decided by a referendum instead: no Mandate, and the town's blocs decide by size and how they feel about it.",
+  "step": 6,
+  "most": 30,
+  "change": 4,
+  "taxChange": 1,
+  "taxMost": 8,
+  "flipDays": 30,
+  "flipTimes": 2,
+  "phaseDays": 10,
+  "laws": {
+    "gate:open": ["freedom", "coin"],
+    "gate:watched": ["order", "caution"],
+    "gate:shut": ["order", "caution", "harsh"],
+    "service:volunteers": ["freedom"],
+    "service:conscription": ["order", "harsh", "valor"],
+    "punish:fine": [],
+    "punish:stocks": ["order", "harsh"],
+    "punish:flogging": ["order", "harsh", "harsh"],
+    "punish:penance": ["faith", "mercy"],
+    "punish:restitution": ["coin", "order"],
+    "trial:detect-thoughts": ["order", "guile"],
+    "trial:zone-of-truth": ["order", "faith"]
+  },
+  "say": {
+    "_doc": "How an ask names a change: the law at that option.",
+    "gate:open": "the gates thrown open", "gate:watched": "a watch on the gates", "gate:shut": "the gates shut",
+    "service:volunteers": "a levy of volunteers only", "service:conscription": "conscription",
+    "trial:": "trials as of old", "trial:detect-thoughts": "trials under Detect Thoughts", "trial:zone-of-truth": "trials under Zone of Truth",
+    "policy:curfew:none": "no curfew", "policy:curfew:late": "a curfew at midnight", "policy:curfew:dusk": "a curfew at dusk",
+    "policy:tithe:none": "no tithe", "policy:tithe:tenth": "a small tithe", "policy:tithe:great": "a great tithe",
+    "policy:dole:none": "no bread dole", "policy:dole:poor": "bread for the poor", "policy:dole:all": "bread for everyone",
+    "tax": "taxes at {rate}", "punish": "{punishment} for {crime}"
+  },
+  "taxes": { "neutral": 0.15, "per": 0.05, "low": ["coin", "freedom"], "high": ["generous", "order"] },
+  "policies": [
+    { "id": "curfew", "name": "Curfew", "icon": "ui-time", "text": "Off the streets after dark: fewer crimes, quieter taverns.",
+      "levels": [
+        { "id": "none", "name": "None", "text": "The streets are free all night." },
+        { "id": "late", "name": "At midnight", "tags": ["order", "caution"], "gold": 2, "perResident": 0.02, "deter": 0.15, "mood": -0.5,
+          "text": "The watch clears the streets at midnight." },
+        { "id": "dusk", "name": "At dusk", "tags": ["order", "caution", "harsh"], "gold": 4, "perResident": 0.04, "deter": 0.35, "mood": -1.5,
+          "text": "Indoors at dusk, by order of the hall." }
+      ] },
+    { "id": "tithe", "name": "Tithe", "icon": "faith", "text": "The treasury pays the temple: the god's favour, the faithful's thanks.",
+      "levels": [
+        { "id": "none", "name": "None", "text": "The temple lives on its own alms." },
+        { "id": "tenth", "name": "A small tithe", "tags": ["faith"], "gold": 3, "perResident": 0.03, "favour": 1,
+          "text": "A share of the taxes goes to the altar." },
+        { "id": "great", "name": "A great tithe", "tags": ["faith", "faith", "order"], "gold": 6, "perResident": 0.08, "favour": 2.5,
+          "text": "The temple takes its due before the hall does." }
+      ] },
+    { "id": "dole", "name": "Bread dole", "icon": "bread", "text": "Bread for the poorest households from the town's purse.",
+      "levels": [
+        { "id": "none", "name": "None", "text": "Every household feeds itself." },
+        { "id": "poor", "name": "For the poor", "tags": ["generous", "mercy"], "gold": 2, "perResident": 0.05, "relief": 3,
+          "text": "Bread for anyone too poor to buy it." },
+        { "id": "all", "name": "For everyone", "tags": ["generous", "generous", "mercy"], "gold": 4, "perResident": 0.12, "relief": 5, "mood": 1,
+          "text": "A loaf a day for every hearth, rich or poor." }
+      ] }
+  ],
+  "forms": [
+    { "id": "charter", "name": "Chartered town", "icon": "decree", "kind": "Chartered", "liberty": 0,
+      "seats": "appointed", "mayor": "chartered", "votes": [], "allowVotes": true, "decreeTimes": 1, "lawTimes": 1,
+      "text": "The crown's charter names the mayor, and the mayor seats the council from the town's ablest." },
+    { "id": "republic", "name": "Free town", "icon": "vote-aye", "kind": "Democratic", "liberty": 2, "tags": ["freedom", "freedom"],
+      "seats": "elected", "mayor": "elected", "votes": ["taxes", "laws", "form"], "allowVotes": true, "decreeTimes": 2, "lawTimes": 0.5, "radicals": 0.5, "mandate": 0.05,
+      "text": "Every household votes at the yearly moot: for the council, and for the mayor, who can lose." },
+    { "id": "commune", "name": "Commune", "icon": "ui-trade", "kind": "Democratic", "liberty": 1, "tags": ["generous", "freedom"],
+      "seats": "elected", "barred": ["gentry"], "mayor": "chartered", "votes": ["taxes", "laws"], "allowVotes": true, "decreeTimes": 1.5, "lawTimes": 0.75, "radicals": 0.75, "dole": 0.5,
+      "text": "The working folk choose the council and share the town's bread; the gentry have no vote." },
+    { "id": "monarchy", "name": "Crown", "icon": "regalia-circlet", "kind": "Authoritarian", "liberty": -1, "tags": ["order", "caution"],
+      "seats": "gentry", "mayor": "crowned", "votes": [], "allowVotes": false, "decreeTimes": 0.5, "lawTimes": 0.75, "radicals": 1.5, "mandate": 0.05,
+      "text": "The mayor wears a crown and their heir succeeds them; the great houses sit on the council." },
+    { "id": "tyranny", "name": "Iron rule", "icon": "face-fist", "kind": "Authoritarian", "liberty": -2, "tags": ["harsh", "harsh", "order"],
+      "seats": "officers", "mayor": "crowned", "votes": [], "allowVotes": false, "decreeTimes": 0, "lawTimes": 0.25, "radicals": 2.5, "watch": 1.3,
+      "text": "The council are the mayor's officers and vote as told; no town votes, the watch is everywhere, and the angry go underground." }
+  ],
+  "formChange": 25,
+  "formGapDays": 60,
+  "matters": [
+    { "id": "taxes", "name": "Taxes", "icon": "gold", "laws": ["tax"], "text": "Every change to the tax rate goes to a town vote." },
+    { "id": "laws", "name": "Laws", "icon": "decree", "laws": ["punish", "trial", "policy", "gate", "service"], "text": "The law book, curfew, tithe, dole, gate and levy go to a town vote." },
+    { "id": "form", "name": "Government", "icon": "tab-council", "laws": ["form"], "text": "Changing how the town is governed goes to a town vote." }
+  ],
+  "matterChange": 6,
+  "vote": {
+    "_doc": "A referendum runs days days. Each bloc supports a change by 0.5 + its reaction to the change's tags times per, + its feeling times feeling, within 0.05-0.95, weighted by its size. Passing gives won Mandate, failing costs lost.",
+    "days": 3, "per": 0.05, "feeling": 0.003, "won": 2, "lost": 1
+  },
+  "moot": {
+    "_doc": "Under a form that elects, the town holds a moot at the end of every year. Each elected seat goes to the candidate (from the ablest few) whose blocs are biggest; their loyalty starts from how their blocs feel about the mayor. An elected mayor needs a share of the vote above keep, read as blocs' feeling (weighted by size) and the Mandate; below it they are turned out and the town picks a new mayor, and in Hardcore the campaign is lost. warnDays before, the Hall shows the moot's coming and the mayor's share.",
+    "candidates": 3, "mandateShare": 0.5, "keep": 0.5, "warnDays": 10, "loyalty": 0.4, "won": 6
+  },
+  "councillors": {
+    "_doc": "Each councillor speaks for their blocs: every bloc they belong to by at least least, and at least two. Their loyalty moves by loyalty a day per 100 of their blocs' mean feeling, and their vote on a motion leans by lean per point of their blocs' reaction to the motion's tags.",
+    "least": 0.2, "loyalty": 0.2, "lean": 1.5
+  },
+  "motions": {
+    "raise_tax": ["generous", "order"],
+    "lower_tax": ["coin", "freedom"],
+    "hire_watch": ["order", "caution"],
+    "dismiss_watch": ["coin", "freedom"],
+    "festival": ["generous"],
+    "build_homes": ["generous", "mercy"],
+    "knight": ["valor"]
+  },
+  "situations": [
+    { "id": "crime", "name": "Crime wave", "icon": "suspicion", "reading": "crime", "start": 5, "end": 2.5, "hurts": ["order", "coin"], "unrest": 0.3,
+      "fed": "Brawls this week per hundred townsfolk", "began": "The watch can't keep up: a crime wave grips {town}.", "ended": "The crime wave in {town} ebbs." },
+    { "id": "slum", "name": "Slums", "icon": "homeless", "reading": "homeless", "start": 12, "end": 5, "hurts": ["mercy", "order"], "unrest": 0.2,
+      "fed": "Share of workers sleeping rough (%)", "began": "Shacks and lean-tos crowd the lanes: {town} has slums.", "ended": "The last shacks come down; the slums of {town} are gone." },
+    { "id": "bread", "name": "Bread riots", "icon": "bread", "reading": "bread", "start": 2.4, "end": 1.6, "hurts": ["generous", "mercy", "order"], "unrest": 0.6,
+      "fed": "Bread price, times its usual", "began": "Bakers' shutters are smashed: bread riots in {town}.", "ended": "Bread is back on the shelves and the riots are over." },
+    { "id": "sick", "name": "Plague", "icon": "sickness", "reading": "sick", "start": 10, "end": 3, "hurts": ["faith", "mercy", "coin"], "unrest": 0.2,
+      "fed": "Share of townsfolk abed (%)", "began": "Sickness spreads house to house: plague in {town}.", "ended": "The plague in {town} burns itself out." },
+    { "id": "strike", "name": "Guild strike", "icon": "ui-trade", "reading": "strike", "start": 1, "end": 0.5, "hurts": ["coin", "order"], "unrest": 0.1,
+      "fed": "Guilds on strike", "began": "Tools are down across {town}: the guilds strike.", "ended": "The guilds go back to work." },
+    { "id": "unrest", "name": "Discontent", "icon": "mandate", "reading": "unrest", "start": 50, "end": 30, "hurts": ["order", "caution"],
+      "fed": "Unrest", "began": "Crowds gather outside the hall: {town} is restless.", "ended": "The crowds outside the hall go home." }
+  ],
+  "trust": {
+    "_doc": "The town's trust in the mayor's word, 0-100, starting at start and easing back by ease a day. Every bloc's feeling moves by weight per point of trust from 50.",
+    "start": 50, "ease": 0.01, "weight": 0.3
+  },
+  "demands": {
+    "_doc": "Now and then (every days) the bloc that feels worst, below askBelow, asks (never again for the same change within again days of being refused) for the law change it would like most. The mayor promises it within dueDays, or refuses. Promising warms it by promise; keeping it warms it by kept and adds keptTrust; breaking it cools it by broken and costs brokenTrust; refusing cools it by refused. An unanswered ask lapses after askDays as a refusal.",
+    "every": 15, "again": 60, "askBelow": -15, "askDays": 5, "dueDays": 20, "promise": 4, "kept": 25, "keptTrust": 8, "broken": 20, "brokenTrust": 15, "refused": 4,
+    "asks": "{voice} ask the mayor for {change}.",
+    "kept_line": "The mayor keeps their word to {voice}: {change}.",
+    "broken_line": "The mayor promised {voice} {change}, and the day came and went. Nobody in {town} forgets."
+  },
+  "radicals": {
+    "_doc": "A bloc whose feeling stays at or below furious for formDays breeds a radical cell (times the form's radicals). Every every days it acts, a step worse each time: graffiti (Mandate), a riot (unrest, a building wrecked), sabotage (gold), then an attempt on the mayor. Each act, the watch may break it up (its strength times catch). The cell melts away once its bloc's feeling is back above calm for calmDays.",
+    "furious": -50, "calm": -20, "formDays": 10, "calmDays": 7, "every": 8, "catch": 0.6,
+    "graffiti": 3, "riot": 12, "sabotage": 0.06, "sabotageMost": 150,
+    "formed": "Some of {voice}, sick of waiting, swear to make the hall listen by other means.",
+    "acts": [
+      "Slogans against the mayor are daubed on the hall's walls overnight, signed by {voice}.",
+      "A crowd of {voice} riots in the streets; {building} is wrecked before the watch clears them.",
+      "Radicals among {voice} slip into the treasury and {gold} gold goes missing.",
+      "A radical from {voice} comes for the mayor with a knife."
+    ],
+    "foiled": "The watch breaks up a cell of radicals among {voice} before they strike again.",
+    "missed": "A radical from {voice} waits for the mayor in the street, but the mayor keeps to the hall.",
+    "faded": "The radicals among {voice} drift back to their trades."
+  }
+}
