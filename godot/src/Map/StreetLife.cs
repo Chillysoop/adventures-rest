@@ -7,7 +7,7 @@ namespace CrownAndCompass.Client.Map;
 /// <summary>
 /// Street life: small scenes at busy spots, read off what the town already knows. A preacher of the god at each
 /// temple and shrine, a crier with the broadsheet's headline the days after it prints, a hawker outside each store,
-/// a busker singing of the town's best hero on festival days, and a grumbler in a ward that is angry with the mayor.
+/// a busker singing of the town's best hero on festival days, and a grumbler from a bloc that is angry with the mayor.
 /// Each is a figure with a speech bubble that changes every few seconds; they show only by day and up close.
 /// Townsfolk in the grip of an inspiration or a break (<see cref="Moods"/>) say so over their own heads, in gold or in grey.
 /// </summary>
@@ -74,15 +74,16 @@ public partial class Crowd
             if (star != null) song.Add($"♪ Sing of {star.GivenName}, who never turned back! ♪");
             list.Add(new(Geo.Center + new Vector2(1.6f, 0.8f), Motley, song, 7));
         }
-        foreach (var wardId in town.City.OpenWards)
+        foreach (var bloc in Blocs.Speaking(town))
         {
-            if (Wards.Feeling(town, wardId) > -15) continue;
-            var house = town.Buildings.Where(b => b.Complete && b.Def.Housing > 0 && City.WardOf(town, town.Lot(b.LotId)).Id == wardId).OrderBy(b => b.Id).FirstOrDefault();
-            if (house == null) continue;
+            if (Blocs.Feeling(town, bloc.Id) > -15) continue;
+            // A grumbler at the door of the first member's home.
+            var member = town.Workers.Where(a => a.HomeId != null && Blocs.Degree(town, bloc, a) >= 0.5).OrderBy(a => a.Id).FirstOrDefault();
+            if (member == null) continue;
+            var house = town.Building(member.HomeId!.Value);
             var lot = town.Lot(house.LotId);
             var at = Geo.LotPos(lot) + Geo.LotFront(lot) * (lot.D / (float)Land.Res / 2 + 0.45f);
-            string ward = City.Ward(town, wardId).Name;
-            list.Add(new(at, Grey, [$"Nobody at the hall listens to {ward}!", "The mayor's never set foot down here.", "Mark my words, there'll be trouble."], house.Id));
+            list.Add(new(at, Grey, [$"Nobody at the hall listens to {bloc.Voice}!", "The mayor's never set foot down here.", "Mark my words, there'll be trouble."], house.Id));
         }
         return list;
     }

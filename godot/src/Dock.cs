@@ -53,7 +53,7 @@ public partial class Main
     /// <summary>A line on each window, shown when its tab is hovered.</summary>
     private static readonly Dictionary<Tab, string> Blurbs = new()
     {
-        [Tab.City] = "Charter, wards, housing and growth",
+        [Tab.City] = "Charter, neighbourhoods, housing and growth",
         [Tab.Mayor] = "Your mayor: what needs you, regalia, sheet (C)",
         [Tab.Ledger] = "Everything that happened, day by day",
         [Tab.Notables] = "People worth knowing: win them over, hear their news",

@@ -336,7 +336,7 @@
       "tier": "great_city",
       "stir": 0.9,
       "text": "At the bottom of the vaults a stair runs on down, into the dark between the roots of the world.",
-      "rise": "Something vast stirs under the city. Streets crack, a well fills with black water and the gibbering is heard from the cellars of a whole ward.",
+      "rise": "Something vast stirs under the city. Streets crack, a well fills with black water and the gibbering is heard from the cellars of a whole street.",
       "site": {
         "id": "under_deeps",
         "name": "the Deep Ways",

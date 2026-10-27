@@ -250,16 +250,16 @@ public partial class Main
         }
         if (blocked != null) sub = $"{Ui.Img("ui-lock", 14)} {Ui.Dim(Ui.Esc(Ui.Cap(blocked)))}";
         // The heroes in town who would like or resent the choice, by their tempers.
-        // So do the wards, each by what it cares about.
+        // So do the town's blocs, each by what it cares about.
         var (pleased, angered) = Regard.Reactions(t, o.Tags);
-        var (wardsPleased, wardsAngered) = Wards.Reactions(t, o.Tags);
-        string Who(List<Agent> heroes, List<WardDef> wards)
+        var (wardsPleased, wardsAngered) = Blocs.Reactions(t, o.Tags);
+        string Who(List<Agent> heroes, List<BlocDef> wards)
         {
             var names = heroes.Take(3).Select(h => h.GivenName).ToList();
             string more = heroes.Count > 3 ? $" +{heroes.Count - 3}" : "";
             var all = new List<string>();
             if (names.Count > 0) all.Add(string.Join(", ", names) + more);
-            all.AddRange(wards.Select(w => w.Name));
+            all.AddRange(wards.Select(w => w.Voice));
             return string.Join(", ", all);
         }
         var feel = new List<string>();

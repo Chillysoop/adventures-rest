@@ -437,8 +437,8 @@ public partial class Main
                     DefenseWork.Gatehouse => "A stone gatehouse with a portcullis over the south road. The gate holds far better when a siege tries it.",
                     DefenseWork.Moat => "A moat round the stone walls, filled from the river. Every wave wades it, and the walls count for more.",
                     DefenseWork.Barracks => "Barracks in the thickness of the stone walls. The watch lives there: cheaper to keep, and quicker to the walls when the horn sounds.",
-                    DefenseWork.StoneWall => "Stone walls around the old town and the inner wards, far stronger than stakes. A large town needs them for its charter. The outer wards stay outside.",
-                    _ => "The great wall of a city, around every inner ward. A great city needs it for its charter.",
+                    DefenseWork.StoneWall => "Stone walls around the old town, far stronger than stakes. A large town needs them for its charter.",
+                    _ => "The great wall of a city, around the old town and the streets about it. A great city needs it for its charter.",
                 };
             }
             else
@@ -447,6 +447,10 @@ public partial class Main
                 why = Planning.Blocked(town, def);
                 line = why ?? $"{Planning.Cost(town, def)}g";
                 tip = def.Blurb != "" ? def.Blurb : BuildTip(town, def);
+                // Arcane works standing together make a scholars' quarter: say so where the player picks them.
+                var scholars = Neighbourhood.Rules(town).Scholars;
+                if (scholars.Ids.Contains(def.Id))
+                    tip += $"\nScholars' quarter: {scholars.Least} arcane works within a few streets of each other add {Js.Str(scholars.Lore)} lore a day ({Neighbourhood.Scholars(town)} together now).";
                 if (why == null && def.IsBusiness) line += $" · {DemandWord(Property.Demand(town, def.Id))}";
             }
             b.Text = $"{item.Label}\n{line.Replace("not enough gold", "short of gold")}";

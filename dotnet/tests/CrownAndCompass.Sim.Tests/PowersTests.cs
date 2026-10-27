@@ -312,7 +312,8 @@ public class PowersTests
     [Fact]
     public void AnEnemyCourtingAPowerIsHowTheTownFirstHearsOfIt()
     {
-        var (sim, m) = Seeded();
+        // On seed 3 a company clears the coven's seat on day 60, so nobody is left to court.
+        var (sim, m) = Seeded(2);
         var t = sim.Town;
         sim.RunDays(t.Content.Powers.CourtFrom - t.Day - 1);
         t.Discovered.RemoveAll(c => c.Key.StartsWith("power:", StringComparison.Ordinal));
