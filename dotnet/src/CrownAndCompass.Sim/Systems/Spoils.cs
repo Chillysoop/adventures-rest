@@ -499,7 +499,7 @@ public static class Spoils
     {
         if (town.Spoils.Orders.Any(o => o.ForId == a.Id)) return null;
         var pick = Rules(town).Recipes
-            .Where(rec => rec.Faction == "" && town.City.Tier >= rec.Tier && Shops(town, rec).Count > 0 && town.Content.Library.Item(rec.Ref) is { } it && Gear.Gain(town.Content, a, it) > 0)
+            .Where(rec => rec.Faction == "" && town.City.Tier >= rec.Tier && Shops(town, rec).Count > 0 && town.Content.Library.Item(rec.Ref) is { } it && it.Tier <= town.Content.Loot.Ready(a.Hero!.Level) && Gear.Gain(town.Content, a, it) > 0)
             .Select(rec => (rec, parts: Parts(town, rec)))
             .Where(x => x.parts != null)
             .Select(x => (x.rec, x.parts, cost: Cost(town, x.rec) + x.parts!.Sum(p => Rules(town).Trophy(p.Key) is { } t ? Price(town, t) * p.Value : 0)))

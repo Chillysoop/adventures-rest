@@ -196,6 +196,17 @@ public static class Ability
     public const string Cha = "cha";
 
     public static readonly string[] All = [Str, Dex, Con, Int, Wis, Cha];
+
+    public static string Name(string ability) => ability switch
+    {
+        Str => "Strength",
+        Dex => "Dexterity",
+        Con => "Constitution",
+        Int => "Intelligence",
+        Wis => "Wisdom",
+        Cha => "Charisma",
+        _ => ability,
+    };
 }
 
 /// <summary>Skill check kinds: trap, hazard, puzzle, parley, perception.</summary>
@@ -919,8 +930,17 @@ public sealed record LootRules
     public int[] WeaponBonus { get; init; } = [0, 1, 1, 1, 2, 2, 3];
     public IReadOnlyList<string> Slots { get; init; } = ["weapon", "armor", "shield", "trinket", "town"];
 
-    /// <summary>Chance per site tier that a cleared hoard holds a magic item.</summary>
+    /// <summary>Chance per site tier that a cleared hoard holds a magic item, at most <see cref="ItemChanceMax"/>.</summary>
     public double ItemChancePerTier { get; init; } = 0.15;
+    public double ItemChanceMax { get; init; } = 1;
+
+    /// <summary>What rarity a hoard of a level holds (the last band at or below it), and the chance it holds one finer.</summary>
+    public IReadOnlyList<HoardBand> HoardTiers { get; init; } = [];
+
+    public HoardBand Band(int level) => HoardTiers.LastOrDefault(b => level >= b.From) ?? new HoardBand { From = level, Tier = Math.Min(Math.Max(level, 1), 5) };
+
+    /// <summary>The finest item tier a hero of this level is ready to carry: what their level's hoards can hold.</summary>
+    public int Ready(int level) => HoardTiers.Count == 0 ? 6 : Band(level).Tier + (Band(level).Up > 0 ? 1 : 0);
 
     /// <summary>Slots only a hoard holds besides <see cref="Slots"/>: draughts and siege pieces.</summary>
     public IReadOnlyList<string> HoardSlots { get; init; } = [];
@@ -930,6 +950,14 @@ public sealed record LootRules
 
     /// <summary>Library items never found: no fitting effect.</summary>
     public IReadOnlyList<string> Pulled { get; init; } = [];
+}
+
+/// <summary>Hoards from party level From up: items of Tier, or one finer at chance Up.</summary>
+public sealed record HoardBand
+{
+    public int From { get; init; } = 1;
+    public int Tier { get; init; } = 2;
+    public double Up { get; init; }
 }
 
 /// <summary>One ring of country around the town: how far out it lies and what level of party it suits.</summary>
@@ -1765,6 +1793,7 @@ public sealed class Content
     public WardRules Wards { get; init; } = new();
     /// <summary>Fame and infamy for heroes and companies (content/game/notoriety.json).</summary>
     public NotorietyRules Notoriety { get; init; } = new();
+    public Systems.AdvanceRules Advances { get; init; } = new();
     /// <summary>Notable townsfolk and the information network (content/game/notables.json).</summary>
     public NotableRules Notables { get; init; } = new();
 
@@ -2083,6 +2112,7 @@ public sealed class Content
             Merchants = Parse<MerchantRules>("merchants.json"),
             Wards = Parse<WardRules>("wards.json"),
             Notoriety = Parse<NotorietyRules>("notoriety.json"),
+            Advances = Parse<Systems.AdvanceRules>("advances.json"),
             Notables = Parse<NotableRules>("notables.json"),
             Goals = Parse<Systems.GoalRules>("goals.json"),
             Passage = Parse<PassageRules>("passage.json"),

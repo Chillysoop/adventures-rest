@@ -414,7 +414,7 @@ public static class Quests
         // Masters of arms who retired here train the newcomers.
         sheet.Xp += Legacies.MentorXp(town, level);
         sheet.Xp += (int)Math.Floor(Research.Xp(town) * XpToNext(level));
-        sheet.MaxHp = Expedition.HeroMaxHp(sheet, a.Abilities.Con);
+        sheet.MaxHp = Expedition.HeroMaxHp(town.Content, sheet, a.Abilities.Con);
         sheet.Hp = sheet.MaxHp;
         Gear.Equip(town.Content.Library, sheet);
         Annals.Raise(town, a, sheet, people);
@@ -882,8 +882,9 @@ public static class Quests
         {
             s.Level++;
             int before = s.MaxHp;
-            s.MaxHp = Expedition.HeroMaxHp(s, a.Abilities.Con);
+            s.MaxHp = Expedition.HeroMaxHp(town.Content, s, a.Abilities.Con);
             s.Hp += s.MaxHp - before;
+            var took = Advances.Catch(town, a);
             // Crossing into a new tier of play: the realm, then the world, start to know the name.
             string fame = s.Level switch
             {
@@ -892,7 +893,7 @@ public static class Quests
                 17 => " The whole world knows the name.",
                 _ => "",
             };
-            town.Log(LedgerCategory.Quest, fame != "" ? Importance.Major : Importance.Notable, $"{a.Name} reaches level {s.Level}.{fame}", [a.Id]);
+            town.Log(LedgerCategory.Quest, fame != "" ? Importance.Major : Importance.Notable, $"{a.Name} reaches level {s.Level}{(took.Count > 0 ? $" and takes {Expedition.ListNames(took)}" : "")}.{fame}", [a.Id]);
             Notoriety.Leveled(town, a, s.Level);
             Moments.Leveled(town, a, s.Level, before);
         }
