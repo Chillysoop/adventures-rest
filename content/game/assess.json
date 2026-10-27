@@ -45,6 +45,8 @@
     "tension": { "unit": 3, "sign": -1, "icon": "unrest", "name": "unrest" },
     "food": { "unit": 30, "sign": 1, "icon": "food", "name": "food" },
     "timber": { "unit": 25, "sign": 1, "icon": "timber", "name": "timber" },
+    "stone": { "unit": 25, "sign": 1, "icon": "stone", "name": "stone" },
+    "commons": { "unit": 3, "sign": 1, "icon": "unrest", "name": "unrest" },
     "people": { "unit": 3, "sign": 1, "icon": "population", "name": "townsfolk" },
     "leaves": { "unit": 1, "sign": -1, "icon": "population", "name": "townsfolk" },
     "moves": { "unit": 1, "sign": 1, "icon": "population", "name": "townsfolk" },

@@ -188,6 +188,7 @@ public sealed class Simulation
         Omens.Daily(t);
         Weather.Daily(t);
         Economy.Daily(t);
+        Commons.Daily(t);
         Skills.Daily(t);
         Merchants.Daily(t);
         City.Daily(t, Hand("planning"));

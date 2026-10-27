@@ -346,7 +346,11 @@ public static class Land
 
     private static Lot? Search(Town town, BuildingDef def, int w, int d, Zone? zone, byte crop)
     {
-        // Fronting on a street, the way the townsfolk build.
+        // Fronting on a street, the way the townsfolk build; families look inside the walls first.
+        if (zone == Zone.Residential && Frontier.Walled(town))
+            foreach (var (_, x, y, yaw) in Streets.Fronts(town, d, zone))
+                if (Frontier.Within(town, x, y) && City.Allows(town, def, x, y) && Fits(town, x, y, w, d, yaw, zone))
+                    return new Lot(town.Lots.Count, x, y) { W = w, D = d, Yaw = yaw, Zone = zone.Value };
         foreach (var (_, x, y, yaw) in Streets.Fronts(town, d, zone))
             if (City.Allows(town, def, x, y) && Fits(town, x, y, w, d, yaw, zone, crop: zone == Zone.Farmland ? crop : (byte)0))
                 return new Lot(town.Lots.Count, x, y) { W = w, D = d, Yaw = yaw, Zone = zone ?? Zone.Civic };

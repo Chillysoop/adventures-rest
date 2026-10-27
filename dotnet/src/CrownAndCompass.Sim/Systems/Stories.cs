@@ -463,7 +463,7 @@ public static class Stories
     /// precedent:id (1 sets it, -1 forgets it) and calling:id (1: the story's hero takes it up, -1: it ends).
     /// </summary>
     public static readonly string[] EffectKeys =
-        ["gold", "mandate", "dread", "tension", "food", "timber", "loyalty", "wound", "favour", "standing", "seat", "foePower", "grudge", "delay", "festival", "reveal", "inspiration", "people", "leaves", "renown", "heat", "expose", "regard", "retire", "memorial", "esteem", "heroXp", "personal", "dismiss", "edge", "swell", "partyHurt", "rest", "slots", "loot", "partyLoyalty", "turnBack", "fine", "jail", "taint", "infamy", "exile", "goodwill", "goodwill2", "prosperity", "security", "contact", "band", "moves", "stir", "book", "lore", "recover", "minor", "egg", "ranger", "shelter", "settle", "pact", "pactFavour", "weregild", "owed", "curse", "magicItem", "seize", "suspicion", "foeHeat", "guild", "notable", "notable2", "raiseFallen", "bigBad"];
+        ["gold", "mandate", "dread", "tension", "food", "timber", "loyalty", "wound", "favour", "standing", "seat", "foePower", "grudge", "delay", "festival", "reveal", "inspiration", "people", "leaves", "renown", "heat", "expose", "regard", "retire", "memorial", "esteem", "heroXp", "personal", "dismiss", "edge", "swell", "partyHurt", "rest", "slots", "loot", "partyLoyalty", "turnBack", "fine", "jail", "taint", "infamy", "exile", "goodwill", "goodwill2", "prosperity", "security", "commons", "stone", "contact", "band", "moves", "stir", "book", "lore", "recover", "minor", "egg", "ranger", "shelter", "settle", "pact", "pactFavour", "weregild", "owed", "curse", "magicItem", "seize", "suspicion", "foeHeat", "guild", "notable", "notable2", "raiseFallen", "bigBad"];
 
     /// <summary>
     /// Every need a story or option can name; besides these, precedent:id, decree:id, season:id and
@@ -473,7 +473,7 @@ public static class Stories
     /// chapter) and below:level (binds that undercity level while it is open and not cleared).
     /// </summary>
     public static readonly string[] Needs =
-        ["hero", "restless", "party", "menace", "march", "warband", "faction", "seat", "tavern", "temple", "site", "unheard", "power", "hungry", "homeless", "rich", "watch", "poor", "petitioner", "neighbourhood", "settlement", "route", "courted", "veteran", "fallen", "admirer", "aggrieved", "abroad", "stormbound", "homeward", "victorious", "lawbreaker", "famous", "infamous", "trouble", "contact", "band", "forge", "below", "library", "scholars", "remains", "minor", "egg", "eggHeld", "ranger", "column", "sworn", "pactless", "bloodied", "owed", "cursed", "lurker", "mole", "grudge", "guild", "rivals", "refugee", "festival"];
+        ["hero", "restless", "party", "menace", "march", "warband", "faction", "seat", "tavern", "temple", "site", "unheard", "power", "hungry", "homeless", "rich", "watch", "poor", "petitioner", "neighbourhood", "settlement", "route", "courted", "veteran", "fallen", "admirer", "aggrieved", "abroad", "stormbound", "homeward", "victorious", "lawbreaker", "famous", "infamous", "trouble", "contact", "band", "forge", "below", "library", "scholars", "remains", "minor", "egg", "eggHeld", "ranger", "column", "sworn", "pactless", "bloodied", "owed", "cursed", "lurker", "mole", "grudge", "guild", "rivals", "refugee", "festival", "dark"];
 
     private static readonly string[] Prefixed = ["precedent:", "decree:", "season:"];
 
@@ -1008,6 +1008,16 @@ public static class Stories
                 s.QuarterId = from.Count == 0 ? null : from[town.Rng.Range(0, from.Count)].Id;
                 return s.QuarterId != null;
             }
+            case "dark":
+            {
+                // A neighbourhood whose lamps have gone dark (Commons); binds it as the place.
+                bool Dark(Quarter q) => q.Neglect >= Commons.Rules(town).Report;
+                if (s.QuarterId is int dq) return Neighbourhood.Find(town, dq) is { } dqq && Dark(dqq);
+                if (!bind) return town.City.Quarters.Any(Dark);
+                var dark = town.City.Quarters.Where(Dark).ToList();
+                s.QuarterId = dark.Count == 0 ? null : dark[town.Rng.Range(0, dark.Count)].Id;
+                return s.QuarterId != null;
+            }
             case "lurker":
             {
                 // An enemy agent loitering in town, before its night comes.
@@ -1536,8 +1546,9 @@ public static class Stories
                     break;
                 case "food":
                 case "timber":
+                case "stone":
                 {
-                    var g = key == "food" ? Good.Food : Good.Timber;
+                    var g = key == "food" ? Good.Food : key == "stone" ? Good.Stone : Good.Timber;
                     if (v > 0) town.Market.Seed(g, v);
                     else town.Market.Seed(g, -Math.Min(town.Market.Stock(g), -v));
                     said.Add($"{(v > 0 ? "+" : "−")}{Js.Str(Math.Abs(v))} {key}");
@@ -1713,6 +1724,14 @@ public static class Stories
                     break;
                 case "heat":
                     if (s.FactionId is string hf && Factions.Find(town, hf) is { } hfs) hfs.Heat = Math.Clamp(hfs.Heat + v, 0, 100);
+                    break;
+                case "commons":
+                    // Its streets lit and swept (+) or left dark and foul (−): days of neglect off or on (Commons).
+                    if (s.QuarterId is int cq && Neighbourhood.Find(town, cq) is { } cqq)
+                    {
+                        cqq.Neglect = Math.Clamp(cqq.Neglect - v, 0, Commons.Rules(town).Days);
+                        said.Add($"{cqq.Name} {(v > 0 ? "cleaner" : "darker")}");
+                    }
                     break;
                 case "prosperity":
                 case "security":

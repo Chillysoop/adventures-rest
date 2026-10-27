@@ -229,22 +229,29 @@ public static class Property
         int homeless = town.Workers.Count(x => x.Roofless);
         int openBeds = 0;
         foreach (var b in town.Buildings) openBeds += b.IsSite ? b.Def.Housing : b.OpenBeds;
-        // Landlords build ahead of the town: a few empty beds draw settlers down the road.
-        if (homeless <= openBeds && openBeds >= 2) return;
-        var house = RentalKind(town);
+        // Landlords build ahead of the town: a few empty beds draw settlers down the road. And however many beds stand
+        // empty, the poorest want the cheapest, so a town keeps a few tenements for them.
+        var tenement = town.Content.Building("tenement");
+        bool slum = City.Unlocked(town, tenement)
+            && Js.Sum(town.Buildings.Where(b => b.Def.Id == tenement.Id), b => b.Def.Housing) < town.Content.City.Slum * town.Workers.Count
+            && FindLot(town, tenement) != null;
+        if (!slum && homeless <= openBeds && openBeds >= 2) return;
+        var house = slum ? tenement : RentalKind(town, a);
         if (a.Gold < (town.LotPrice(Town.Grid) + house.Cost + Planning.Materials(town, house)) * 1.5) return;
         if (TryBuild(town, a, house, true) && !a.Has(Trait.Greedy)) a.Ambition = Ambition.None;
     }
 
     /// <summary>
-    /// A landlord builds tall houses wall to wall on high-density land, tenements on open land outside the walls,
-    /// and cottages until the town has either.
+    /// A landlord builds tall houses wall to wall on high-density land or tenements on cheap ground (half of them
+    /// looking for the cheapest bed first), and cottages until the town has either.
     /// </summary>
-    private static BuildingDef RentalKind(Town town)
+    private static BuildingDef RentalKind(Town town, Agent a)
     {
+        var tenement = town.Content.Building("tenement");
+        bool cheap = a.Id % 2 == 1 && City.Unlocked(town, tenement) && FindLot(town, tenement) != null;
+        if (cheap) return tenement;
         foreach (var d in town.Content.Buildings.Where(d => d.Zone == Zone.Residential && d.Buildable && d.Density > Density.Low).OrderByDescending(d => d.Density).ThenBy(d => d.Id, StringComparer.Ordinal))
             if (City.Unlocked(town, d) && FindLot(town, d) != null) return d;
-        var tenement = town.Content.Building("tenement");
         return City.Unlocked(town, tenement) && FindLot(town, tenement) != null ? tenement : town.Content.Building("house");
     }
 

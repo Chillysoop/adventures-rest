@@ -30,6 +30,9 @@ public sealed record BlocRules
 
     /// <summary>Members (summed by degree) a bloc needs before it speaks up.</summary>
     public double Least { get; init; } = 3;
+
+    /// <summary>And at least this share of the town's working folk: a trade with a handful of hands has no voice in a city.</summary>
+    public double Share { get; init; }
     public List<BlocDef> Blocs { get; init; } = [];
 
     public BlocDef? Of(string id) => Blocs.FirstOrDefault(b => b.Id == id);
@@ -82,7 +85,11 @@ public static class Blocs
     public static double Size(Town town, BlocDef bloc) => Js.Sum(town.Agents, a => Degree(town, bloc, a));
 
     /// <summary>The blocs big enough to speak, in the order blocs.json lists them.</summary>
-    public static List<BlocDef> Speaking(Town town) => Rules(town).Blocs.Where(b => Size(town, b) >= Rules(town).Least).ToList();
+    public static List<BlocDef> Speaking(Town town)
+    {
+        double least = Math.Max(Rules(town).Least, Rules(town).Share * town.Workers.Count);
+        return Rules(town).Blocs.Where(b => Size(town, b) >= least).ToList();
+    }
 
     /// <summary>How a choice with these tags moves a bloc.</summary>
     public static double Moves(Town town, BlocDef b, IReadOnlyCollection<string> tags) =>
@@ -113,7 +120,12 @@ public static class Blocs
         var parts = new List<string>();
         if (pleased.Count > 0) parts.Add($"{Voices(pleased)} are pleased");
         if (angered.Count > 0) parts.Add($"{Voices(angered)} grumble");
-        town.Log(LedgerCategory.Town, Importance.Routine, $"{about}: {string.Join("; ", parts)}.");
+        string line = $"{about}: {string.Join("; ", parts)}.";
+        // A choice in two steps that moves the same blocs the same way is told once.
+        var said = town.Ledger.Entries;
+        for (int i = said.Count - 1; i >= 0 && said[i].Tick > town.Tick - SimTime.HoursPerDay; i--)
+            if (said[i].Category == LedgerCategory.Town && said[i].Text == line) return;
+        town.Log(LedgerCategory.Town, Importance.Routine, line);
     }
 
     /// <summary>Move one bloc's feeling about the mayor by a delta (clamped to ±100).</summary>

@@ -66,14 +66,14 @@ public class DensityTests
     }
 
     [Fact]
-    public void TimberHousesNeedMediumLandToBecomeTownhouses()
+    public void TimberHousesBecomeTownhousesOnAnyLand()
     {
         var sim = Planned();
         var t = sim.Town;
         t.City.Tier = City.TierIndex(t, "town");
         var house = t.Buildings.First(b => b.Def.Id == "house");
         house.Def = t.Content.Building("timber_house");
-        Assert.Contains("medium density", City.UpgradeBlocked(t, house));
+        Assert.DoesNotContain("density", City.UpgradeBlocked(t, house) ?? "");
     }
 
     [Fact]

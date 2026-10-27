@@ -65,6 +65,15 @@ public sealed record FormDef
     public double Watch { get; init; } = 1;
     public double Dole { get; init; } = 1;
 
+    /// <summary>Added to the town's draw for settlers: word of how it is ruled.</summary>
+    public double Draw { get; init; }
+
+    /// <summary>Unrest the townsfolk carry for being ruled this way, whatever else they think (<see cref="Taxes.Close"/>).</summary>
+    public double Unrest { get; init; }
+
+    /// <summary>The hearth tax collected, times this: a crowned or iron hand takes more.</summary>
+    public double Levy { get; init; } = 1;
+
     public bool Elects => Seats == "elected" || Mayor == "elected";
 }
 
@@ -1141,7 +1150,7 @@ public static class Politics
             p.Demands.Remove(d);
             p.Refused[$"{d.Bloc}|{d.Law}|{d.Option}"] = town.Day;
             Systems.Blocs.Nudge(town, d.Bloc, -r.Refused);
-            town.Log(LedgerCategory.Council, Importance.Routine, $"The mayor turns {voice} away.");
+            town.Log(LedgerCategory.Council, Importance.Routine, $"The mayor turns {voice} away: they wanted {Say(town, d.Law, d.Option)}.");
         }
         return true;
     }

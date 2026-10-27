@@ -5,7 +5,7 @@
   "moodPerPoint": 0.6,
   "days": 7,
   "income": ["Sales tax", "Ale tax", "Hearth tax", "Rent", "Land sales", "Town businesses", "Trade", "Orchards", "Tribute", "Institutions", "Grand works", "The region", "Bastions"],
-  "services": ["Laws", "Upkeep", "Watch", "Institutions", "Outposts", "Clockwork", "Decorations", "Undercity"],
+  "services": ["Laws", "Upkeep", "Commons", "Watch", "Institutions", "Outposts", "Clockwork", "Decorations", "Undercity"],
   "scale": 250,
   "rise": 3,
   "ease": 2,
@@ -17,5 +17,6 @@
   "strikeShare": 0.3,
   "stages": [25, 50, 75],
   "heavyFrom": 0.25,
-  "heavyUnrest": 4
+  "heavyUnrest": 4,
+  "discontent": { "base": 0, "expect": 0.5, "slack": 2, "perPoint": 5, "calm": -20, "blocs": 1.2 }
 }

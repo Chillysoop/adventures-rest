@@ -45,6 +45,9 @@ public sealed record DensityDef
 
     /// <summary>Mood its residents carry for the crowding.</summary>
     public double Mood { get; init; }
+
+    /// <summary>Content days a house on it waits before growing a storey, against city.json "upgradeDays".</summary>
+    public double Grow { get; init; } = 1;
     public string Blurb { get; init; } = "";
 }
 
@@ -205,6 +208,9 @@ public sealed record CityRules
     /// <summary>How the masons pave the streets with stone from the centre outward once the town is grand enough.</summary>
     public PavingRules Paving { get; init; } = new();
 
+    /// <summary>What each neighbourhood's watchman, wells, drains and lamps cost a day.</summary>
+    public CommonsRules Commons { get; init; } = new();
+
     /// <summary>Gold back when the council tears a building down or calls off a site (<see cref="Planning.Raze"/>).</summary>
     public DemolishRules Demolish { get; init; } = new();
 
@@ -227,6 +233,9 @@ public sealed record CityRules
 
     /// <summary>Mood a fully content household carries; a wanting one loses as much.</summary>
     public double NeedsMood { get; init; } = 6;
+
+    /// <summary>Share of the town's working folk landlords keep tenement beds for, open beds elsewhere or not: the poorest want the cheapest.</summary>
+    public double Slum { get; init; }
 
     public double BasePrice(Good g) => Goods.TryGetValue(g.ToString(), out double p) ? p : 1;
 }
@@ -476,7 +485,7 @@ public static class City
     {
         if (a.HomeId == null) return 0;
         var home = town.Building(a.HomeId.Value);
-        double mood = Neighbourhood.Mood(town, town.Lot(home.LotId)) + Blocs.Mood(town, a) + Clockwork.Mood(town) + Density.Mood(town, home) + Moods.Feast(town, Neighbourhood.Of(town, home));
+        double mood = Neighbourhood.Mood(town, town.Lot(home.LotId)) + Blocs.Mood(town, a) + Clockwork.Mood(town) + Density.Mood(town, home) + Moods.Feast(town, Neighbourhood.Of(town, home)) + Commons.Mood(town, Neighbourhood.Of(town, home));
         if (Housing(town, home.Def.Id) is { } h && (h.Goods.Count > 0 || h.Services.Count > 0))
             mood += (home.Contentment - 0.5) * 2 * town.Content.City.NeedsMood;
         return mood;
@@ -523,7 +532,7 @@ public static class City
     /// <summary>Every household pays its hearth tax, scaled by the tax rate the council has set.</summary>
     private static void HearthTax(Town town)
     {
-        double scale = town.Content.Rules.TaxRate > 0 ? town.TaxRate / town.Content.Rules.TaxRate : 1;
+        double scale = (town.Content.Rules.TaxRate > 0 ? town.TaxRate / town.Content.Rules.TaxRate : 1) * Politics.Form(town).Levy;
         double total = 0;
         foreach (var house in town.Buildings)
         {
@@ -641,7 +650,7 @@ public static class City
             }
             house.DownDays = 0;
             house.UpDays = house.Contentment >= rules.UpgradeAt ? house.UpDays + 1 : 0;
-            if (house.UpDays >= rules.UpgradeDays) TryUpgrade(town, house);
+            if (house.UpDays >= rules.UpgradeDays * Density.Def(town, Density.At(town, town.Lot(house.LotId))).Grow) TryUpgrade(town, house);
         }
     }
 

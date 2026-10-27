@@ -262,6 +262,8 @@ public static class Planning
         site.Draws = true;
         site.LaborBudget = Construction.Hours(town, d) * Brain.ConstructionWage;
         if (d.IsBusiness) site.Cash = StartingCash;
+        // A wayside shrine goes up to the god most of the town prays to.
+        if (d.Id == town.Content.Shrines.Shrine) Faith.Dedicate(town, site, Faith.TempleChoice(town));
         town.Log(
             LedgerCategory.Town,
             d.Civic || d.IsBusiness ? Importance.Notable : Importance.Routine,

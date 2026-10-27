@@ -292,6 +292,7 @@ public static class TreasuryAccount
     public const string CharterHouses = "Charter houses";
     public const string Bounties = "Bounties";
     public const string Upkeep = "Upkeep";
+    public const string Commons = "Commons";
     public const string Repairs = "Repairs";
     public const string CountingHouse = "Counting house";
     public const string Watch = "Watch";

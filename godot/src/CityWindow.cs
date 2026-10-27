@@ -373,7 +373,8 @@ public partial class Main
             Ui.Chip(CharacterIcon(st.Character), Ui.Cap(CharacterName(st.Character)), Ui.Ink2, "What it is now"),
             st.Residents > 0 ? Ui.Chip("ui-person", $"{st.Residents}", null, "Living here") : "",
             Ui.Chip("gold", $"×{st.Rent:0.00}", lc, "Rent, by what stands round the homes"),
-            Ui.Chip("ui-heart", $"{(st.Mood >= -0.05 ? "+" : "−")}{Math.Abs(st.Mood):0.0}", mc, "Mood its homes carry"));
+            Ui.Chip("ui-heart", $"{(st.Mood >= -0.05 ? "+" : "−")}{Math.Abs(st.Mood):0.0}", mc, "Mood its homes carry"),
+            st.Quarter.Neglect > 0 ? Ui.Chip("sick-house", "Dark", Ui.Bad, "Its lamps, wells and watchman go unpaid: gloomy, sickly and angry until the treasury pays") : "");
     }
 
     /// <summary>The hover on a neighbourhood: when it formed, what's there and what the ground is worth.</summary>

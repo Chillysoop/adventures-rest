@@ -228,7 +228,8 @@ public class ArmyTests
         var r = sim.RaiseRegiment("swordsmen", 10)!;
         sim.RunDays(3);
         Assert.Equal(10, r.Soldiers.Count);
-        t.Treasury = 0;
+        // Deep in debt, so a day's land sale can't pay them after all.
+        t.Treasury = -1000;
         sim.RunDays(1);
         Assert.True(r.Soldiers.Count < 10);
         Assert.Contains(t.Ledger.Entries, e => e.Text.Contains("hand back their arms"));
