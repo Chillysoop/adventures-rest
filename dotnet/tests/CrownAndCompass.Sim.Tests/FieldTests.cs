@@ -20,6 +20,8 @@ public class FieldTests
             var b = t.AddBuilding(d, Planning.CivicLot(t, d)!, null, d.Name, false);
             b.BuildProgress = d.BuildHours;
         }
+        // Hands enough for both regiments, however the first month went.
+        Population.Settle(t, 60);
         foreach (var (unit, size) in new[] { ("swordsmen", 30), ("outriders", 16) })
         {
             var r = sim.RaiseRegiment(unit, size, ArmyPost.Walls)!;
