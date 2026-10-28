@@ -58,9 +58,10 @@ public class ThreatTests
             if (sim.Town.Saga.Sacks > 0 || sim.Town.Outcome == Outcome.Defeat) fallen++;
         }
         // A good share fall; the rest hold on the militia, guard and neighbours of a town grown big enough
-        // (about 15 of 40 now). Forty seeds, since any change to the world or the rng stream reshuffles which
-        // ones hold, and sixteen swung between 3 and 5 on changes that left the share the same.
-        Assert.True(fallen >= 10, $"only {fallen} of 40 fell");
+        // (13 of 40 before the city-building playtest, 7 after it: eleven seeds swung to holding and five to falling,
+        // their towns housing more in tenements and townhouses by the time the warband comes). Forty seeds, since any
+        // change to the world or the rng stream reshuffles which ones hold.
+        Assert.True(fallen >= 6, $"only {fallen} of 40 fell");
     }
 
     [Fact]

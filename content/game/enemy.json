@@ -56,7 +56,7 @@
     "timber": 40,
     "stone": 320,
     "days": 20,
-    "tier": "city"
+    "tier": "large_town"
   },
   "outpost": {
     "id": "bloodtusk_camp",

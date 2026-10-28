@@ -43,7 +43,8 @@ public class WildsTests
     [Fact]
     public void ExploreZoneIsWalkedUntilSeen()
     {
-        var sim = Player(5);
+        // No stand-in bounties: on some seeds they keep every company out on lairs, and nobody is ever free to walk the paint.
+        var sim = new Simulation(new SimulationOptions { Seed = 5, AutoBounties = false, AutoCouncil = true, AutoDefense = true, AutoPlanning = true, AutoExplore = false });
         sim.RunDays(40);
         var t = sim.Town;
         t.Book(TreasuryAccount.Exploring, 3000);

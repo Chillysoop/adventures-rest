@@ -108,10 +108,12 @@ public class FaithTests
         var hero = t.Agent(b.AgentId);
         int blessed = hero.Hero!.WeaponBonus;
         var party = t.Parties[b.PartyId - 1];
+        // The mayor's banner may already bless the same march; it lifts with the god's when they come home.
+        int marched = t.Regalia.Boons.Where(x => x.AgentId == hero.Id && x.PartyId == party.Id).Sum(x => x.Bonus);
         while (!party.Returned) sim.RunDays(1);
         sim.RunDays(1);
         Assert.DoesNotContain(t.Faiths.Blessings, x => x.PartyId == party.Id);
-        if (!hero.Dead && hero.Hero.WeaponBonus < blessed) Assert.Equal(blessed - b.Bonus, hero.Hero.WeaponBonus);
+        if (!hero.Dead && hero.Hero.WeaponBonus < blessed) Assert.Equal(blessed - b.Bonus - marched, hero.Hero.WeaponBonus);
     }
 
     [Fact]

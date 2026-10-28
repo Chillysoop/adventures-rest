@@ -118,6 +118,2345 @@
   ],
   "stories": [
     {
+      "id": "slum-fire",
+      "odds": {
+        "crowded": 0.3
+      },
+      "title": "Fire in {neighbourhood}",
+      "stakes": "medium",
+      "source": "town",
+      "needs": [
+        "neighbourhood:poor"
+      ],
+      "repeatDays": 150,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A lamp knocked over in a crowded tenement, and now {neighbourhood} is burning lane by lane. The houses are timber, packed wall to wall, and the wind is rising.",
+          "options": [
+            {
+              "label": "Lead the bucket chain yourself",
+              "tags": [
+                "valor"
+              ],
+              "skill": "athletics",
+              "dc": 13,
+              "success": {
+                "text": "You stand in the line until dawn, and the fire stops two houses short of the main street. Nobody forgets who was there.",
+                "effects": {
+                  "mandate": 3,
+                  "commons": 2
+                }
+              },
+              "failure": {
+                "text": "Smoke drives you back, and the fire burns itself out on the stones of the market.",
+                "effects": {
+                  "mandate": -1,
+                  "people": -4
+                }
+              }
+            },
+            {
+              "label": "Pull down a row for a firebreak",
+              "tags": [
+                "order",
+                "harsh"
+              ],
+              "success": {
+                "text": "Hooks and ropes bring down six houses in the fire's path. It starves there. Six families sleep in the temple tonight.",
+                "effects": {
+                  "people": -2,
+                  "tension": 3,
+                  "timber": 8
+                }
+              }
+            },
+            {
+              "label": "Pay to rebuild what burned",
+              "tags": [
+                "generous",
+                "mercy"
+              ],
+              "cost": 90,
+              "prefer": 0.15,
+              "success": {
+                "text": "Fresh timber goes up within the week, with a brick fire wall between each pair of houses this time.",
+                "effects": {
+                  "mandate": 2,
+                  "commons": 3
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The fire burns until it runs out of houses. {neighbourhood} is a field of ash and chimneys.",
+        "effects": {
+          "people": -6,
+          "mandate": -3,
+          "tension": 4
+        }
+      }
+    },
+    {
+      "id": "smoke-petition",
+      "title": "{neighbourhood} against the smoke",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "neighbourhood:rich"
+      ],
+      "fromTier": "large_town",
+      "repeatDays": 140,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The households of {neighbourhood} send a petition sealed with a dozen signets: the forges and kilns upwind blacken their washing and their lungs. They want the fires banked by day.",
+          "options": [
+            {
+              "label": "Order the forges to burn by night",
+              "tags": [
+                "order"
+              ],
+              "success": {
+                "text": "The smiths grumble and work by lamplight. The washing on the hill stays white.",
+                "effects": {
+                  "mandate": 1,
+                  "tension": 2
+                }
+              }
+            },
+            {
+              "label": "Tell the gentry the forges built this town",
+              "tags": [
+                "freedom",
+                "harsh"
+              ],
+              "success": {
+                "text": "The smiths cheer you in the street. The signets are not seen at your table for a season.",
+                "effects": {
+                  "mandate": 1,
+                  "gold": -20
+                }
+              }
+            },
+            {
+              "label": "Broker taller chimneys, the gentry paying half",
+              "tags": [
+                "coin"
+              ],
+              "skill": "persuasion",
+              "dc": 14,
+              "success": {
+                "text": "A tall chimney for every forge, half of it paid for by the hill. Both sides call it a victory.",
+                "effects": {
+                  "mandate": 3,
+                  "gold": 30
+                }
+              },
+              "failure": {
+                "text": "Each side says the other should pay all of it. The petition comes back with more signets.",
+                "effects": {
+                  "mandate": -1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The petition gathers dust. The hill stops inviting the mayor to dine.",
+        "effects": {
+          "mandate": -2
+        }
+      }
+    },
+    {
+      "id": "quarter-well",
+      "odds": {
+        "crowded": 0.2
+      },
+      "title": "The well at {neighbourhood}",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "neighbourhood"
+      ],
+      "repeatDays": 120,
+      "stages": [
+        {
+          "id": "start",
+          "text": "Folk from two lanes came to blows at the well in {neighbourhood}: one lane says the other fouls it, and the other says it dug it. The rope was cut in the night.",
+          "options": [
+            {
+              "label": "Dig a second well",
+              "tags": [
+                "generous"
+              ],
+              "cost": 50,
+              "prefer": 0.2,
+              "success": {
+                "text": "A second well, a new rope and a stone trough for the carters. The lanes still glare, but they drink.",
+                "effects": {
+                  "mandate": 2,
+                  "commons": 3
+                }
+              }
+            },
+            {
+              "label": "Set the hours each lane draws",
+              "tags": [
+                "order"
+              ],
+              "skill": "insight",
+              "dc": 12,
+              "success": {
+                "text": "Dawn for one lane, dusk for the other, a watchman to keep it. It holds.",
+                "effects": {
+                  "mandate": 2,
+                  "tension": -2
+                }
+              },
+              "failure": {
+                "text": "Your hours suit nobody, and the rope is cut again.",
+                "effects": {
+                  "tension": 3
+                }
+              }
+            },
+            {
+              "label": "Let them settle it themselves",
+              "tags": [
+                "freedom"
+              ],
+              "success": {
+                "text": "They do, with fists. The well is quiet afterwards, for now.",
+                "effects": {
+                  "tension": 3
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The rope is cut again, and the lanes drink from the ditch.",
+        "effects": {
+          "tension": 4,
+          "commons": -3
+        }
+      }
+    },
+    {
+      "id": "street-feast",
+      "title": "A feast in {neighbourhood}",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "neighbourhood"
+      ],
+      "repeatDays": 90,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The folk of {neighbourhood} want to close their street for a night and set trestles end to end: bread, ale, a fiddler and a pig on the spit. They ask the hall for leave and a little coin.",
+          "options": [
+            {
+              "label": "Give leave and a purse",
+              "tags": [
+                "generous"
+              ],
+              "cost": 40,
+              "prefer": 0.25,
+              "success": {
+                "text": "The whole lane eats together under lanterns, and they drink to the mayor more than once.",
+                "effects": {
+                  "mandate": 2,
+                  "festival": 1
+                }
+              }
+            },
+            {
+              "label": "Lend them the hall's trestles",
+              "tags": [
+                "coin"
+              ],
+              "skill": "persuasion",
+              "dc": 11,
+              "success": {
+                "text": "The hall's trestles and benches, a fiddler who plays for ale. A good night on the cheap.",
+                "effects": {
+                  "mandate": 1,
+                  "tension": -2
+                }
+              },
+              "failure": {
+                "text": "The trestles go missing after, and the hall blames the lane.",
+                "effects": {
+                  "mandate": -1
+                }
+              }
+            },
+            {
+              "label": "Refuse: the carts need the street",
+              "tags": [
+                "order"
+              ],
+              "success": {
+                "text": "The carts roll through on time. The lane eats indoors and says so.",
+                "effects": {
+                  "tension": 2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "They hold it anyway, without leave, and the watch doesn't stop them.",
+        "effects": {
+          "mandate": -1
+        }
+      }
+    },
+    {
+      "id": "dark-footpads",
+      "title": "Footpads in {neighbourhood}",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "dark"
+      ],
+      "repeatDays": 60,
+      "stages": [
+        {
+          "id": "start",
+          "text": "With the lamps out in {neighbourhood}, footpads work the lanes after dusk. A cooper was beaten for his purse last night, and the families keep their children in.",
+          "options": [
+            {
+              "label": "Pay the lamplighters what they're owed",
+              "tags": [
+                "generous"
+              ],
+              "cost": 60,
+              "prefer": 0.2,
+              "success": {
+                "text": "The lamps are lit by sundown. The footpads move on to darker lanes.",
+                "effects": {
+                  "mandate": 2,
+                  "commons": 5
+                }
+              }
+            },
+            {
+              "label": "Send the watch to walk the lanes",
+              "tags": [
+                "order"
+              ],
+              "skill": "intimidation",
+              "dc": 13,
+              "success": {
+                "text": "The watch walks the lanes in pairs, and two footpads hang by Midsummer.",
+                "effects": {
+                  "mandate": 2,
+                  "tension": -2
+                }
+              },
+              "failure": {
+                "text": "The watch walks loud, and the footpads simply wait for them to pass.",
+                "effects": {
+                  "mandate": -1
+                }
+              }
+            },
+            {
+              "label": "Each house hangs its own lantern",
+              "tags": [
+                "freedom"
+              ],
+              "skill": "persuasion",
+              "dc": 12,
+              "success": {
+                "text": "Every door hangs a lantern. It's not the town's lamps, but it's light.",
+                "effects": {
+                  "mandate": 1,
+                  "commons": 2
+                }
+              },
+              "failure": {
+                "text": "Lamp oil costs money the lane doesn't have.",
+                "effects": {
+                  "tension": 2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The lanes stay dark, and those who can move away.",
+        "effects": {
+          "people": -3,
+          "tension": 3
+        }
+      }
+    },
+    {
+      "id": "dark-drains",
+      "title": "The drains of {neighbourhood}",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "dark"
+      ],
+      "repeatDays": 70,
+      "stages": [
+        {
+          "id": "start",
+          "text": "Nobody has cleared the drains in {neighbourhood} for weeks. They back up into cellars when it rains, and the wells taste of them.",
+          "options": [
+            {
+              "label": "Hire muckrakers at once",
+              "tags": [
+                "generous"
+              ],
+              "cost": 70,
+              "prefer": 0.2,
+              "success": {
+                "text": "Twenty muckrakers and a cart of quicklime. The cellars dry out by the week's end.",
+                "effects": {
+                  "commons": 6,
+                  "mandate": 1
+                }
+              }
+            },
+            {
+              "label": "Ask the temple for its almsmen",
+              "tags": [
+                "faith"
+              ],
+              "skill": "religion",
+              "dc": 13,
+              "success": {
+                "text": "The almsmen dig in the name of the gods, and the priests bless the clean wells.",
+                "effects": {
+                  "commons": 4,
+                  "mandate": 2
+                }
+              },
+              "failure": {
+                "text": "The priests say filth is a judgement, not a job.",
+                "effects": {
+                  "tension": 2
+                }
+              }
+            },
+            {
+              "label": "Burn the rubbish heaps",
+              "tags": [
+                "harsh"
+              ],
+              "success": {
+                "text": "The heaps burn for a day and the lane chokes, but the rats are gone.",
+                "effects": {
+                  "commons": 3,
+                  "tension": 2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The drains overflow, and the fever comes with the rain.",
+        "effects": {
+          "commons": -3,
+          "tension": 3
+        }
+      }
+    },
+    {
+      "id": "dark-lantern-march",
+      "title": "Dead lanterns from {neighbourhood}",
+      "stakes": "medium",
+      "source": "town",
+      "needs": [
+        "dark"
+      ],
+      "repeatDays": 90,
+      "stages": [
+        {
+          "id": "start",
+          "text": "Two hundred folk from {neighbourhood} march on the hall carrying dead lanterns. Their streets have gone unlit, unswept and unwatched, they shout, while the hill's lamps burn all night.",
+          "options": [
+            {
+              "label": "Pay every arrear today",
+              "tags": [
+                "generous"
+              ],
+              "cost": 110,
+              "prefer": 0.15,
+              "success": {
+                "text": "You open the strongbox in front of them. The lanterns are lit from the hall's own fire and carried home.",
+                "effects": {
+                  "commons": 10,
+                  "mandate": 3
+                }
+              }
+            },
+            {
+              "label": "Speak to them from the steps",
+              "tags": [
+                "mercy"
+              ],
+              "skill": "persuasion",
+              "dc": 15,
+              "success": {
+                "text": "You promise the lamps lit within the week, and name the day. They go home grumbling, but they go home.",
+                "effects": {
+                  "mandate": 1,
+                  "tension": -3
+                }
+              },
+              "failure": {
+                "text": "The crowd shouts you down, and a lantern breaks a window.",
+                "effects": {
+                  "mandate": -3,
+                  "tension": 4
+                }
+              }
+            },
+            {
+              "label": "Have the watch clear the square",
+              "tags": [
+                "order",
+                "harsh"
+              ],
+              "skill": "intimidation",
+              "dc": 13,
+              "success": {
+                "text": "The watch clears the square with staves. The lanterns are left lying in the street.",
+                "effects": {
+                  "tension": 6,
+                  "mandate": -1
+                }
+              },
+              "failure": {
+                "text": "The watch hesitates, and the crowd knows it.",
+                "effects": {
+                  "tension": 8,
+                  "mandate": -3
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The crowd stays until dark, and goes home to dark streets.",
+        "effects": {
+          "tension": 6,
+          "mandate": -3
+        }
+      }
+    },
+    {
+      "id": "market-cutpurses",
+      "odds": {
+        "crowded": 0.3
+      },
+      "title": "Cutpurses in {neighbourhood}",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "neighbourhood:market"
+      ],
+      "repeatDays": 110,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A gang of cutpurses works the crowds in {neighbourhood}. The stallholders say custom is falling off: folk come to market with their purses in their boots.",
+          "options": [
+            {
+              "label": "Trace the gang to its fence",
+              "tags": [
+                "guile"
+              ],
+              "skill": "investigation",
+              "dc": 13,
+              "success": {
+                "text": "Your watchers follow a stolen purse to a pawnshop, and the pawnshop to the gang. Twelve purses go back to their owners.",
+                "effects": {
+                  "mandate": 2,
+                  "gold": 20
+                }
+              },
+              "failure": {
+                "text": "The fence is warned, and the gang moves on with its takings.",
+                "effects": {
+                  "mandate": -1
+                }
+              }
+            },
+            {
+              "label": "Post the watch at every corner",
+              "tags": [
+                "order"
+              ],
+              "success": {
+                "text": "Watchmen at every corner. Custom comes back, slowly.",
+                "effects": {
+                  "mandate": 1,
+                  "gold": -15
+                }
+              }
+            },
+            {
+              "label": "Let the stallholders hire their own men",
+              "tags": [
+                "freedom",
+                "coin"
+              ],
+              "success": {
+                "text": "The stallholders hire bruisers. Purses are safe and prices are a copper higher.",
+                "effects": {
+                  "tension": 1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The cutpurses grow fat, and the stallholders' takings thin.",
+        "effects": {
+          "gold": -25,
+          "mandate": -1
+        }
+      }
+    },
+    {
+      "id": "stall-rents",
+      "odds": {
+        "wealth": 0.3
+      },
+      "title": "Stall rents in {neighbourhood}",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "neighbourhood:market"
+      ],
+      "repeatDays": 150,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The landlords of {neighbourhood} have doubled the rent on market stalls, and the small sellers say they will be driven out. The landlords say the ground is worth it.",
+          "options": [
+            {
+              "label": "Cap the stall rents",
+              "tags": [
+                "mercy",
+                "order"
+              ],
+              "success": {
+                "text": "A cap on stall rents, cried in the square. The small sellers stay; the landlords sulk.",
+                "effects": {
+                  "mandate": 2,
+                  "gold": -10
+                }
+              }
+            },
+            {
+              "label": "Let the market set the rent",
+              "tags": [
+                "coin",
+                "freedom"
+              ],
+              "success": {
+                "text": "The rents stand. Half the old sellers go, and bigger shops take their pitches.",
+                "effects": {
+                  "gold": 30,
+                  "tension": 2
+                }
+              }
+            },
+            {
+              "label": "Talk the landlords down",
+              "tags": [
+                "coin"
+              ],
+              "skill": "persuasion",
+              "dc": 13,
+              "success": {
+                "text": "A rise, but not a doubling. Nobody is pleased, which is how you know it's fair.",
+                "effects": {
+                  "mandate": 2
+                }
+              },
+              "failure": {
+                "text": "The landlords smile and raise the rents anyway.",
+                "effects": {
+                  "tension": 2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The rents double. Some of the old faces stop coming to market.",
+        "effects": {
+          "people": -2,
+          "tension": 2
+        }
+      }
+    },
+    {
+      "id": "market-dawn-carts",
+      "title": "Carts at dawn in {neighbourhood}",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "neighbourhood:market"
+      ],
+      "repeatDays": 150,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The households round {neighbourhood} complain that the market carts start rattling in two hours before dawn, and the drovers sing.",
+          "options": [
+            {
+              "label": "No carts before first light",
+              "tags": [
+                "order"
+              ],
+              "success": {
+                "text": "Carts wait at the gate until the bell. The houses sleep; the stallholders lose an hour.",
+                "effects": {
+                  "mandate": 1,
+                  "gold": -10
+                }
+              }
+            },
+            {
+              "label": "Straw the cobbles and hush the drovers",
+              "tags": [
+                "mercy"
+              ],
+              "skill": "persuasion",
+              "dc": 11,
+              "success": {
+                "text": "Straw on the stones and a word with the drovers. It's quieter, mostly.",
+                "effects": {
+                  "mandate": 1
+                }
+              },
+              "failure": {
+                "text": "The drovers sing louder.",
+                "effects": {
+                  "tension": 1
+                }
+              }
+            },
+            {
+              "label": "A market town is a loud town",
+              "tags": [
+                "coin"
+              ],
+              "success": {
+                "text": "The carts roll. The neighbours buy thicker shutters.",
+                "effects": {
+                  "gold": 10,
+                  "tension": 1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The carts rattle on, and the neighbours stop buying at the market out of spite.",
+        "effects": {
+          "tension": 2
+        }
+      }
+    },
+    {
+      "id": "apprentice-brawl",
+      "title": "The apprentices of {neighbourhood}",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "neighbourhood:workshops"
+      ],
+      "repeatDays": 120,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The apprentices of {neighbourhood} marched out with hammers and fought another quarter's lads on the bridge over an insult nobody can remember. Three are in the watch house.",
+          "options": [
+            {
+              "label": "Make them mend what they broke",
+              "tags": [
+                "order",
+                "mercy"
+              ],
+              "skill": "intimidation",
+              "dc": 11,
+              "success": {
+                "text": "A week of carrying stone for the masons. They come out of it friends.",
+                "effects": {
+                  "mandate": 2,
+                  "stone": 5
+                }
+              },
+              "failure": {
+                "text": "They carry the stone, and drop it on each other's feet.",
+                "effects": {
+                  "tension": 2
+                }
+              }
+            },
+            {
+              "label": "Fine their masters",
+              "tags": [
+                "harsh",
+                "coin"
+              ],
+              "success": {
+                "text": "Their masters pay, and then their masters make them pay.",
+                "effects": {
+                  "gold": 25
+                }
+              }
+            },
+            {
+              "label": "Set them a contest instead",
+              "tags": [
+                "valor"
+              ],
+              "skill": "performance",
+              "dc": 13,
+              "success": {
+                "text": "A tug of war on feast day. The bridge sees a rematch every year after.",
+                "effects": {
+                  "mandate": 2,
+                  "tension": -3
+                }
+              },
+              "failure": {
+                "text": "The contest becomes the next brawl.",
+                "effects": {
+                  "tension": 3
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The feud goes on all summer, bridge to bridge.",
+        "effects": {
+          "tension": 4
+        }
+      }
+    },
+    {
+      "id": "kiln-collapse",
+      "title": "A kiln falls in {neighbourhood}",
+      "stakes": "medium",
+      "source": "town",
+      "needs": [
+        "neighbourhood:workshops"
+      ],
+      "repeatDays": 200,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A brick kiln in {neighbourhood} collapsed while firing, and the yard is full of hot rubble. Two firemen are trapped under it.",
+          "options": [
+            {
+              "label": "Dig them out",
+              "tags": [
+                "valor"
+              ],
+              "skill": "athletics",
+              "dc": 14,
+              "success": {
+                "text": "You haul on the beams with the rest, and both come out alive.",
+                "effects": {
+                  "mandate": 3
+                }
+              },
+              "failure": {
+                "text": "One comes out alive.",
+                "effects": {
+                  "mandate": 1,
+                  "people": -1
+                }
+              }
+            },
+            {
+              "label": "Pay the widows' fund",
+              "tags": [
+                "generous",
+                "mercy"
+              ],
+              "cost": 40,
+              "success": {
+                "text": "Whatever comes out, the families will eat this winter. The yard is grateful.",
+                "effects": {
+                  "mandate": 2
+                }
+              }
+            },
+            {
+              "label": "Send for the masons first",
+              "tags": [
+                "caution"
+              ],
+              "skill": "investigation",
+              "dc": 12,
+              "success": {
+                "text": "The masons prop the roof before anyone goes in. It's slow, and it's safe.",
+                "effects": {
+                  "mandate": 1,
+                  "stone": -6
+                }
+              },
+              "failure": {
+                "text": "Too slow: the second wall goes before the masons arrive.",
+                "effects": {
+                  "people": -2,
+                  "mandate": -2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The yard digs them out on its own, too late for one of them.",
+        "effects": {
+          "people": -1,
+          "mandate": -2
+        }
+      }
+    },
+    {
+      "id": "boundary-stones",
+      "title": "Boundary stones in {neighbourhood}",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "neighbourhood:farms"
+      ],
+      "repeatDays": 160,
+      "stages": [
+        {
+          "id": "start",
+          "text": "Somebody has been moving the boundary stones in {neighbourhood} by night, a yard at a time, and three families claim the same strip of barley.",
+          "options": [
+            {
+              "label": "Walk the bounds with the old men",
+              "tags": [
+                "order"
+              ],
+              "skill": "history",
+              "dc": 12,
+              "success": {
+                "text": "You walk the bounds with the oldest folk in town and a stick. The stones go back where their grandfathers set them.",
+                "effects": {
+                  "mandate": 2,
+                  "food": 10
+                }
+              },
+              "failure": {
+                "text": "The old men disagree with each other, loudly.",
+                "effects": {
+                  "tension": 2
+                }
+              }
+            },
+            {
+              "label": "Catch the stone-shifter",
+              "tags": [
+                "guile"
+              ],
+              "skill": "perception",
+              "dc": 13,
+              "success": {
+                "text": "A watch by moonlight, and the stone-shifter is caught with a crowbar. The strip goes to the others.",
+                "effects": {
+                  "mandate": 2
+                }
+              },
+              "failure": {
+                "text": "The stone-shifter sees your watchers first.",
+                "effects": {
+                  "tension": 1
+                }
+              }
+            },
+            {
+              "label": "Split the strip three ways",
+              "tags": [
+                "mercy"
+              ],
+              "success": {
+                "text": "Three thin strips, three sour families, no fighting.",
+                "effects": {
+                  "tension": -1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The families settle it with pitchforks.",
+        "effects": {
+          "tension": 3,
+          "food": -10
+        }
+      }
+    },
+    {
+      "id": "harvest-home",
+      "odds": {
+        "season:autumn": 0.8
+      },
+      "title": "Harvest home in {neighbourhood}",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "neighbourhood:farms"
+      ],
+      "repeatDays": 300,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The farms of {neighbourhood} are in, and the farm folk want a harvest home: the last sheaf brought in on a garlanded cart, and the town to come out and drink to it.",
+          "options": [
+            {
+              "label": "Bring the whole town out",
+              "tags": [
+                "generous",
+                "faith"
+              ],
+              "cost": 35,
+              "prefer": 0.25,
+              "success": {
+                "text": "The last sheaf comes in on a cart full of children, and the town dances in the stubble.",
+                "effects": {
+                  "mandate": 2,
+                  "festival": 1
+                }
+              }
+            },
+            {
+              "label": "Bless the barns",
+              "tags": [
+                "faith"
+              ],
+              "skill": "religion",
+              "dc": 11,
+              "success": {
+                "text": "Priests bless the barns and the granary. The farm folk swear the grain keeps better.",
+                "effects": {
+                  "mandate": 1,
+                  "food": 15
+                }
+              },
+              "failure": {
+                "text": "A stray cat runs through the blessing, which some say is luck and some say isn't.",
+                "effects": {}
+              }
+            },
+            {
+              "label": "Ask for the tithe on the spot",
+              "tags": [
+                "coin",
+                "harsh"
+              ],
+              "success": {
+                "text": "The tithe comes in with the sheaf. The dancing is thinner.",
+                "effects": {
+                  "gold": 30,
+                  "tension": 2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The farms drink alone, and say the town forgets who feeds it.",
+        "effects": {
+          "mandate": -1
+        }
+      }
+    },
+    {
+      "id": "farm-tolls",
+      "title": "Tolls on {neighbourhood}'s carts",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "neighbourhood:farms"
+      ],
+      "repeatDays": 200,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The farmers of {neighbourhood} say the gate toll on their carts takes their margin: they want to bring their produce to market free.",
+          "options": [
+            {
+              "label": "Let farm carts in free",
+              "tags": [
+                "mercy",
+                "freedom"
+              ],
+              "success": {
+                "text": "Farm carts roll in free, and the market fills with cheap greens.",
+                "effects": {
+                  "mandate": 2,
+                  "food": 15,
+                  "gold": -20
+                }
+              }
+            },
+            {
+              "label": "Keep the toll: the roads cost money",
+              "tags": [
+                "order",
+                "coin"
+              ],
+              "success": {
+                "text": "The toll stands. The farmers sell more at their own gates instead.",
+                "effects": {
+                  "gold": 20,
+                  "tension": 2
+                }
+              }
+            },
+            {
+              "label": "Half toll on market days",
+              "tags": [
+                "coin"
+              ],
+              "skill": "persuasion",
+              "dc": 12,
+              "success": {
+                "text": "Half toll on market days. The farmers grumble and come.",
+                "effects": {
+                  "mandate": 1,
+                  "food": 8
+                }
+              },
+              "failure": {
+                "text": "They want the whole loaf, not half.",
+                "effects": {
+                  "tension": 1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The farmers sell at their gates, and the market's bread is dearer.",
+        "effects": {
+          "food": -15,
+          "mandate": -1
+        }
+      }
+    },
+    {
+      "id": "holy-procession",
+      "title": "The procession through {neighbourhood}",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "neighbourhood:holy"
+      ],
+      "repeatDays": 150,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The temples of {neighbourhood} mean to carry their saints through the streets on a market day, and the stallholders say it will close the town for a morning.",
+          "options": [
+            {
+              "label": "Let the saints have the streets",
+              "tags": [
+                "faith"
+              ],
+              "success": {
+                "text": "The saints pass, the town kneels, and the market opens an hour late to bigger crowds.",
+                "effects": {
+                  "mandate": 2,
+                  "gold": -10
+                }
+              }
+            },
+            {
+              "label": "Move it to a rest day",
+              "tags": [
+                "order",
+                "coin"
+              ],
+              "success": {
+                "text": "The procession moves to a rest day. The priests preach about it for weeks.",
+                "effects": {
+                  "gold": 10,
+                  "tension": 1
+                }
+              }
+            },
+            {
+              "label": "Route it past every stall",
+              "tags": [
+                "coin",
+                "faith"
+              ],
+              "skill": "persuasion",
+              "dc": 13,
+              "success": {
+                "text": "The saints go past every stall, and the stallholders sell candles to the crowd.",
+                "effects": {
+                  "mandate": 2,
+                  "gold": 20
+                }
+              },
+              "failure": {
+                "text": "The priests won't have their saints made a sales pitch.",
+                "effects": {
+                  "mandate": -1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The procession goes ahead and the market is a scrum.",
+        "effects": {
+          "tension": 2
+        }
+      }
+    },
+    {
+      "id": "temple-beggars",
+      "odds": {
+        "unrest": 0.3
+      },
+      "title": "Beggars on the steps of {neighbourhood}",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "neighbourhood:holy"
+      ],
+      "repeatDays": 140,
+      "stages": [
+        {
+          "id": "start",
+          "text": "Beggars crowd the temple steps of {neighbourhood}, more each week, and the worshippers have to step over them. The priests say they cannot turn them away, and will not feed them all.",
+          "options": [
+            {
+              "label": "Open an almshouse",
+              "tags": [
+                "generous",
+                "mercy"
+              ],
+              "cost": 60,
+              "success": {
+                "text": "An almshouse with soup and straw. The steps are clear, and nobody is turned away.",
+                "effects": {
+                  "mandate": 3,
+                  "food": -15
+                }
+              }
+            },
+            {
+              "label": "Find them work",
+              "tags": [
+                "order"
+              ],
+              "skill": "persuasion",
+              "dc": 12,
+              "success": {
+                "text": "Ditches to dig, walls to mend. Half of them take it.",
+                "effects": {
+                  "mandate": 1,
+                  "people": 2
+                }
+              },
+              "failure": {
+                "text": "There is no work they want.",
+                "effects": {
+                  "tension": 1
+                }
+              }
+            },
+            {
+              "label": "Move them on",
+              "tags": [
+                "harsh"
+              ],
+              "success": {
+                "text": "The watch clears the steps. Some of them clear out of town altogether.",
+                "effects": {
+                  "people": -2,
+                  "tension": 2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The steps fill and the worshippers stop coming.",
+        "effects": {
+          "mandate": -2
+        }
+      }
+    },
+    {
+      "id": "saints-bones",
+      "title": "A saint's bones in {neighbourhood}",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "neighbourhood:holy"
+      ],
+      "repeatDays": 300,
+      "stages": [
+        {
+          "id": "start",
+          "text": "Two shrines in {neighbourhood} both claim the same saint's bones, and the faithful of each have started to throw things.",
+          "options": [
+            {
+              "label": "Look into the relics",
+              "tags": [
+                "faith",
+                "caution"
+              ],
+              "skill": "religion",
+              "dc": 14,
+              "success": {
+                "text": "One set is a saint's. The other is a pig's. You tell the priests in private and let them sort out the rest.",
+                "effects": {
+                  "mandate": 2,
+                  "tension": -2
+                }
+              },
+              "failure": {
+                "text": "Both sets look very holy and very old.",
+                "effects": {
+                  "tension": 2
+                }
+              }
+            },
+            {
+              "label": "Let each keep a hand",
+              "tags": [
+                "mercy"
+              ],
+              "success": {
+                "text": "A hand to each shrine. The saint, presumably, doesn't mind.",
+                "effects": {
+                  "mandate": 1
+                }
+              }
+            },
+            {
+              "label": "Take the bones into the hall's keeping",
+              "tags": [
+                "order",
+                "harsh"
+              ],
+              "success": {
+                "text": "The bones go into the hall's strongroom. Both shrines curse you equally.",
+                "effects": {
+                  "mandate": -1,
+                  "tension": -3
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The faithful settle it with stones.",
+        "effects": {
+          "tension": 4
+        }
+      }
+    },
+    {
+      "id": "hill-ball",
+      "title": "A masked ball in {neighbourhood}",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "neighbourhood:rich"
+      ],
+      "fromTier": "large_town",
+      "repeatDays": 200,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The great houses of {neighbourhood} want to close the square for a masked ball, with fireworks and musicians from the coast. They will pay well for the privilege.",
+          "options": [
+            {
+              "label": "Sell them the square for the night",
+              "tags": [
+                "coin"
+              ],
+              "success": {
+                "text": "Fireworks over the square, and a fat fee for the treasury. The lanes watch from the roofs.",
+                "effects": {
+                  "gold": 60,
+                  "tension": 1
+                }
+              }
+            },
+            {
+              "label": "Make it a ball for the whole town",
+              "tags": [
+                "generous",
+                "freedom"
+              ],
+              "skill": "persuasion",
+              "dc": 14,
+              "success": {
+                "text": "Masks for everyone at the square's edge. The gentry dance with tanners and pretend not to know.",
+                "effects": {
+                  "mandate": 3,
+                  "festival": 1
+                }
+              },
+              "failure": {
+                "text": "The gentry won't have it, and hold the ball behind their walls.",
+                "effects": {
+                  "mandate": -1
+                }
+              }
+            },
+            {
+              "label": "Refuse: the square is everyone's",
+              "tags": [
+                "order"
+              ],
+              "success": {
+                "text": "The square stays open. The hill holds its ball indoors and complains.",
+                "effects": {
+                  "mandate": 1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "They hold the ball anyway, and the square is barred to everyone else for a night.",
+        "effects": {
+          "tension": 2
+        }
+      }
+    },
+    {
+      "id": "garden-wall",
+      "title": "The green of {neighbourhood}",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "neighbourhood:rich"
+      ],
+      "fromTier": "town",
+      "repeatDays": 300,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A gentleman of {neighbourhood} has walled off the common green behind his house and planted it with roses. The townsfolk who grazed their geese there want it back.",
+          "options": [
+            {
+              "label": "Order the wall down",
+              "tags": [
+                "order",
+                "freedom"
+              ],
+              "success": {
+                "text": "The wall comes down stone by stone. The geese go back, and the roses stay for everyone.",
+                "effects": {
+                  "mandate": 3,
+                  "stone": 8
+                }
+              }
+            },
+            {
+              "label": "Make him pay for the green",
+              "tags": [
+                "coin"
+              ],
+              "skill": "persuasion",
+              "dc": 13,
+              "success": {
+                "text": "He buys the green, the town buys a new one further out with the money.",
+                "effects": {
+                  "gold": 50,
+                  "tension": 1
+                }
+              },
+              "failure": {
+                "text": "He pays nothing and his lawyer quotes old charters.",
+                "effects": {
+                  "mandate": -2
+                }
+              }
+            },
+            {
+              "label": "Leave the rich to their roses",
+              "tags": [
+                "coin"
+              ],
+              "success": {
+                "text": "The roses bloom. The goosegirls don't forget.",
+                "effects": {
+                  "tension": 3
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The wall stands, and the green is gone for good.",
+        "effects": {
+          "mandate": -2,
+          "tension": 2
+        }
+      }
+    },
+    {
+      "id": "hill-burglaries",
+      "title": "Burglaries in {neighbourhood}",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "neighbourhood:rich"
+      ],
+      "repeatDays": 160,
+      "stages": [
+        {
+          "id": "start",
+          "text": "Three great houses in {neighbourhood} have been burgled in a fortnight. The gentry blame the poor lanes below the hill and want them searched door to door.",
+          "options": [
+            {
+              "label": "Find the real burglar",
+              "tags": [
+                "guile"
+              ],
+              "skill": "investigation",
+              "dc": 14,
+              "success": {
+                "text": "The burglar is a footman in one of the great houses, selling his master's silver through a cousin.",
+                "effects": {
+                  "mandate": 3,
+                  "gold": 25
+                }
+              },
+              "failure": {
+                "text": "The trail runs cold, and the gentry say you didn't want to find it.",
+                "effects": {
+                  "mandate": -2
+                }
+              }
+            },
+            {
+              "label": "Search the lanes below",
+              "tags": [
+                "order",
+                "harsh"
+              ],
+              "success": {
+                "text": "The watch turns over every house in the lanes. They find a stolen ladle and a lot of anger.",
+                "effects": {
+                  "tension": 6,
+                  "mandate": -1
+                }
+              }
+            },
+            {
+              "label": "Lend the hill a night watch",
+              "tags": [
+                "caution"
+              ],
+              "success": {
+                "text": "A night watch on the hill. The burglaries stop, and the lanes are left alone.",
+                "effects": {
+                  "gold": -30,
+                  "mandate": 1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The burglaries go on, and the gentry hire their own men with cudgels.",
+        "effects": {
+          "tension": 3
+        }
+      }
+    },
+    {
+      "id": "soup-kitchen",
+      "odds": {
+        "season:winter": 1
+      },
+      "title": "Hungry winter in {neighbourhood}",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "neighbourhood:poor"
+      ],
+      "repeatDays": 300,
+      "stages": [
+        {
+          "id": "start",
+          "text": "Winter has come hard to {neighbourhood}. The tenement folk can't buy fuel and bread both, and the children are thin.",
+          "options": [
+            {
+              "label": "Open a soup kitchen",
+              "tags": [
+                "generous",
+                "mercy"
+              ],
+              "cost": 30,
+              "success": {
+                "text": "Soup and bread every noon from the hall's own stores. The lanes come through the winter.",
+                "effects": {
+                  "mandate": 3,
+                  "food": -25
+                }
+              }
+            },
+            {
+              "label": "Give out firewood",
+              "tags": [
+                "generous"
+              ],
+              "success": {
+                "text": "A cart of wood to every stair. Warm, if not full.",
+                "effects": {
+                  "mandate": 2,
+                  "timber": -15
+                }
+              }
+            },
+            {
+              "label": "The guilds should feed their own",
+              "tags": [
+                "freedom",
+                "coin"
+              ],
+              "success": {
+                "text": "Some guilds do. Some don't.",
+                "effects": {
+                  "tension": 2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "Some of {neighbourhood} doesn't see the spring.",
+        "effects": {
+          "people": -4,
+          "mandate": -2
+        }
+      }
+    },
+    {
+      "id": "lane-gang",
+      "odds": {
+        "unrest": 0.4
+      },
+      "title": "The gang of {neighbourhood}",
+      "stakes": "medium",
+      "source": "town",
+      "needs": [
+        "neighbourhood:poor"
+      ],
+      "repeatDays": 160,
+      "stages": [
+        {
+          "id": "start",
+          "text": "A gang runs {neighbourhood} now: it takes a cut from every stall, settles every quarrel, and the watch goes in only by daylight.",
+          "options": [
+            {
+              "label": "Break the gang",
+              "tags": [
+                "order",
+                "valor"
+              ],
+              "skill": "intimidation",
+              "dc": 15,
+              "success": {
+                "text": "The watch goes in at night in force. The gang's leaders swing; the lanes breathe out.",
+                "effects": {
+                  "mandate": 3,
+                  "tension": -2
+                }
+              },
+              "failure": {
+                "text": "The watch is beaten back, and the gang is the law in the lanes.",
+                "effects": {
+                  "mandate": -3,
+                  "tension": 4
+                }
+              }
+            },
+            {
+              "label": "Turn its leader",
+              "tags": [
+                "guile"
+              ],
+              "skill": "deception",
+              "dc": 13,
+              "success": {
+                "text": "The gang's boss becomes the hall's man in the lanes, for a fee. It's quieter. It isn't cleaner.",
+                "effects": {
+                  "gold": -20,
+                  "tension": -4
+                }
+              },
+              "failure": {
+                "text": "The boss takes your fee and laughs about it.",
+                "effects": {
+                  "gold": -20
+                }
+              }
+            },
+            {
+              "label": "Give the lanes what the gang gives",
+              "tags": [
+                "mercy",
+                "generous"
+              ],
+              "cost": 80,
+              "success": {
+                "text": "A watch house, a well and a judge on market days. The gang has less to offer.",
+                "effects": {
+                  "mandate": 2,
+                  "commons": 4
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The gang grows, and its cut grows with it.",
+        "effects": {
+          "tension": 4,
+          "gold": -20
+        }
+      }
+    },
+    {
+      "id": "slum-clearance",
+      "odds": {
+        "wealth": 0.4
+      },
+      "title": "Clearing {neighbourhood}",
+      "stakes": "medium",
+      "source": "town",
+      "needs": [
+        "neighbourhood:poor"
+      ],
+      "fromTier": "large_town",
+      "repeatDays": 300,
+      "stages": [
+        {
+          "id": "start",
+          "text": "Builders and landlords want {neighbourhood} cleared for townhouses: the ground is near the market and worth more than the folk who live on it. The tenants say they have nowhere else.",
+          "options": [
+            {
+              "label": "Clear it, with new homes elsewhere",
+              "tags": [
+                "order",
+                "generous"
+              ],
+              "success": {
+                "text": "The tenements come down, and the hall pays for cottages past the walls. Some folk go. Most come back in time.",
+                "effects": {
+                  "gold": 40,
+                  "people": -3,
+                  "tension": 2
+                }
+              }
+            },
+            {
+              "label": "Refuse the builders",
+              "tags": [
+                "mercy"
+              ],
+              "success": {
+                "text": "The tenements stand. The builders take their money to another town.",
+                "effects": {
+                  "mandate": 2,
+                  "gold": -20
+                }
+              }
+            },
+            {
+              "label": "Let them buy out who'll sell",
+              "tags": [
+                "coin",
+                "freedom"
+              ],
+              "success": {
+                "text": "Half the tenants sell. The other half live between building sites.",
+                "effects": {
+                  "gold": 25,
+                  "tension": 3
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The builders buy the landlords instead, and the evictions begin.",
+        "effects": {
+          "people": -4,
+          "tension": 4
+        }
+      }
+    },
+    {
+      "id": "alchemy-blast",
+      "title": "A blast in {neighbourhood}",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "neighbourhood:scholars"
+      ],
+      "repeatDays": 180,
+      "stages": [
+        {
+          "id": "start",
+          "text": "Something exploded in a scholar's cellar in {neighbourhood} at midnight, and the street is full of green smoke that smells of pears. Nobody knows if it's safe to breathe.",
+          "options": [
+            {
+              "label": "Read the scholar's notes",
+              "tags": [
+                "caution"
+              ],
+              "skill": "arcana",
+              "dc": 13,
+              "success": {
+                "text": "The notes say the smoke is harmless and the scholar is an idiot. Both prove true.",
+                "effects": {
+                  "mandate": 2
+                }
+              },
+              "failure": {
+                "text": "The notes are in cipher. The street sleeps elsewhere.",
+                "effects": {
+                  "tension": 2
+                }
+              }
+            },
+            {
+              "label": "Clear the street until it settles",
+              "tags": [
+                "order"
+              ],
+              "success": {
+                "text": "A night out of their homes, and grumbling. By morning the smoke is gone.",
+                "effects": {
+                  "mandate": 1,
+                  "tension": 1
+                }
+              }
+            },
+            {
+              "label": "Fine the scholar",
+              "tags": [
+                "harsh",
+                "coin"
+              ],
+              "success": {
+                "text": "A heavy fine, and a promise of no more cellars.",
+                "effects": {
+                  "gold": 30
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The smoke drifts away on its own. The street's cats are green for a month.",
+        "effects": {
+          "tension": 1
+        }
+      }
+    },
+    {
+      "id": "scholars-revels",
+      "title": "Students in {neighbourhood}",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "neighbourhood:scholars"
+      ],
+      "repeatDays": 150,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The students of {neighbourhood} sing in the streets all night, steal the tavern signs and chalk rude verse on the temple door. The neighbours want a curfew.",
+          "options": [
+            {
+              "label": "A curfew for the students",
+              "tags": [
+                "order"
+              ],
+              "success": {
+                "text": "Curfew at the tenth bell. The students write rude verse about you instead.",
+                "effects": {
+                  "mandate": 1,
+                  "tension": 1
+                }
+              }
+            },
+            {
+              "label": "Make them clean the temple door",
+              "tags": [
+                "mercy"
+              ],
+              "skill": "persuasion",
+              "dc": 12,
+              "success": {
+                "text": "They scrub the door, and leave a better verse on it in good Latin.",
+                "effects": {
+                  "mandate": 2
+                }
+              },
+              "failure": {
+                "text": "They scrub it and chalk it again.",
+                "effects": {
+                  "tension": 1
+                }
+              }
+            },
+            {
+              "label": "Youth will have its night",
+              "tags": [
+                "freedom"
+              ],
+              "success": {
+                "text": "The singing goes on. Some of it is quite good.",
+                "effects": {
+                  "tension": 2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The neighbours start emptying chamber pots on the singers.",
+        "effects": {
+          "tension": 2
+        }
+      }
+    },
+    {
+      "id": "river-flood",
+      "odds": {
+        "season:spring": 0.5
+      },
+      "title": "The river rises in {neighbourhood}",
+      "stakes": "medium",
+      "source": "town",
+      "needs": [
+        "neighbourhood:river"
+      ],
+      "repeatDays": 200,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The river has burst its banks below {neighbourhood}. Cellars are under water and the low lanes are waist-deep, and it's still rising.",
+          "options": [
+            {
+              "label": "Sandbag the banks all night",
+              "tags": [
+                "valor",
+                "order"
+              ],
+              "skill": "athletics",
+              "dc": 13,
+              "success": {
+                "text": "A wall of sacks by moonlight, the whole lane hauling. The water stops at the second step.",
+                "effects": {
+                  "mandate": 3
+                }
+              },
+              "failure": {
+                "text": "The sacks give way at midnight.",
+                "effects": {
+                  "food": -15,
+                  "people": -2
+                }
+              }
+            },
+            {
+              "label": "Get everyone out to high ground",
+              "tags": [
+                "caution",
+                "mercy"
+              ],
+              "success": {
+                "text": "Every family up the hill by dark, nobody lost. The cellars are ruined.",
+                "effects": {
+                  "mandate": 2,
+                  "food": -10
+                }
+              }
+            },
+            {
+              "label": "Pay for a stone embankment",
+              "tags": [
+                "generous"
+              ],
+              "cost": 100,
+              "success": {
+                "text": "Masons and a hundred cartloads of stone. It will never flood here again, they say.",
+                "effects": {
+                  "mandate": 2,
+                  "stone": -20,
+                  "commons": 3
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The river takes the low lanes and gives them back full of mud.",
+        "effects": {
+          "food": -20,
+          "people": -3,
+          "commons": -3
+        }
+      }
+    },
+    {
+      "id": "ferry-bridge",
+      "title": "Ferrymen of {neighbourhood}",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "neighbourhood:river"
+      ],
+      "repeatDays": 300,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The ferrymen of {neighbourhood} say the new bridge is taking their living, and have chained their boats across it in protest.",
+          "options": [
+            {
+              "label": "Give them the bridge tolls for a year",
+              "tags": [
+                "mercy",
+                "coin"
+              ],
+              "success": {
+                "text": "The ferrymen become toll-keepers. The chains come off.",
+                "effects": {
+                  "mandate": 2,
+                  "gold": -30
+                }
+              }
+            },
+            {
+              "label": "Cut the chains",
+              "tags": [
+                "order",
+                "harsh"
+              ],
+              "success": {
+                "text": "Axes through the chains. The ferrymen spit in the river.",
+                "effects": {
+                  "tension": 3
+                }
+              }
+            },
+            {
+              "label": "Hire them as the river watch",
+              "tags": [
+                "guile"
+              ],
+              "skill": "persuasion",
+              "dc": 12,
+              "success": {
+                "text": "A river watch who know every eddy. They take it.",
+                "effects": {
+                  "mandate": 2,
+                  "tension": -2
+                }
+              },
+              "failure": {
+                "text": "They want their trade, not a wage.",
+                "effects": {
+                  "tension": 2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The chains stay up for a week, and trade waits.",
+        "effects": {
+          "gold": -30,
+          "tension": 2
+        }
+      }
+    },
+    {
+      "id": "chimney-fires",
+      "odds": {
+        "season:winter": 0.6
+      },
+      "title": "Chimney fires in {neighbourhood}",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "neighbourhood:homes"
+      ],
+      "repeatDays": 200,
+      "stages": [
+        {
+          "id": "start",
+          "text": "Three chimneys caught in {neighbourhood} this week: nobody has swept them since autumn, and the thatch is dry as tinder.",
+          "options": [
+            {
+              "label": "Hire sweeps for every house",
+              "tags": [
+                "generous"
+              ],
+              "cost": 35,
+              "success": {
+                "text": "Sweeps up every chimney in the lane, and soot on every doorstep.",
+                "effects": {
+                  "mandate": 2,
+                  "commons": 2
+                }
+              }
+            },
+            {
+              "label": "Order every house swept by the month's end",
+              "tags": [
+                "order"
+              ],
+              "success": {
+                "text": "Swept or fined. The lanes grumble and sweep.",
+                "effects": {
+                  "mandate": 1,
+                  "gold": 10
+                }
+              }
+            },
+            {
+              "label": "Teach the lanes to sweep their own",
+              "tags": [
+                "mercy"
+              ],
+              "skill": "performance",
+              "dc": 11,
+              "success": {
+                "text": "A brush and a demonstration in the square. Most take to it.",
+                "effects": {
+                  "mandate": 1
+                }
+              },
+              "failure": {
+                "text": "A brush gets stuck, and so does a boy.",
+                "effects": {
+                  "tension": 1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The next chimney fire takes a roof.",
+        "effects": {
+          "people": -2,
+          "tension": 2
+        }
+      }
+    },
+    {
+      "id": "dark-rats",
+      "title": "Rats in {neighbourhood}",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "dark"
+      ],
+      "repeatDays": 80,
+      "stages": [
+        {
+          "id": "start",
+          "text": "With nobody sweeping {neighbourhood}, the rubbish heaps have grown taller than the children, and the rats have grown bolder than the cats.",
+          "options": [
+            {
+              "label": "Pay ratcatchers by the tail",
+              "tags": [
+                "coin"
+              ],
+              "success": {
+                "text": "A copper a tail. The ratcatchers grow rich and the heaps grow small.",
+                "effects": {
+                  "commons": 4,
+                  "gold": -15
+                }
+              }
+            },
+            {
+              "label": "Cart the heaps out of town",
+              "tags": [
+                "order"
+              ],
+              "skill": "athletics",
+              "dc": 12,
+              "success": {
+                "text": "Every cart in the lane, three days of hauling. The rats go with the heaps.",
+                "effects": {
+                  "commons": 5,
+                  "mandate": 1
+                }
+              },
+              "failure": {
+                "text": "Half the heaps go. The rats move into the other half.",
+                "effects": {
+                  "commons": 1
+                }
+              }
+            },
+            {
+              "label": "Bring in the town's cats",
+              "tags": [
+                "guile"
+              ],
+              "skill": "animal-handling",
+              "dc": 13,
+              "success": {
+                "text": "Every cat in town, carried in baskets. The rats leave in a hurry.",
+                "effects": {
+                  "commons": 2,
+                  "tension": -1
+                }
+              },
+              "failure": {
+                "text": "The cats fight each other and ignore the rats.",
+                "effects": {}
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "The rats get into the granary next.",
+        "effects": {
+          "food": -15,
+          "commons": -2
+        }
+      }
+    },
+    {
+      "id": "lane-bell",
+      "title": "A bell for {neighbourhood}",
+      "stakes": "low",
+      "source": "town",
+      "needs": [
+        "neighbourhood:homes"
+      ],
+      "repeatDays": 400,
+      "stages": [
+        {
+          "id": "start",
+          "text": "The folk of {neighbourhood} have saved a year to cast a bell for their lane chapel, and ask the hall to make up the last of the price.",
+          "options": [
+            {
+              "label": "Make up the price",
+              "tags": [
+                "generous",
+                "faith"
+              ],
+              "cost": 45,
+              "prefer": 0.2,
+              "success": {
+                "text": "The bell is cast in the square and rung all the way home. {N} hears it every morning now.",
+                "effects": {
+                  "mandate": 2,
+                  "commons": 1
+                }
+              }
+            },
+            {
+              "label": "Find a bellfounder who'll take less",
+              "tags": [
+                "coin"
+              ],
+              "skill": "persuasion",
+              "dc": 12,
+              "success": {
+                "text": "A travelling founder casts it for their savings alone. It rings a little flat, and they love it.",
+                "effects": {
+                  "mandate": 2
+                }
+              },
+              "failure": {
+                "text": "The founder takes their savings and casts a cracked bell.",
+                "effects": {
+                  "mandate": -1,
+                  "tension": 2
+                }
+              }
+            },
+            {
+              "label": "Bells are the temple's business",
+              "tags": [
+                "order"
+              ],
+              "success": {
+                "text": "No bell. The lane keeps its savings, and its grudge.",
+                "effects": {
+                  "tension": 1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ignored": {
+        "text": "They ring a cooking pot instead, and say the hall wouldn't help.",
+        "effects": {
+          "mandate": -1
+        }
+      }
+    },
+    {
       "id": "tavern-brawl", "title": "A brawl at {tavern}", "stakes": "low", "source": "tavern",
       "odds": {"class:barbarian": 0.2, "class:fighter": 0.1, "watch": -0.2, "crowded": 0.5},
       "needs": ["tavern"], "repeatDays": 40,

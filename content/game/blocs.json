@@ -3,8 +3,9 @@
   "step": 6,
   "decay": 0.98,
   "comfort": 0.1,
-  "mood": 3,
+  "mood": 8,
   "least": 3,
+  "share": 0.03,
   "blocs": [
     { "id": "householders", "voice": "the householders", "icon": "ui-house", "likes": ["order", "caution"], "dislikes": ["guile"],
       "members": { "home:house": 1, "home:timber_house": 1, "home:tall_house": 0.6 } },

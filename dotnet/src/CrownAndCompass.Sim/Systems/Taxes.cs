@@ -43,6 +43,31 @@ public sealed record TaxRules
     /// <summary>Above this rate taxes are a burden in themselves: each point over it adds <see cref="HeavyUnrest"/> unrest, funded services or not.</summary>
     public double HeavyFrom { get; init; } = 1;
     public double HeavyUnrest { get; init; }
+
+    /// <summary>Unrest from how the townsfolk live and how their blocs feel, whatever the books say.</summary>
+    public DiscontentRules Discontent { get; init; } = new();
+}
+
+/// <summary>
+/// The unrest a town feels about its streets and its rulers (taxes.json "discontent"): households whose homes carry less
+/// mood than the town's size leads them to expect (<see cref="City.HomeMood"/>: what stands round them, their blocs,
+/// crowding, how content the house is), and blocs angrier than calm, by their size.
+/// </summary>
+public sealed record DiscontentRules
+{
+    /// <summary>Home mood every household expects, plus Expect per point of <see cref="Frontier.Expect"/>.</summary>
+    public double Base { get; init; }
+    public double Expect { get; init; }
+
+    /// <summary>Points short the households shrug off before any of it is unrest.</summary>
+    public double Slack { get; init; }
+
+    /// <summary>Unrest per point of home mood the town's households fall short, on average, past the slack.</summary>
+    public double PerPoint { get; init; }
+
+    /// <summary>Bloc feeling below which a bloc's anger counts, and unrest per point below it (by the bloc's share of the town).</summary>
+    public double Calm { get; init; } = -20;
+    public double Blocs { get; init; }
 }
 
 public sealed class TaxState
@@ -59,6 +84,9 @@ public sealed class TaxState
 
     /// <summary>The last stage of unrest the Ledger reported (0 = calm).</summary>
     public int Stage { get; set; }
+
+    /// <summary>What drives the unrest now: "services", "taxes", "homes" or "blocs".</summary>
+    public string Cause { get; set; } = "services";
 }
 
 /// <summary>
@@ -119,6 +147,39 @@ public static class Taxes
         return Math.Max(0, (town.TaxRate - r.HeavyFrom) * 100 * r.HeavyUnrest);
     }
 
+    /// <summary>Unrest from households whose homes carry less mood than a town this size expects.</summary>
+    public static double Homes(Town town)
+    {
+        var d = Rules(town).Discontent;
+        if (d.PerPoint <= 0) return 0;
+        double sum = 0;
+        int n = 0;
+        foreach (var a in town.Agents)
+        {
+            if (a.Departed || a.Hero != null || a.HomeId == null) continue;
+            sum += City.HomeMood(town, a);
+            n++;
+        }
+        if (n == 0) return 0;
+        double expect = d.Base + d.Expect * Frontier.Expect(town);
+        return Math.Max(0, (expect - d.Slack - sum / n) * d.PerPoint);
+    }
+
+    /// <summary>Unrest from blocs angrier than calm, each by its share of the town.</summary>
+    public static double BlocAnger(Town town)
+    {
+        var d = Rules(town).Discontent;
+        if (d.Blocs <= 0) return 0;
+        double anger = 0, all = 0;
+        foreach (var b in Politics.Blocs(town))
+        {
+            double size = Politics.Size(town, b);
+            all += size;
+            anger += size * Math.Max(0, d.Calm - Politics.Feeling(town, b.Id));
+        }
+        return all <= 0 ? 0 : anger / all * d.Blocs;
+    }
+
     /// <summary>Settlers' attraction lost to unrest.</summary>
     public static double Attraction(Town town) => -Rules(town).Attraction * town.Taxes.Unrest / 100;
 
@@ -153,7 +214,9 @@ public static class Taxes
         if (s.Services.Count > r.Days) s.Services.RemoveAt(0);
 
         double funding = Funding(town);
-        double target = Math.Min(100, Math.Max(funding >= 1 ? 0 : (1 - funding) * r.Scale, Heavy(town)));
+        double neglect = funding >= 1 ? 0 : (1 - funding) * r.Scale, heavy = Heavy(town), homes = Homes(town), blocs = BlocAnger(town), rule = Politics.Form(town).Unrest;
+        double target = Math.Min(100, Math.Max(Math.Max(neglect, heavy), homes + blocs + rule));
+        s.Cause = target <= 0 ? s.Cause : neglect >= target ? "services" : heavy >= target ? "taxes" : homes >= Math.Max(blocs, rule) ? "homes" : blocs >= rule ? "blocs" : "rule";
         s.Unrest = s.Unrest < target ? Math.Min(target, s.Unrest + r.Rise) : Math.Max(target, s.Unrest - r.Ease);
         if (s.Unrest > 0) town.Mandate = Math.Clamp(town.Mandate - r.Mandate * s.Unrest / 100, 0, 100);
         Report(town, funding);
@@ -169,6 +232,22 @@ public static class Taxes
         if (stage > s.Stage)
         {
             string shortfall = $"The town's services cost {Js.Str(Js.Round(Services(town)))}g a day and taxes, rents and trade bring in {Js.Str(Js.Round(Income(town)))}g.";
+            if (s.Cause is "homes" or "blocs" or "rule")
+            {
+                string why = s.Cause == "homes"
+                    ? $"Folk in {Worst(town)} say their streets are smoky, crowded or a long walk from anything."
+                    : s.Cause == "rule" || Angry(town).Count == 0
+                        ? $"They are sick of {Politics.Form(town).Name.ToLowerInvariant()}."
+                        : Upper(Systems.Blocs.Voices(Angry(town))) + " are sick of the hall.";
+                town.Log(LedgerCategory.Hardship, stage >= 2 ? Importance.Major : Importance.Notable, stage switch
+                {
+                    1 => $"Grumbling in the lanes. {why}",
+                    2 => $"A crowd gathers outside the town hall, banging pots. {why}",
+                    _ => $"Workers down tools across {town.Name} and march on the town hall. {why}",
+                });
+                s.Stage = stage;
+                return;
+            }
             town.Log(LedgerCategory.Hardship, stage >= 2 ? Importance.Major : Importance.Notable, stage switch
             {
                 1 => $"Grumbling in the market: the wells go uncleaned, the lamps unlit, the roads unmended. {shortfall}",
@@ -179,9 +258,35 @@ public static class Taxes
         }
         else if (stage == 0 && s.Stage > 0)
         {
-            town.Log(LedgerCategory.Town, Importance.Notable, "The lamps are lit again and the wells run clean. The protests over the town's neglect die down.");
+            town.Log(LedgerCategory.Town, Importance.Notable, s.Cause is "homes" or "blocs" or "rule"
+                ? "The crowds outside the hall thin and go home. The town is calm again."
+                : "The lamps are lit again and the wells run clean. The protests over the town's neglect die down.");
             s.Stage = 0;
         }
         else if (stage < s.Stage - 1) s.Stage = stage + 1;
+    }
+
+    /// <summary>The neighbourhood whose households carry the least mood from home, for the news.</summary>
+    private static string Worst(Town town)
+    {
+        string name = "the poorer lanes";
+        double worst = double.MaxValue;
+        foreach (var q in town.City.Quarters)
+        {
+            var st = Neighbourhood.Stats(town, q);
+            if (st.Homes == 0 || st.Mood >= worst) continue;
+            worst = st.Mood;
+            name = q.Name;
+        }
+        return name;
+    }
+
+    private static string Upper(string s) => s.Length == 0 ? s : char.ToUpperInvariant(s[0]) + s[1..];
+
+    /// <summary>The blocs angrier than calm, angriest first.</summary>
+    private static List<BlocDef> Angry(Town town)
+    {
+        double calm = Rules(town).Discontent.Calm;
+        return Politics.Blocs(town).Where(b => Politics.Feeling(town, b.Id) < calm).OrderBy(b => Politics.Feeling(town, b.Id)).ThenBy(b => b.Id, StringComparer.Ordinal).ToList();
     }
 }
