@@ -683,7 +683,12 @@ public static class Neighbours
             b.Status = BountyStatus.Failed;
             Quests.Refund(town, b);
         }
-        foreach (var p in town.Pleas.Where(p => p.SiteId == s.Def.Id && p.Status == PleaStatus.Open)) p.Status = PleaStatus.Answered;
+        foreach (var p in town.Pleas.Where(p => p.SiteId == s.Def.Id && p.Status == PleaStatus.Open))
+        {
+            p.Status = PleaStatus.Answered;
+            // Their own band did it: the council's backing comes home.
+            if (p.Backed > 0) town.Book(TreasuryAccount.Bounties, p.Backed);
+        }
     }
 
     /// <summary>Defence the bands of allied settlements bring to the walls.</summary>
@@ -982,7 +987,7 @@ public static class Neighbours
     // ---- Words ----
 
     public static string Fill(Town town, Settlement s, string text) =>
-        text.Replace("{settlement}", s.Name).Replace("{people}", s.People).Replace("{leader}", s.Leader).Replace("{title}", LeaderOf(town, s).Title)
+        text.Replace("{settlement}", s.Name).Replace("{People}", s.People.Length == 0 ? "" : char.ToUpperInvariant(s.People[0]) + s.People[1..]).Replace("{people}", s.People).Replace("{leader}", s.Leader).Replace("{title}", LeaderOf(town, s).Title)
             .Replace("{town}", town.Name).Replace("{band}", s.Band?.Name ?? "their band").Replace("{captain}", s.Band?.Captain ?? "their captain")
             .Replace("{trouble}", TroubleOf(town, s) is { } d ? Lower(d.Name) : "their trouble")
             .Replace("{site}", s.Trouble?.SiteId is string sid && Quests.Site(town, sid) is { } site ? site.Def.Name : "the wilds");

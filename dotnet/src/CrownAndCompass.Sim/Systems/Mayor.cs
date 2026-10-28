@@ -25,7 +25,9 @@ public static class Mayor
             RaiseYards(town);
             RaiseWorks(town, defend);
             RaiseInstitutions(town);
+            if (defend) RingTheSprawl(town);
             RaiseServices(town);
+            RaiseNearby(town);
             PutIdleToWork(town);
             Decor.StandIn(town, defend);
             Seasons.StandIn(town);
@@ -101,6 +103,16 @@ public static class Mayor
         }
     }
 
+    /// <summary>The city wall round the homes that spilled past the stone walls (the "outgrown" alert), as the treasury allows.</summary>
+    private static void RingTheSprawl(Town town)
+    {
+        if (Alerts.Spilled(town) == null || town.Defenses.StoneWall != PalisadeState.Built) return;
+        if (town.Treasury < Threat.BuildCost(town, DefenseWork.CityWall) + 250) return;
+        if (Threat.Spec(town, DefenseWork.CityWall).Tier is { Length: > 0 } tier && !City.Reached(town, tier)) return;
+        WallLines.StandIn(town, 1);
+        if (Threat.BuildBlocked(town, DefenseWork.CityWall) == null) Threat.Build(town, DefenseWork.CityWall);
+    }
+
     /// <summary>The institutions the next charter asks for, and the walls, raised as the treasury allows (one at a time).</summary>
     private static void RaiseInstitutions(Town town)
     {
@@ -136,6 +148,37 @@ public static class Mayor
             if (Planning.Blocked(town, d) != null || town.Treasury < Planning.Cost(town, d) + 500) continue;
             var lot = Planning.CivicLot(town, d);
             if (lot != null && Planning.Place(town, d.Id, lot) != null) return;
+        }
+    }
+
+    /// <summary>A shrine or market hall among houses that wait on one within reach to grow a storey (<see cref="City.NeedsBlocked"/>).</summary>
+    private static void RaiseNearby(Town town)
+    {
+        if (town.Buildings.Any(b => b.IsSite && Planning.IsGovernment(town, b.Def))) return;
+        double reach = town.Content.City.NearReach;
+        List<(Lot Lot, HousingDef Next)>? growing = null;
+        foreach (var d in town.Content.Buildings.Where(d => d.Civic && !d.IsPart && d.Max == 0 && d.Serves.Count > 0).OrderBy(d => d.Cost).ThenBy(d => d.Id, StringComparer.Ordinal))
+        {
+            if (Planning.Blocked(town, d) != null || town.Treasury < Planning.Cost(town, d) + 300) continue;
+            string service = d.Serves.Keys.Order(StringComparer.Ordinal).First();
+            // The houses that could grow a storey, and into what: read once for every service tried.
+            if (growing == null)
+            {
+                growing = [];
+                foreach (var house in town.Buildings)
+                {
+                    if (!house.Complete || City.Housing(town, house.Def.Id) is not { } h) continue;
+                    string next = City.NextFor(town, house, h);
+                    if (next != "" && City.Housing(town, next) is { } nh && nh.Near.Count > 0) growing.Add((town.Lot(house.LotId), nh));
+                }
+            }
+            var waiting = new List<Lot>();
+            foreach (var (lot, nh) in growing)
+                if (nh.Near.Contains(service) && !City.Near(town, lot, service, reach)) waiting.Add(lot);
+            if (waiting.Count < 3) continue;
+            double mx = waiting.Average(l => l.X), my = waiting.Average(l => l.Y);
+            var at = waiting.OrderBy(l => (l.X - mx) * (l.X - mx) + (l.Y - my) * (l.Y - my)).ThenBy(l => l.Id).First();
+            if (Planning.Place(town, d.Id, at.X, at.Y) != null) return;
         }
     }
 

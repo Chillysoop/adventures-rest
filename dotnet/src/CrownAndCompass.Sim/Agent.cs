@@ -297,6 +297,10 @@ public sealed class HeroSheet
     /// <summary>Day the hero last gave their fortune to the town (<see cref="Systems.Downtime"/> patronage).</summary>
     public int? GaveDay { get; set; }
 
+    /// <summary>The day they last threw a feast, and whether their holding is a manor (<see cref="Systems.Downtime"/>).</summary>
+    public int? FeastDay { get; set; }
+    public bool Manor { get; set; }
+
     /// <summary>The familiar their patron sent ("a cinder imp"), "" for none.</summary>
     public string Familiar { get; set; } = "";
 

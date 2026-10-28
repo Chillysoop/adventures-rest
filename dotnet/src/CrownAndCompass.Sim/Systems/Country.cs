@@ -861,7 +861,8 @@ public static class Country
                 // Aboard the harbour's ship they sail even where they could fly, at the ship's pace (Voyages.Embark).
                 if (f.Kind.Ship && mind.Sail > 0) (cost[i], way[i]) = (mind.Sail, "sail");
                 else if (flies) (cost[i], way[i]) = (1, "fly");
-                else if (f.Kind.Boats) (cost[i], way[i]) = (f.Kind.Slow, "sail");
+                // The near sea's boats row anyone over; the open sea takes a ship (Voyages), or wings.
+                else if (f.Kind.Boats && !f.Kind.Ship) (cost[i], way[i]) = (f.Kind.Slow, "sail");
                 else if (f.Kind.Wonder?.Kind == "ferry") (cost[i], way[i]) = (1.3, "ferry");
                 else (cost[i], way[i]) = (Never, "");
                 continue;

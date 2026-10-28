@@ -31,6 +31,7 @@ public partial class Main
         [Tab.War] = "War",
         [Tab.Army] = "The army",
         [Tab.Defence] = "Defence",
+        [Tab.Fleet] = "The fleet",
         [Tab.Council] = "Council",
         [Tab.Bounties] = "Bounties and the road",
         [Tab.Companies] = "Adventurers' roster",

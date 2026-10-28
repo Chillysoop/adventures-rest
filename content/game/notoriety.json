@@ -51,7 +51,7 @@
     "bard": ["Silvertongue", "the Songweaver", "Goldthroat"],
     "hedge-witch": ["the Cunning", "Herbwise", "Hollowmoon"]
   },
-  "fameDeeds": { "plea": 3, "honour": 5, "vow": 6, "levels": { "5": 4, "11": 10, "17": 20 } },
+  "fameDeeds": { "plea": 6, "honour": 5, "vow": 6, "levels": { "5": 4, "11": 10, "17": 20 } },
   "infamyDeeds": { "brawl": 3, "theft": 5, "desert": 8, "betray": 25 },
   "companyShare": 0.5,
   "epithetTier": 2,

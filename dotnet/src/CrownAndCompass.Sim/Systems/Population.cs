@@ -147,7 +147,9 @@ public static class Population
         attraction += frontier;
         // A haven's name travels: the roads bring hopefuls to a town known to take people in.
         double haven = Refugees.Appeal(town);
-        attraction += haven + Frontier.Draw(town);
+        // How the town is ruled travels too: free towns draw hopefuls, iron rule keeps them away.
+        double rule = Politics.Form(town).Draw;
+        attraction += haven + Frontier.Draw(town) + rule;
         // Settlers want land to build on: with no residential lot zoned and for sale, fewer come.
         double land = Planning.VacantZoned(town, Zone.Residential) == 0 ? 0.15 : 0;
         if (land > 0) attraction -= land;
@@ -168,7 +170,8 @@ public static class Population
         Add($"The season ({Seasons.Current(town).Name.ToLowerInvariant()})", season);
         Add("Decrees in force", decrees);
         Add("The town's institutions", institutions);
-        Add("Unrest over neglected services", unrest);
+        Add("Unrest in the streets", unrest);
+        Add(Politics.Form(town).Name, rule);
         Add("Cheap land in a young town", frontier);
         Add($"Known as {Refugees.Title(town)}", haven);
         Add("No zoned home lots for sale", -land);

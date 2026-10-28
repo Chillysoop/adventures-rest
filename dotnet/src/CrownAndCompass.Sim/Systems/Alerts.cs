@@ -30,6 +30,7 @@ public enum AlertWindow
     Tourney,
     Army,
     Notables,
+    Fleet,
 }
 
 /// <summary>A group of alerts: one icon on the strip, with a count and a hover list of what is in it.</summary>
@@ -128,17 +129,21 @@ public static class Alerts
     public static readonly AlertKind Carts = new("carts", "Cart taken", "warband", AlertLevel.Decision, AlertWindow.Bounties, "Patrols");
     public static readonly AlertKind Unmanned = new("unmanned", "Walls unmanned", "defence", AlertLevel.Decision, AlertWindow.Defence, "Gate");
     public static readonly AlertKind Strangers = new("strangers", "Strangers at work", "suspicion", AlertLevel.Decision, AlertWindow.Defence, "Gate");
+    public static readonly AlertKind Outgrown = new("outgrown", "Outgrown the walls", "defence", AlertLevel.Decision, AlertWindow.Defence, "Walls");
     public static readonly AlertKind Notable = new("notable", "Notables", "np-shaking-hands", AlertLevel.Decision, AlertWindow.Notables);
     public static readonly AlertKind Ask = new("ask", "A bloc asks", "vote-aye", AlertLevel.Decision, AlertWindow.Council, "Blocs>");
     public static readonly AlertKind Radicals = new("radicals", "Radicals", "suspicion", AlertLevel.Urgent, AlertWindow.Council, "Blocs>");
+    public static readonly AlertKind Ship = new("ship", "Hull holed", "defence", AlertLevel.Decision, AlertWindow.Fleet, "Patch");
+    public static readonly AlertKind Corsairs = new("corsairs", "Corsairs grow bold", "warband", AlertLevel.Decision, AlertWindow.Fleet, "Patrol");
+    public static readonly AlertKind Idle = new("idle", "A ship lies idle", "inst-harbour", AlertLevel.Minor, AlertWindow.Fleet, "Run");
 
 
     /// <summary>Every kind, in the order their icons sit on the strip within a level.</summary>
     public static readonly IReadOnlyList<AlertKind> Kinds =
-        [Siege, Sighted, Lurker, Captives, Overdue, Ride, Doom, Crisis, Sick, Fear, Hunger, Coffers, Underfunded, Unrest, Radicals, Strike, Hostile, Motion, Ask, Guild, Balance, Fealty, Gathering, DarkQuest, Road, Clash, Traitor, Plot, Dark, Spent, Fields, Carts, Unmanned, Strangers, Stores, Story, Scry, Explorers, Fallen, LevelUp, Charter, GrandWork, Tourney, Bastion, Institution, Notable, Heroes, Honours, Courted, Envoy, Neighbour, AllyAsk, Shadow, Treasure, Loot, Stalled, Bridge, Ruin, Work, Settlers, Below, Scholars, Trade, Wager, RareFind, Gifts, Tower, Patrol, Outpost, Housing, Rooms, Camp, Crowded, WarAsk];
+        [Siege, Sighted, Lurker, Captives, Overdue, Ride, Doom, Crisis, Sick, Fear, Hunger, Coffers, Underfunded, Unrest, Radicals, Strike, Hostile, Motion, Ask, Guild, Balance, Fealty, Gathering, DarkQuest, Road, Clash, Traitor, Plot, Dark, Spent, Fields, Carts, Unmanned, Outgrown, Strangers, Corsairs, Ship, Stores, Story, Scry, Explorers, Fallen, LevelUp, Charter, GrandWork, Tourney, Bastion, Institution, Notable, Heroes, Honours, Courted, Envoy, Neighbour, AllyAsk, Shadow, Treasure, Loot, Stalled, Bridge, Ruin, Work, Settlers, Below, Scholars, Trade, Wager, RareFind, Gifts, Tower, Patrol, Outpost, Housing, Rooms, Camp, Crowded, Idle, WarAsk];
 
     /// <summary>The standing rules, each naming what needs the player now. No rng and no writes: the client calls them often.</summary>
-    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Trades, Hostility, Winter, Growth, Routes, Region, Courting, Undercity, Study, Loyalty, Armoury, Homes, Sites, Allies, Word, Crowds, Keepers, Notables, Outposts, Lists, Brought, Missing, Frontiers, Treasures, Blocs];
+    public static readonly IReadOnlyList<Func<Town, IEnumerable<Alert>>> Rules = [War, Events, Food, Money, Council, Trades, Hostility, Winter, Growth, Routes, Region, Courting, Undercity, Study, Loyalty, Armoury, Homes, Sites, Allies, Word, Crowds, Keepers, Notables, Outposts, Lists, Brought, Missing, Frontiers, Treasures, Blocs, Seas];
 
     public static List<Alert> Standing(Town town) => Rules.SelectMany(r => r(town)).ToList();
 
@@ -587,6 +592,24 @@ public static class Alerts
         }
     }
 
+    /// <summary>The harbour's ships: a hull holed past half at its mooring, corsairs near and angry with nobody on patrol, a ship with a hold and no run.</summary>
+    private static IEnumerable<Alert> Seas(Town t)
+    {
+        if (Fleet.Harbour(t) == null) yield break;
+        var moored = Fleet.AtSea(t).Where(s => s.Out == null && s.Flight == null && Voyages.Carrying(t, s) == null).ToList();
+        foreach (var s in moored.Where(s => s.Hull < Fleet.Def(t, s).Hull * 0.5 && !Fleet.AtAnchor(t, s)))
+            yield return new($"ship:{s.Id}", Ship, $"{Cap(s.Name)} is holed",
+                $"{Cap(s.Name)} lies at her mooring with {Js.Str(Js.Round(s.Hull))} of {Js.Str(Fleet.Def(t, s).Hull)} hull. Below a quarter she can't sail at all. Patch her in the Fleet window ({Js.Str(Fleet.RepairCost(t, s))}g).");
+        var holds = Fleet.Holds(t);
+        if (t.FleetState.Wrath >= 3 && holds.Any(h => h.RegionId is int g && t.Regions[g].Ring <= 2) && Voyages.Patrolling(t) == 0 && moored.Any(s => Voyages.Moored(t, s)))
+            yield return new("corsairs", Corsairs, $"{Cap(Fleet.Lord(t))}'s corsairs grow bold",
+                $"Corsair sails are seen off the coast more each week: {holds.Count} of their holds stand, the nearest {holds[0].Def.Name}. Send a ship to patrol the home waters, or post a bounty on a hold to burn it.", SiteId: holds[0].Def.Id);
+        foreach (var s in moored.Where(s => s.Route == null && Fleet.Def(t, s).Hold > 0 && Voyages.Moored(t, s)).Take(1))
+            if (Fleet.Ports(t).Any())
+                yield return new($"idle:{s.Id}", Idle, $"{Cap(s.Name)} has no run",
+                    $"{Cap(s.Name)} only fishes at her mooring. Give her a standing run in the Fleet window and she sails to that port again each time she is home.");
+    }
+
     /// <summary>The frontier: fields stripped beyond the walls, a wall with too few on it, strangers robbing an open town.</summary>
     private static IEnumerable<Alert> Frontiers(Town t)
     {
@@ -596,7 +619,7 @@ public static class Alerts
         var f = t.Frontier;
         if (f.FieldsLost > 0)
             yield return new("fields", Fields, $"{f.FieldsLost} {(f.FieldsLost == 1 ? "field" : "fields")} stripped",
-                $"Raiders and beasts took {Js.Str(Js.Round(f.FoodLost))} food from fields beyond the walls last night. Plant a guard flag over the fields (G on the map): a field with a guard by it is left alone.");
+                $"Raiders and beasts took {Js.Str(Js.Round(f.FoodLost))} food from {(Frontier.Walled(t) ? "fields beyond the walls" : "the open fields")} last night. Plant a guard flag over the fields (G on the map): a field with a guard by it is left alone.");
         var cart = t.Workings;
         if (t.Day - cart.RaidedDay <= Workings.Rules(t).Raid.AlertDays && Workings.Nearest(t, cart.RaidedGood) is { } road)
         {
@@ -607,6 +630,9 @@ public static class Alerts
         if (Frontier.Walled(t) && Frontier.Manned(t) < t.Content.Frontier.WantManned)
             yield return new("unmanned", Unmanned, $"Walls {Js.Str(Js.Round(Frontier.Manned(t) * 100))}% manned",
                 $"The wall wants {Frontier.Wanted(t)} watchmen at night and has {Js.Str(Js.Round(Frontier.OnWalls(t)))}. An unmanned wall gives a third of its strength. Hire the watch in the council.");
+        if (Spilled(t) is { } spilled)
+            yield return new("outgrown", Outgrown, $"{Js.Str(Js.Round(spilled * 100))}% of homes past the walls",
+                "Raiders rob the homes past the walls first, and rents there are low. Draw the city wall round them, and build it.");
         if (f.Strangers > 0)
             yield return new("strangers", Strangers, "Strangers robbing shops",
                 Frontier.Walled(t)
@@ -786,5 +812,23 @@ public static class Alerts
         else if (st.Stage == TourneyStage.Running && st.Events.Select((e, i) => (e, i)).FirstOrDefault(x => !x.e.Started && x.e.Day <= t.Day + 1 && Tournaments.BetBlocked(t, x.e) == null) is ({ } next, int index))
             yield return new($"tourney:bet:{index}", Wager, $"Bet on {Tournaments.DefOf(t, next).Name}",
                 $"{Cap(Tournaments.DefOf(t, next).Name)} is ridden {(next.Day == t.Day ? "today" : "tomorrow")}. Open the tourney card to see the draw and the odds, and stake the treasury's gold on a rider if you like.");
+    }
+
+    /// <summary>
+    /// The share of homes standing past the town's only wall once at least <see cref="FrontierRules.Outgrown"/> of them do
+    /// and the city wall isn't begun; else null.
+    /// </summary>
+    public static double? Spilled(Town t)
+    {
+        if (!Frontier.Walled(t) || t.Defenses.CityWall != PalisadeState.None || WallLines.Begun(t, 1)) return null;
+        int homes = 0, outside = 0;
+        foreach (var b in t.Buildings)
+        {
+            if (!b.Complete || b.Def.Housing == 0 || b.Residents.Count == 0) continue;
+            homes++;
+            if (!Frontier.Within(t, b)) outside++;
+        }
+        double share = homes == 0 ? 0 : (double)outside / homes;
+        return homes >= 20 && share >= t.Content.Frontier.Outgrown ? share : null;
     }
 }

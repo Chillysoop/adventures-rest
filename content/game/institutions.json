@@ -999,9 +999,9 @@
         "label": "what the quay is for first",
         "text": "There is only so much quay, and the harbourmaster wants to know who gets it.",
         "options": [
-          { "id": "fishers", "name": "the fishing fleet", "text": "The boats go out on every tide and the smokehouses never cool.", "service": { "mood": 0.03 } },
-          { "id": "merchants", "name": "merchant ships", "text": "Foreign hulls tie up and pay their dues; the quay pays its own way.", "service": { "gold": 3 } },
-          { "id": "guard", "name": "a guard boat", "text": "A boat with a crossbow crew rows the harbour mouth all night.", "service": { "defence": 2 } }
+          { "id": "fishers", "name": "the fishing fleet", "text": "The boats go out on every tide and the smokehouses never cool: the moored ships land more fish.", "service": { "mood": 0.03 } },
+          { "id": "merchants", "name": "merchant ships", "text": "Foreign hulls tie up and pay their dues; the quay pays its own way, and the town's own runs sell dearer.", "service": { "gold": 3 } },
+          { "id": "guard", "name": "a guard boat", "text": "A boat with a crossbow crew rows the harbour mouth all night: corsairs who come for the harbour meet it first.", "service": { "defence": 2 } }
         ]
       },
       "keepers": [
@@ -1018,7 +1018,7 @@
       "sparks": ["folk:gnome:10", "partner:gnomes"],
       "tier": "city",
       "title": "Dockmaster",
-      "blurb": "A mooring mast, a gasbag shed and a crew of gnome riggers who keep the town's airship flying. One company at a time sails out in it, straight over whatever water or mountain stands in the way, and is carried home again.",
+      "blurb": "A mooring mast, a gasbag shed and a crew of gnome riggers who keep the town's airships flying. A company sails out in one straight over whatever water or mountain stands in the way, and is carried home again.",
       "service": {
         "airship": 1,
         "arrivals": 0.004,
@@ -1026,7 +1026,7 @@
       },
       "choice": {
         "label": "who the airship sails for first",
-        "text": "There is only one airship, and the riggers need the council to say what it is for between voyages.",
+        "text": "The riggers need the council to say what the airships are for between voyages.",
         "options": [
           {
             "id": "companies",

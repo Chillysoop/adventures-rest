@@ -135,6 +135,8 @@
       "text": "{hero}'s blood burns with innate sorcery." },
     { "id": "arcane-recovery", "class": "wizard", "level": 1, "text": "{hero} pores over the spellbook and recovers {n} spell{s}." },
     { "id": "agonizing-blast", "class": "warlock", "level": 2, "text": "" },
+    { "id": "dark-ones-blessing", "class": "warlock", "level": 1, "text": "{hero} drinks in the death and stands the stronger for it (+{hp} temporary hp)." },
+    { "id": "cunning-action", "class": "rogue", "level": 2, "text": "" },
     { "id": "sworn-to-the-walls", "class": "warden", "level": 1, "weight": 4,
       "text": "{hero} plants the glaive and dares them to come." },
     { "id": "binding-rite", "class": "reliquarian", "level": 7, "uses": [[7, 1]], "rest": "long", "save": "cha", "rounds": 2,

@@ -2752,6 +2752,11 @@ public partial class TownView(MapView map) : Node3D
     /// </summary>
     private void Ships(Town town)
     {
+        if (Sim.Systems.Fleet.OnRiver(town) && Sim.Systems.Fleet.Harbour(town) is { } wharf)
+        {
+            RiverBoats(town, wharf);
+            return;
+        }
         if (!Sim.Systems.Fleet.Coastal(town) || Sim.Systems.Founding.Bay(town) is not { } sea) return;
         var gen = map.Gen;
         double b = sea.Bearing * Math.PI / 180;
@@ -2776,7 +2781,8 @@ public partial class TownView(MapView map) : Node3D
         }
         var alive = new HashSet<string>();
         float now = (float)Time.GetTicksMsec() / 1000f;
-        foreach (var s in town.Ships)
+        // Airships ride at the Sky Dock's masts, never at the quay.
+        foreach (var s in Sim.Systems.Fleet.AtSea(town))
         {
             string id = $"ship:{s.Id}";
             alive.Add(id);
@@ -2788,10 +2794,14 @@ public partial class TownView(MapView map) : Node3D
             }
             Vector2 at;
             float yaw = face;
-            if (s.Out is { } v)
+            // Out on a run or a job: furthest at the halfway day, drifting toward its side of the sea. A ship carrying a
+            // company lies off the far shore until they come back aboard.
+            (double Start, double Days)? away = s.Out is { } v ? (v.BackDay - v.Days, v.Days)
+                : s.Flight is { } fl ? (SimTime.DayOf(fl.SetOutTick), fl.BackDay - SimTime.DayOf(fl.SetOutTick))
+                : Voyages.Carrying(town, s) != null ? (town.Day - 1, 2) : null;
+            if (away is var (start, length))
             {
-                // Out and back again: furthest at the halfway day, drifting toward the port's side of the sea.
-                double u = Math.Clamp(1 - Math.Abs((town.Day - (v.BackDay - v.Days)) / Math.Max(1.0, v.Days) * 2 - 1), 0, 1);
+                double u = Math.Clamp(1 - Math.Abs((town.Day - start) / Math.Max(1.0, length) * 2 - 1), 0, 1);
                 double side = ((s.Id % 3) - 1) * 0.25;
                 float far = (float)Passage.DayRadius(sea.Outer) - 6;
                 at = Off(shore + 7 + (float)u * Mathf.Max(0, far - shore - 7), (float)side * 30 * (float)u);
@@ -2801,6 +2811,48 @@ public partial class TownView(MapView map) : Node3D
             else at = Off(shore + 1.2f + (s.Id / 2 % 3) * 2.2f, (s.Id % 2 == 0 ? -1 : 1) * (2.0f + (float)Fleet.Def(town, s).Hold / 40f));
             mi.Position = new Vector3(at.X, Mathf.Max(WorldGen.WaterLevel, gen.HeightAt(at.X, at.Y)) + 0.05f * Mathf.Sin(now * 1.3f + s.Id), at.Y);
             mi.Rotation = new Vector3(0.03f * Mathf.Sin(now * 0.9f + s.Id), yaw, 0);
+        }
+        foreach (var key in _landmarks.Keys.Where(k => k.StartsWith("ship:", StringComparison.Ordinal) && !alive.Contains(k)).ToList())
+        {
+            _landmarks[key].QueueFree();
+            _landmarks.Remove(key);
+        }
+    }
+
+    /// <summary>
+    /// A river harbour's boats, moored in the water nearest its wharves; those away on the river are out of sight.
+    /// </summary>
+    private void RiverBoats(Town town, Building wharf)
+    {
+        var gen = map.Gen;
+        var c = Geo.LotPos(town.Lot(wharf.LotId));
+        // Berths: the water nearest the wharves, a boat's length apart, found the same way each time.
+        var berths = new List<Vector2>();
+        for (float r = 2; r <= 14 && berths.Count < 6; r += 1.5f)
+            for (int i = 0; i < 24 && berths.Count < 6; i++)
+            {
+                float a = i * Mathf.Tau / 24;
+                var p = c + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * r;
+                if (gen.HeightAt(p.X, p.Y) < WorldGen.WaterLevel - 0.2f && berths.All(b => b.DistanceTo(p) > 2.2f)) berths.Add(p);
+            }
+        var alive = new HashSet<string>();
+        float now = (float)Time.GetTicksMsec() / 1000f;
+        int n = 0;
+        foreach (var s in Sim.Systems.Fleet.AtSea(town))
+        {
+            if (s.Out != null || s.Flight != null || Voyages.Carrying(town, s) != null || n >= berths.Count) continue;
+            var at = berths[n++];
+            string id = $"ship:{s.Id}";
+            alive.Add(id);
+            if (!_landmarks.TryGetValue(id, out var mi))
+            {
+                mi = new MeshInstance3D { Mesh = ShipMesh(s.Kind), MaterialOverride = Mats.Props };
+                AddChild(mi);
+                _landmarks[id] = mi;
+            }
+            var toward = c - at;
+            mi.Position = new Vector3(at.X, WorldGen.WaterLevel + 0.05f * Mathf.Sin(now * 1.3f + s.Id), at.Y);
+            mi.Rotation = new Vector3(0.03f * Mathf.Sin(now * 0.9f + s.Id), Mathf.Atan2(toward.Y, -toward.X), 0);
         }
         foreach (var key in _landmarks.Keys.Where(k => k.StartsWith("ship:", StringComparison.Ordinal) && !alive.Contains(k)).ToList())
         {

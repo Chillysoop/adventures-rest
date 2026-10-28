@@ -878,6 +878,17 @@ public sealed record LairRules
     public int[] ThrallSteal { get; init; } = [8, 25];
     public int[] ResettleDays { get; init; } = [25, 45];
 
+    /// <summary>Each time a site has been cleared before puts its next resettlement off by this share more, up to quietMost times as long: cleared country goes quiet.</summary>
+    public double Quieter { get; init; } = 0.6;
+    public double QuietMost { get; init; } = 4;
+
+    /// <summary>Clearings after which the site is worth a tower (the site card says so, and the stand-in builds one when it can).</summary>
+    public int HoldAfter { get; init; } = 3;
+
+    /// <summary>Lines for what moves into a cleared site: its master, and the rooms where the old occupants' own kind once stood.</summary>
+    public IReadOnlyList<string> NewMaster { get; init; } = [];
+    public IReadOnlyList<string> Newcomers { get; init; } = [];
+
     /// <summary>Chance the new occupant of a cleared site is a tier worse.</summary>
     public double WorseChance { get; init; } = 0.4;
 
@@ -933,6 +944,9 @@ public sealed record LootRules
     /// <summary>Chance per site tier that a cleared hoard holds a magic item, at most <see cref="ItemChanceMax"/>.</summary>
     public double ItemChancePerTier { get; init; } = 0.15;
     public double ItemChanceMax { get; init; } = 1;
+
+    /// <summary>A cleared hoard with no magic item in it holds this share more of its gold in coin and gems.</summary>
+    public double NoItemGold { get; init; }
 
     /// <summary>What rarity a hoard of a level holds (the last band at or below it), and the chance it holds one finer.</summary>
     public IReadOnlyList<HoardBand> HoardTiers { get; init; } = [];
@@ -1205,6 +1219,13 @@ public sealed record StandingRules
     public int PleaDays { get; init; } = 14;
     public double PleaRewardPerLevel { get; init; } = 30;
 
+    /// <summary>A plea pays at least this share of the bounty the site is worth (<see cref="Systems.Quests.SuggestedReward"/>).</summary>
+    public double PleaShare { get; init; } = 0.5;
+
+    /// <summary>The share of what heroes ask that the council adds when it backs a plea, and the days the plea then stands.</summary>
+    public double BackShare { get; init; } = 0.5;
+    public int BackDays { get; init; } = 14;
+
     /// <summary>How far the town trusts what a plea, a visit or an ally's maps say about a site.</summary>
     public int PleaTrust { get; init; } = 80;
     public int VisitTrust { get; init; } = 60;
@@ -1247,6 +1268,9 @@ public sealed record CompanyRules
     /// <summary>Extra appeal of burning the warband's camp.</summary>
     public double CampGlory { get; init; } = 0.4;
 
+    /// <summary>A company's liking for a site a settlement has pleaded about, on top of the plea's pay.</summary>
+    public double PleaPull { get; init; } = 0.2;
+
     /// <summary>Expeditions after which a hero is a veteran who can lead greenhorns.</summary>
     public int Veteran { get; init; } = 3;
 
@@ -1273,6 +1297,16 @@ public sealed record DelveRules
     /// <summary>Share of the party's hit points left at which they break off a fight (a boss fight, which they press harder).</summary>
     public double BreakOff { get; init; } = 0.2;
     public double BossBreakOff { get; init; } = 0.15;
+
+    /// <summary>
+    /// The cost of breaking off, times the storyteller's peril: each foe still standing swings at the fleeing with this
+    /// chance, each fallen hero is cut down before they can be dragged clear with this chance, and this share of the gold
+    /// found is left behind. A site above the party's level fields this many more foes a fight for each level over.
+    /// </summary>
+    public double Parting { get; init; } = 0.5;
+    public double Dragged { get; init; } = 0.2;
+    public double RetreatDrop { get; init; } = 0.5;
+    public double Overreach { get; init; } = 1;
 
     /// <summary>They also break off once this share of the living party is down.</summary>
     public double DownedShare { get; init; } = 1;

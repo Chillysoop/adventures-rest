@@ -56,6 +56,26 @@ public sealed record CorsairRules
 
     /// <summary>What each watchman adds to the harbour's fight.</summary>
     public double WatchFight { get; init; } = 0.5;
+
+    /// <summary>
+    /// The corsair fleet is the group in groups.json (`group`): its holds (sites of the group not cleared) are where the raids
+    /// come from. With none left the harbour is not raided and only `stray` of the ambushes at sea remain. Each hold standing
+    /// adds `perHold` to a raid and `grow` a day to the corsairs' wrath (at most `most`), which a raid that lands halves; a hold
+    /// burned scatters `scatter` of the wrath, and while others stand the rest come back for revenge within `revengeDays`
+    /// with `revenge` more of it. `lords` names the captain who sails over them all.
+    /// </summary>
+    public string Group { get; init; } = "corsair-fleet";
+    public double Stray { get; init; } = 0.3;
+    public double PerHold { get; init; } = 1.5;
+    public double Grow { get; init; } = 0.01;
+    public double Most { get; init; } = 10;
+    public double Scatter { get; init; } = 0.5;
+    public double Revenge { get; init; } = 3;
+    public int RevengeDays { get; init; } = 6;
+    public IReadOnlyList<string> Lords { get; init; } = [];
+    public IReadOnlyList<string> Burned { get; init; } = [];
+    public IReadOnlyList<string> Swept { get; init; } = [];
+    public IReadOnlyList<string> Back { get; init; } = [];
     public IReadOnlyList<string> Win { get; init; } = [];
     public IReadOnlyList<string> Lose { get; init; } = [];
     public IReadOnlyList<string> Sunk { get; init; } = [];
@@ -68,13 +88,24 @@ public sealed record FleetRules
 {
     public double Ration { get; init; } = 0.25;
     public double MinStanding { get; init; } = -10;
-    public double Reach { get; init; } = 100;
+    /// <summary>Degrees past the ocean's edge a land region's own arc may end and still have a shore on it.</summary>
+    public double Shore { get; init; } = 0;
     public IReadOnlyList<string> CoastThemes { get; init; } = [];
+
+    /// <summary>Countries that never have a harbour however near the sea they lie (mountain holds, the deep roads).</summary>
+    public IReadOnlyList<string> InlandThemes { get; init; } = [];
     public int Turnaround { get; init; } = 1;
-    public double Learn { get; init; } = 0.25;
+    public double Learn { get; init; } = 0.06;
     public double ProwessFish { get; init; } = 0.1;
     public double ProwessFight { get; init; } = 1;
     public double WinterFish { get; init; } = 0.5;
+
+    /// <summary>The chance a captain goes down with her ship, and the prowess a new captain loses against the old.</summary>
+    public double Drown { get; init; } = 0.5;
+    public double MateLoss { get; init; } = 1;
+
+    /// <summary>Below this share of her hands at the harbour (townsfolk who work there, <see cref="Fleet.Manned"/>) a ship won't sail.</summary>
+    public double ManMost { get; init; } = 0.5;
     public double PatchBelow { get; init; } = 0.5;
     public int StandInEvery { get; init; } = 10;
     public double StandInProfit { get; init; } = 40;
@@ -122,6 +153,15 @@ public sealed record HarbourParts
     public string DryDock { get; init; } = "";
     public double DockRepair { get; init; } = 0.6;
     public double DockMend { get; init; } = 2;
+
+    /// <summary>The harbourmaster's choice of what the quay is for first: the fishing fleet's catch, the merchants' sale, the guard boat's fight against corsair raids.</summary>
+    public double Fishers { get; init; } = 1.4;
+
+    /// <summary>Foreign hulls at the quay: dues a day for each allied port on the coast, at most `foreignBerth` a berth (doubled by the merchants' quay).</summary>
+    public double Foreign { get; init; } = 1.5;
+    public double ForeignBerth { get; init; } = 4;
+    public double Merchants { get; init; } = 1.15;
+    public double GuardBoat { get; init; } = 6;
 }
 
 /// <summary>sea.json `river`: the river harbour's building, how far (days) from the water a port may lie, and its catch.</summary>
@@ -190,6 +230,9 @@ public sealed class Ship
     public string Name { get; init; } = "";
     public string Captain { get; set; } = "";
 
+    /// <summary>The townsperson who captains her, if one does (<see cref="Fleet.Captains"/>); null for a captain from away.</summary>
+    public int? CaptainId { get; set; }
+
     /// <summary>1 green to 5 legendary.</summary>
     public double Prowess { get; set; } = 1;
     public double Hull { get; set; }
@@ -214,6 +257,9 @@ public sealed class Ship
     public int Fights { get; set; }
     public int Won { get; set; }
 
+    /// <summary>A standing run: the port this ship sails to again each time it is home, with the cargo that pays best then; null for none.</summary>
+    public int? Route { get; set; }
+
     /// <summary>Who stands at the rail with the crew in a sea ship's free marine places: "" nobody, "watch" lent watchmen, "hired" sellsword marines (<see cref="Voyages"/>).</summary>
     public string Guard { get; set; } = "";
 }
@@ -224,6 +270,13 @@ public sealed class FleetState
     public int NextRaidDay { get; set; }
     public int NextStandInDay { get; set; }
     public bool Granted { get; set; }
+
+    /// <summary>The corsair holds standing when last counted, and whether they have been counted yet (<see cref="Fleet.Corsairs"/>).</summary>
+    public int Holds { get; set; }
+    public bool Counted { get; set; }
+
+    /// <summary>How hard the corsairs want the town: it grows while their holds stand and is spent by a raid that lands.</summary>
+    public double Wrath { get; set; }
 }
 
 /// <summary>
@@ -261,6 +314,10 @@ public static class Fleet
 
     private static HarbourParts Parts(Town town) => Rules(town).Harbour;
 
+    /// <summary>What the harbourmaster gives the quay to first ("fishers", "merchants", "guard"), or "" before the choice.</summary>
+    public static string Quay(Town town) =>
+        Institutions.Find(town, "harbour") is { } h && Institutions.Chosen(town, h) is { } o ? o.Id : "";
+
     /// <summary>Ships the harbour can berth: its own and each quay's.</summary>
     public static int Berths(Town town) => Parts(town).Berths + Parts(town).PerQuay * Parts(town).Quays.Count(q => Has(town, q));
 
@@ -269,6 +326,54 @@ public static class Fleet
         !Aloft(town, s) && AtSea(town).OrderBy(x => x.Id).TakeWhile(x => x != s).Count() >= Berths(town);
 
     public static bool Coastal(Town town) => town.Founding != null && Founding.Of(town).Sea != null;
+
+    // ---- The corsairs ----
+
+    /// <summary>The corsair fleet's holds still standing (groups.json, sea.json `corsairs.group`), nearest first.</summary>
+    public static List<SiteState> Holds(Town town) =>
+        town.Sites.Where(x => x.Def.Group == Rules(town).Corsairs.Group && !x.Cleared)
+            .OrderBy(x => x.RegionId is int r ? town.Regions[r].Ring : 99).ThenBy(x => x.Def.Id, StringComparer.Ordinal).ToList();
+
+    /// <summary>The captain the corsairs sail under, a pure function of the seed.</summary>
+    public static string Lord(Town town)
+    {
+        var l = Rules(town).Corsairs.Lords;
+        return l.Count == 0 ? "the corsair king" : l[(int)(World.Hash(town.Seed * 151 + 9) * l.Count)];
+    }
+
+    /// <summary>How strong the corsairs come at the harbour: the raid's own strength, each hold standing and their wrath.</summary>
+    public static double CorsairPower(Town town) =>
+        Rules(town).Corsairs.RaidStrength + Rules(town).Corsairs.PerHold * Holds(town).Count + town.FleetState.Wrath;
+
+    /// <summary>Daily: count the holds; one burned scatters them (and the rest want revenge), one retaken puts black sails back on the sea.</summary>
+    private static void Corsairs(Town town)
+    {
+        var c = Rules(town).Corsairs;
+        var st = town.FleetState;
+        var holds = Holds(town);
+        int live = holds.Count;
+        if (st.Counted && live < st.Holds)
+        {
+            st.Wrath *= 1 - c.Scatter;
+            if (live == 0)
+                town.Log(LedgerCategory.War, Importance.Major, Say(town, c.Swept, ""));
+            else
+            {
+                st.Wrath = Math.Min(c.Most, st.Wrath + c.Revenge);
+                st.NextRaidDay = Math.Min(st.NextRaidDay, town.Day + c.RevengeDays);
+                town.Log(LedgerCategory.War, Importance.Notable, Say(town, c.Burned, holds[0].Def.Name));
+            }
+        }
+        else if (st.Counted && live > st.Holds && holds.Count > 0)
+            town.Log(LedgerCategory.War, Importance.Notable, Say(town, c.Back, holds[0].Def.Name));
+        st.Holds = live;
+        st.Counted = true;
+        st.Wrath = Math.Min(c.Most, st.Wrath + c.Grow * live);
+    }
+
+    private static string Say(Town town, IReadOnlyList<string> texts, string hold) => Cap(
+        (texts.Count == 0 ? "" : texts[(int)(World.Hash(town.Seed * 31 + town.Day * 7 + 1) * texts.Count)])
+            .Replace("{lord}", Lord(town), StringComparison.Ordinal).Replace("{hold}", hold, StringComparison.Ordinal));
 
     public static string ProwessName(Town town, Ship s)
     {
@@ -302,6 +407,8 @@ public static class Fleet
         var r = Rules(town);
         var d = Kind(town, kind)!;
         bool sky = d.Realm == "sky";
+        if (!free && Stewards.Intercept(town, "fleet", new StewardAsk { Area = "fleet", Kind = "ship", Title = $"Build a {d.Name} · {Js.Str(Cost(town, d))}g", Why = sky ? "• Another airship for the Sky Dock" : "• Another hull for the harbour", S1 = d.Id, Cost = Cost(town, d) }))
+            return null;
         if (!free)
         {
             double cost = d.Cost * Yard(town, d) + town.Market.Buy(Good.Timber, d.Timber);
@@ -316,13 +423,93 @@ public static class Fleet
         string name = names.Count > 0 ? names[(int)(World.Hash(town.Seed * 131 + id * 17 + 3) * names.Count)] : $"the {d.Name} {id + 1}";
         string captain = captains.Count > 0 ? captains[(int)(World.Hash(town.Seed * 137 + id * 19 + 5) * captains.Count)] : "the mate";
         var ship = new Ship { Id = id, Kind = d.Id, Name = name, Captain = captain, Hull = d.Hull, Lift = d.Lift };
+        if (!sky && Skipper(town) is { } who)
+        {
+            ship.CaptainId = who.Id;
+            ship.Captain = who.Name;
+        }
         town.Ships.Add(ship);
+        if (!sky) Hands(town);
         town.Log(LedgerCategory.Town, Importance.Notable,
             sky ? free ? $"The Sky Dock's first airship, {name}, rises on her mast. {captain} will fly her."
                        : $"A new {d.Name}, {name}, is warped out of the gasbag shed, with {captain} for her captain."
-            : free ? $"The harbour's first boat, {name}, is pushed down the slip. {captain} will skipper her."
-                 : $"A new {d.Name}, {name}, slides down the harbour slip, with {captain} for her captain.");
+            : free ? $"The harbour's first boat, {name}, is pushed down the slip. {ship.Captain} will skipper her."
+                 : $"A new {d.Name}, {name}, slides down the harbour slip, with {ship.Captain} for her captain.", ship.CaptainId is int cid ? [cid] : null);
         return ship;
+    }
+
+    // ---- Hands and captains ----
+
+    /// <summary>
+    /// The townsperson best fit to captain a new ship: a hand already at the harbour first, then the wisest and nimblest
+    /// grown townsfolk who are not heroes, travellers, councillors or captains already. No dice.
+    /// </summary>
+    public static Agent? Skipper(Town town)
+    {
+        var taken = town.Ships.Where(x => x.CaptainId != null).Select(x => x.CaptainId!.Value).ToHashSet();
+        var seated = town.Seats.Where(x => x.HolderId != null).Select(x => x.HolderId!.Value).ToHashSet();
+        int? harbour = Harbour(town)?.Id;
+        return town.Agents.Where(a => !a.Dead && !a.Departed && !a.Traveller && a.Hero == null && a.Age >= 20 && !taken.Contains(a.Id) && !seated.Contains(a.Id))
+            .OrderByDescending(a => harbour != null && a.JobId == harbour ? 1 : 0)
+            .ThenByDescending(a => a.Abilities.Wis + a.Abilities.Dex).ThenBy(a => a.Id).FirstOrDefault();
+    }
+
+    /// <summary>The hands the town's ships need: their crews, taken on at the harbour as townsfolk (<see cref="Building.Crew"/>).</summary>
+    public static int CrewNeeded(Town town) => AtSea(town).Sum(s => Def(town, s).Crew);
+
+    /// <summary>The share of the ships' hands the harbour has: below one, the boats fish less, and below `manMost` none sails.</summary>
+    public static double Manned(Town town)
+    {
+        int need = CrewNeeded(town);
+        return need == 0 || Harbour(town) is not { } h ? 1 : Math.Min(1, h.Workers.Count / (double)need);
+    }
+
+    /// <summary>
+    /// Daily, and when a ship is laid down: the harbour takes on as many hands as the ships need (the idle first, in id
+    /// order) and lets the rest go; a captain dead or gone is followed by the mate.
+    /// </summary>
+    public static void Hands(Town town)
+    {
+        if (Harbour(town) is not { } h) return;
+        int need = CrewNeeded(town);
+        h.Crew = need;
+        foreach (var a in town.Workers.Where(a => a.JobId == null).OrderBy(a => a.Id))
+        {
+            if (h.Workers.Count >= need) break;
+            a.JobId = h.Id;
+            h.Workers.Add(a.Id);
+        }
+        while (h.Workers.Count > need)
+        {
+            int id = h.Workers[^1];
+            h.Workers.RemoveAt(h.Workers.Count - 1);
+            town.Agent(id).JobId = null;
+        }
+        foreach (var s in AtSea(town).Where(s => s.CaptainId is int c && (town.Agent(c).Dead || town.Agent(c).Departed)).ToList())
+        {
+            string was = s.Captain;
+            s.CaptainId = null;
+            s.Prowess = Math.Max(1, s.Prowess - Rules(town).MateLoss);
+            if (Skipper(town) is { } who)
+            {
+                s.CaptainId = who.Id;
+                s.Captain = who.Name;
+            }
+            else s.Captain = "the mate";
+            town.Log(LedgerCategory.Town, Importance.Notable, $"{Cap(s.Name)} has lost {was}. {Cap(s.Captain)} takes her helm, greener than the old hand.", s.CaptainId is int cid ? [cid] : null);
+        }
+    }
+
+    /// <summary>A ship gone down: her captain may go with her (on the ship's own dice); the rest of the crew come home in the boats.</summary>
+    public static void Sink(Town town, Ship s, Rng rng)
+    {
+        town.Ships.Remove(s);
+        if (s.CaptainId is int c && !town.Agent(c).Dead && !town.Agent(c).Departed && rng.Chance(Rules(town).Drown))
+        {
+            var a = town.Agent(c);
+            Threat.Kill(town, a);
+            town.Log(LedgerCategory.Hardship, Importance.Notable, $"{a.Name} goes down with {s.Name}, the last aboard.", [a.Id]);
+        }
     }
 
     // ---- Repairs ----
@@ -336,6 +523,7 @@ public static class Fleet
         if (s == null || s.Out != null || s.Flight != null || s.DownedRegion != null || s.Hull >= Def(town, s).Hull || (Aloft(town, s) ? Sky.Dock(town) : Harbour(town)) == null || AtAnchor(town, s)) return false;
         double cost = RepairCost(town, s);
         if (town.Treasury < cost) return false;
+        if (Stewards.Intercept(town, "fleet", new StewardAsk { Area = "fleet", Kind = "patch", Title = $"Patch {s.Name} · {Js.Str(cost)}g", Why = $"• Hull {Js.Str(Js.Round(s.Hull))} of {Js.Str(Def(town, s).Hull)}", I1 = s.Id, Cost = cost })) return false;
         town.Book(TreasuryAccount.Works, -cost);
         s.Hull = Def(town, s).Hull;
         town.Log(LedgerCategory.Town, Importance.Routine, $"{(Aloft(town, s) ? "Riggers" : "Shipwrights")} patch {s.Name}'s hull ({Js.Str(cost)} gold).");
@@ -352,13 +540,27 @@ public static class Fleet
         {
             var line = Passage.River(town);
             return town.Settlements.Where(s => !s.Razed && town.Regions[s.RegionId].Known && s.Standing >= r.MinStanding
-                && (Passage.Mouth(town) && (r.CoastThemes.Contains(town.Regions[s.RegionId].Theme.Id) || town.Regions[s.RegionId].Theme.Sea)
+                && (Passage.Mouth(town) && OnCoast(town, town.Regions[s.RegionId])
                     || line.Min(p => Math.Abs(p.X - Spot(town, s).X) + Math.Abs(p.Y - Spot(town, s).Y)) <= r.River.Reach)).OrderBy(s => s.Id);
         }
         if (!Coastal(town)) return [];
-        double sea = Founding.Facing(town);
-        return town.Settlements.Where(s => !s.Razed && town.Regions[s.RegionId].Known && s.Standing >= r.MinStanding
-            && (r.CoastThemes.Contains(town.Regions[s.RegionId].Theme.Id) || town.Regions[s.RegionId].Theme.Sea || Gap(town.Regions[s.RegionId].Bearing, sea) <= r.Reach)).OrderBy(s => s.Id);
+        return town.Settlements.Where(s => !s.Razed && town.Regions[s.RegionId].Known && s.Standing >= r.MinStanding && OnCoast(town, town.Regions[s.RegionId])).OrderBy(s => s.Id);
+    }
+
+    /// <summary>Why the town can't trade over the sea with a people out on it (no harbour ship or airship to carry the goods), or null.</summary>
+    public static string? Overseas(Town town, Settlement s) =>
+        !World.Sea(town.Regions[s.RegionId]) || Harbour(town) != null && ToSea(town) || Sky.Dock(town) != null ? null : "over the sea: needs a harbour or a Sky Dock";
+
+    /// <summary>
+    /// Whether a land has a shore a ship can tie up at: the sea's own lands, coast country, or a land whose arc reaches the
+    /// ocean's sector (not mountain holds or the deep roads, however near).
+    /// </summary>
+    public static bool OnCoast(Town town, Region g)
+    {
+        var r = Rules(town);
+        if (g.Theme.Sea || r.CoastThemes.Contains(g.Theme.Id) || g.Theme.Habitats.Contains("coast")) return true;
+        if (r.InlandThemes.Contains(g.Theme.Id) || town.OceanArc <= 0) return false;
+        return Math.Abs(World.AngleBetween(g.Bearing, town.OceanBearing)) - town.OceanArc / 2 <= g.Arc / 2 + r.Shore;
     }
 
     private static (double X, double Y) Spot(Town town, Settlement s)
@@ -368,10 +570,18 @@ public static class Fleet
         return (g.Days * Math.Sin(b), -g.Days * Math.Cos(b));
     }
 
-    private static double Gap(double a, double b) => Math.Abs(((a - b) % 360 + 540) % 360 - 180);
+    /// <summary>Days there and back at the ship's own speed in fair weather: what the captain plans for.</summary>
+    public static int Days(Town town, Ship s, Settlement port) => Days(town, port, Def(town, s).Speed);
 
-    public static int Days(Town town, Ship s, Settlement port) =>
-        Math.Max(2, 2 * (int)Math.Ceiling(town.Regions[port.RegionId].Days * Def(town, s).Speed - 1e-9) + Rules(town).Turnaround);
+    private static int Days(Town town, Settlement port, double pace) =>
+        Math.Max(2, 2 * (int)Math.Ceiling(town.Regions[port.RegionId].Days * pace - 1e-9) + Rules(town).Turnaround);
+
+    /// <summary>Days the run really takes: the ship's speed, the navigator's roll, the weather over the port's waters and the wind on the heading (<see cref="Voyages.SailPace"/>).</summary>
+    public static int Sailed(Town town, Ship s, Settlement port, Rng rng)
+    {
+        var g = town.Regions[port.RegionId];
+        return Days(town, port, Voyages.SailPace(town, s, 0, rng, g, g.Bearing));
+    }
 
     /// <summary>Food the crew eats on a run there and back.</summary>
     public static double Rations(Town town, Ship s, Settlement port) => Js.Round(Def(town, s).Crew * Days(town, s, port) * Rules(town).Ration * 10) / 10;
@@ -391,6 +601,7 @@ public static class Fleet
         if (s.Out != null || s.Flight != null || Voyages.Carrying(town, s) != null) return "at sea";
         if (Def(town, s).Hold <= 0) return "no hold";
         if (s.Hull < Def(town, s).Hull * 0.25) return "needs patching first";
+        if (Manned(town) < r.ManMost) return "not enough hands at the harbour";
         if (!Ports(town).Contains(port)) return "not a port the ship can reach";
         if (town.Market.Stock(Good.Food) < Rations(town, s, port) + (cargo == Good.Food ? Spare(town, s, cargo) : 0)) return "not enough food for the crew";
         if (Spare(town, s, cargo) < town.Content.Trade.Sky.MinCargo) return $"no {Lower(cargo)} to spare";
@@ -407,13 +618,14 @@ public static class Fleet
         if (s == null || settlementId < 0 || settlementId >= town.Settlements.Count) return false;
         var port = town.Settlements[settlementId];
         if (Refuse(town, s, port, cargo) != null) return false;
+        if (Stewards.Intercept(town, "fleet", new StewardAsk { Area = "fleet", Kind = "run", Title = $"Sail {s.Name} to {port.Name} with {Lower(cargo)}", Why = $"• About {Js.Str(Js.Round(Profit(town, s, port, cargo)))} gold", I1 = s.Id, I2 = port.Id, S1 = cargo.ToString() })) return false;
         double qty = Spare(town, s, cargo), food = Rations(town, s, port);
         town.Market.Seed(cargo, -qty);
         town.Market.Seed(Good.Food, -food);
-        int days = Days(town, s, port);
+        int plan = Days(town, s, port), days = Sailed(town, s, port, Dice(town, 31 + s.Id));
         s.Out = new Voyage { SettlementId = port.Id, Cargo = cargo, Qty = qty, Days = days, BackDay = town.Day + days };
         town.Log(LedgerCategory.Town, Importance.Notable,
-            $"{Cap(s.Name)} sails for {port.Name} with {Js.Str(Js.Round(qty))} {Lower(cargo)} in the hold and {Js.Str(Js.Round(food))} food for the crew. Home in {days} days.");
+            $"{Cap(s.Name)} sails for {port.Name} with {Js.Str(Js.Round(qty))} {Lower(cargo)} in the hold and {Js.Str(Js.Round(food))} food for the crew. Home in {days} days{(days > plan ? ", the weather against her" : days < plan ? ", a fair wind behind her" : "")}.");
         return true;
     }
 
@@ -442,6 +654,8 @@ public static class Fleet
             if (r.Ships.Count > 0) Build(town, r.Ships[0].Id, free: true);
         }
         bool winter = Seasons.Current(town).Id == "winter";
+        Hands(town);
+        Corsairs(town);
         Voyages.Daily(town);
         foreach (var s in AtSea(town).ToList())
         {
@@ -454,12 +668,14 @@ public static class Fleet
             if (s.Hull <= 0 || s.Flight != null || Voyages.Carrying(town, s) != null) continue;
             var d = Def(town, s);
             if (Has(town, r.Harbour.DryDock) && !AtAnchor(town, s)) s.Hull = Math.Min(d.Hull, s.Hull + r.Harbour.DockMend);
-            double catchToday = d.Fish * (1 + r.ProwessFish * (s.Prowess - 1)) * (winter ? r.WinterFish : 1) * (OnRiver(town) ? r.River.Fish : 1);
+            double catchToday = d.Fish * (1 + r.ProwessFish * (s.Prowess - 1)) * (winter ? r.WinterFish : 1) * (OnRiver(town) ? r.River.Fish : 1) * (Quay(town) == "fishers" ? r.Harbour.Fishers : 1) * Manned(town);
             town.Market.Seed(Good.Food, catchToday);
             s.Fished += catchToday;
         }
-        if (town.Day >= st.NextRaidDay) Raid(town);
         if (autoMayor) StandIn(town);
+        Routes(town);
+        if (Dues(town) is var dues and > 0) town.Book(TreasuryAccount.Trade, dues);
+        if (town.Day >= st.NextRaidDay) Raid(town);
     }
 
     private static Rng Dice(Town town, int salt) => new(town.Seed * 7349 + town.Day * 31 + salt);
@@ -480,7 +696,8 @@ public static class Fleet
         // Corsairs lie in wait on the way home: fought like any ship fight (ShipFight), the guard at the rail with the crew.
         bool anchored = AtAnchor(town, s);
         double lit = Has(town, r.Harbour.Lighthouse) ? r.Harbour.LightCorsairs : 1;
-        if (rng.Chance(Math.Min(c.Max, c.Chance + c.PerRing * ring) * lit) && Corsair(town, rng, ring) is { } foe)
+        double stray = Holds(town).Count == 0 ? c.Stray : 1;
+        if (rng.Chance(Math.Min(c.Max, c.Chance + c.PerRing * ring) * lit * stray) && Corsair(town, rng, ring) is { } foe)
         {
             string outcome = ShipFight.Resolve(town, s, foe, town.Regions[port.RegionId], [], Voyages.Guards(town, s, 0), false, rng, out _);
             if (outcome is "won" or "boarded")
@@ -492,7 +709,7 @@ public static class Fleet
                 fight = " " + Fill(rng, c.Lose, s, port).Replace("{lost}", Js.Str(lost), StringComparison.Ordinal).Replace("{good}", Lower(v.Cargo), StringComparison.Ordinal);
                 if (outcome == "wrecked" || s.Hull <= 0)
                 {
-                    town.Ships.Remove(s);
+                    Sink(town, s, rng);
                     town.Log(LedgerCategory.War, Importance.Major, Fill(rng, c.Sunk, s, port));
                     return;
                 }
@@ -507,7 +724,10 @@ public static class Fleet
             return;
         }
         // At anchor the cargo comes in by rowing boat, and some is left in the hold; the trading house sells dearer.
-        double earned = Skyship.Sell(town, port, v.Cargo, qty * (anchored ? r.Harbour.AnchorLoad : 1)) * (Has(town, r.Harbour.TradingHouse) ? r.Harbour.Trading : 1);
+        // The trading house, the merchants' quay and a rich port pay over the market's price; the extra is booked here.
+        double sold = Skyship.Sell(town, port, v.Cargo, qty * (anchored ? r.Harbour.AnchorLoad : 1));
+        double earned = sold * SaleBonus(town, port);
+        if (earned > sold) town.Book(TreasuryAccount.Trade, earned - sold);
         s.Earned += earned;
         string brought = "";
         if (Skyship.Bring(town, port, v.Cargo) is { } bring && bring.Price > 0)
@@ -528,6 +748,64 @@ public static class Fleet
         town.Log(LedgerCategory.Town, Importance.Notable, s.LastLine);
     }
 
+    /// <summary>What a ship's sale fetches over the market: the trading house, the merchants' quay, and a port richer than most (its prosperity).</summary>
+    public static double SaleBonus(Town town, Settlement port)
+    {
+        var h = Rules(town).Harbour;
+        return (Has(town, h.TradingHouse) ? h.Trading : 1) * (Quay(town) == "merchants" ? h.Merchants : 1) * Math.Max(1, 1 + (port.Prosperity - 50) / 100);
+    }
+
+    /// <summary>Gold a day foreign hulls pay at the quay: each allied port on the coast sends ships, as many as the berths take.</summary>
+    public static double Dues(Town town)
+    {
+        var h = Rules(town).Harbour;
+        if (Harbour(town) == null) return 0;
+        int allied = Ports(town).Count(p => p.Allied);
+        double d = h.Foreign * allied * (Has(town, h.TradingHouse) ? h.Trading : 1) * (Quay(town) == "merchants" ? 2 : 1);
+        return Js.Round(Math.Min(d, h.ForeignBerth * Berths(town)) * 10) / 10;
+    }
+
+    // ---- Standing runs ----
+
+    /// <summary>Why a ship can't take a standing run to this port, or null. -1 clears it.</summary>
+    public static string? RouteRefused(Town town, Ship s, int settlementId)
+    {
+        if (Aloft(town, s)) return "an airship trades from the Sky Dock";
+        if (settlementId < 0) return null;
+        if (settlementId >= town.Settlements.Count || !Ports(town).Contains(town.Settlements[settlementId])) return "not a port the ship can reach";
+        if (Def(town, s).Hold <= 0) return "no hold";
+        return null;
+    }
+
+    public static bool SetRoute(Town town, int shipId, int settlementId)
+    {
+        var s = town.Ships.FirstOrDefault(x => x.Id == shipId);
+        if (s == null || RouteRefused(town, s, settlementId) != null) return false;
+        s.Route = settlementId < 0 ? null : settlementId;
+        if (s.Route is int id) town.Log(LedgerCategory.Town, Importance.Routine, $"{Cap(s.Name)} will sail for {town.Settlements[id].Name} again each time she is home.");
+        return true;
+    }
+
+    /// <summary>Ships on standing runs that are home sail again: patched first when worn, with the cargo that pays best there now.</summary>
+    private static void Routes(Town town)
+    {
+        var r = Rules(town);
+        foreach (var s in AtSea(town).Where(s => s.Route != null && s.Out == null && s.Flight == null && Voyages.Carrying(town, s) == null).ToList())
+        {
+            var port = town.Settlements[s.Route!.Value];
+            if (!Ports(town).Contains(port))
+            {
+                s.Route = null;
+                town.Log(LedgerCategory.Town, Importance.Notable, $"{Cap(s.Name)} gives up her run to {port.Name}: it is no port of the town's any more.");
+                continue;
+            }
+            if (s.Hull < Def(town, s).Hull * r.PatchBelow && town.Treasury >= RepairCost(town, s)) Repair(town, s.Id);
+            var best = Goods.All.Where(g => Refuse(town, s, port, g) == null).Select(g => (G: g, Gain: Profit(town, s, port, g)))
+                .Where(x => x.Gain > 0).OrderByDescending(x => x.Gain).ThenBy(x => x.G).FirstOrDefault();
+            if (best.Gain > 0) Send(town, s.Id, port.Id, best.G);
+        }
+    }
+
     /// <summary>The corsairs a trade run meets: one of sea.json's corsair kinds for the ring.</summary>
     private static ShipFoe? Corsair(Town town, Rng rng, int ring)
     {
@@ -535,7 +813,7 @@ public static class Fleet
         var kinds = r.Foes.Where(k => k.Id.StartsWith("corsair", StringComparison.Ordinal) && ring >= k.Rings[0] && ring <= k.Rings[^1]).ToList();
         if (kinds.Count == 0) return null;
         var k = rng.Pick(kinds);
-        return new ShipFoe(k.Name, k.Power + r.PowerPerRing * ring, k.Speed, k.Boards);
+        return new ShipFoe(k.Name, k.Power + r.PowerPerRing * ring + town.FleetState.Wrath, k.Speed, k.Boards);
     }
 
     /// <summary>Corsairs come for the harbour: the moored ships and the watch fight them off, or they rob it and hole a ship.</summary>
@@ -544,6 +822,8 @@ public static class Fleet
         var r = Rules(town);
         var c = r.Corsairs;
         town.FleetState.NextRaidDay = town.Day + c.RaidEvery;
+        // No hold left on the sea: nobody to come.
+        if (Holds(town).Count == 0) return;
         var rng = Dice(town, 977);
         if (!rng.Chance(c.RaidChance)) return;
         // Ships patrolling the home waters turn some raids away before they reach the harbour.
@@ -554,11 +834,11 @@ public static class Fleet
         }
         var moored = AtSea(town).Where(s => Voyages.Moored(town, s) && s.Hull > 0).ToList();
         double guard = town.Watch * c.WatchFight + Js.Sum(moored.Where(s => !AtAnchor(town, s)).ToList(), s => Def(town, s).Fight + r.ProwessFight * (s.Prowess - 1))
-            + (Has(town, r.Harbour.Barracks) ? r.Harbour.BarracksFight : 0);
+            + (Has(town, r.Harbour.Barracks) ? r.Harbour.BarracksFight : 0) + (Quay(town) == "guard" ? r.Harbour.GuardBoat : 0);
         int die = rng.D20();
-        if (die + guard >= 10 + c.RaidStrength + town.Day / 120.0)
+        if (die + guard >= 10 + CorsairPower(town))
         {
-            town.Log(LedgerCategory.War, Importance.Notable, rng.Pick(c.Repelled));
+            town.Log(LedgerCategory.War, Importance.Notable, Cap(rng.Pick(c.Repelled).Replace("{lord}", Lord(town), StringComparison.Ordinal)));
             return;
         }
         double gold = Math.Min(Math.Max(0, town.Treasury), c.RaidGold), food = Math.Min(town.Market.Stock(Good.Food), c.RaidFood);
@@ -566,29 +846,41 @@ public static class Fleet
         town.Market.Seed(Good.Food, -food);
         var holed = moored.Count > 0 ? moored[rng.Range(0, moored.Count)] : null;
         if (holed != null) holed.Hull = Math.Max(1, holed.Hull - c.Hurt);
-        town.Log(LedgerCategory.War, Importance.Notable, rng.Pick(c.Raided)
+        town.FleetState.Wrath /= 2;
+        town.Log(LedgerCategory.War, Importance.Notable, Cap(rng.Pick(c.Raided)
+            .Replace("{lord}", Lord(town), StringComparison.Ordinal)
             .Replace("{gold}", Js.Str(Js.Round(gold)), StringComparison.Ordinal)
             .Replace("{food}", Js.Str(Js.Round(food)), StringComparison.Ordinal)
-            .Replace("{ship}", holed?.Name ?? "a fishing boat", StringComparison.Ordinal));
+            .Replace("{ship}", holed?.Name ?? "a fishing boat", StringComparison.Ordinal)));
     }
 
-    /// <summary>The stand-in mayor patches worn hulls, adds a longship when it can afford one, and sends the best run now and then.</summary>
+    /// <summary>
+    /// The stand-in (or the harbourmaster): patches worn hulls, keeps as many ships as the berths hold (a carrack once the
+    /// charter allows one), gives each idle ship a standing run to the port that clears most a day, and sends the best
+    /// fighter on patrol while corsair holds stand near and their wrath is up.
+    /// </summary>
     private static void StandIn(Town town)
     {
         var r = Rules(town);
         var st = town.FleetState;
         foreach (var s in AtSea(town).Where(s => s.Out == null && s.Hull < Def(town, s).Hull * r.PatchBelow).ToList())
             if (town.Treasury > RepairCost(town, s) + 200) Repair(town, s.Id);
-        if (AtSea(town).Count() < 2 && r.Ships.Count > 1 && BuildBlocked(town, r.Ships[1].Id) == null && town.Treasury > Cost(town, r.Ships[1]) + 400)
-            Build(town, r.Ships[1].Id);
+        int want = Math.Min(Berths(town), City.Reached(town, "town") ? 3 : 2);
+        if (AtSea(town).Count() < want && r.Ships.Skip(1).Reverse().FirstOrDefault(k => BuildBlocked(town, k.Id) == null && town.Treasury > Cost(town, k) + 400) is { } kind)
+            Build(town, kind.Id);
         if (town.Day < st.NextStandInDay) return;
         st.NextStandInDay = town.Day + r.StandInEvery;
-        var best = AtSea(town).Where(s => s.Out == null)
-            .SelectMany(s => Ports(town).SelectMany(p => Goods.All.Where(g => Refuse(town, s, p, g) == null).Select(g => (S: s, P: p, G: g, Gain: Profit(town, s, p, g)))))
-            .Where(x => x.Gain >= r.StandInProfit)
-            .OrderByDescending(x => x.Gain / Days(town, x.S, x.P)).ThenBy(x => x.S.Id).ThenBy(x => x.P.Id).ThenBy(x => x.G)
-            .FirstOrDefault();
-        if (best.S != null) Send(town, best.S.Id, best.P.Id, best.G);
+        foreach (var s in AtSea(town).Where(s => s.Route == null && s.Out == null && Voyages.Moored(town, s)).ToList())
+        {
+            var best = Ports(town).SelectMany(p => Goods.All.Where(g => Refuse(town, s, p, g) == null).Select(g => (P: p, Gain: Profit(town, s, p, g))))
+                .Where(x => x.Gain >= r.StandInProfit)
+                .OrderByDescending(x => x.Gain / Days(town, s, x.P)).ThenBy(x => x.P.Id).FirstOrDefault();
+            if (best.P != null) SetRoute(town, s.Id, best.P.Id);
+        }
+        // Corsairs near and angry: the best fighter at its mooring goes out on patrol (off its run till it is home).
+        if (Holds(town).Any(h => h.RegionId is int g && town.Regions[g].Ring <= 2) && st.Wrath >= 2 && Voyages.Patrolling(town) == 0
+            && AtSea(town).Where(s => Voyages.Moored(town, s) && s.Out == null && Def(town, s).Fight > 0).OrderByDescending(s => Def(town, s).Fight).ThenBy(s => s.Id).FirstOrDefault() is { } guard)
+            Voyages.Send(town, guard.Id, "patrol");
     }
 
     private static string Fill(Rng rng, IReadOnlyList<string> texts, Ship s, Settlement port) =>

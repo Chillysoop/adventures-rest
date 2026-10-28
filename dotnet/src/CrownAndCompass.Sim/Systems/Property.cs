@@ -226,25 +226,39 @@ public static class Property
 
     private static void TryBuildRental(Town town, Agent a)
     {
+        // Whatever a landlord would build, they need the purse for it: spare the lot searches for one who can't afford the cheapest.
+        double cheapest = town.Content.Buildings.Where(d => d.Zone == Zone.Residential || d.Id is "tenement" or "house")
+            .Min(d => d.Cost + Planning.Materials(town, d));
+        if (a.Gold < (town.LotPrice(Town.Grid) + cheapest) * 1.5) return;
         int homeless = town.Workers.Count(x => x.Roofless);
         int openBeds = 0;
         foreach (var b in town.Buildings) openBeds += b.IsSite ? b.Def.Housing : b.OpenBeds;
-        // Landlords build ahead of the town: a few empty beds draw settlers down the road.
-        if (homeless <= openBeds && openBeds >= 2) return;
-        var house = RentalKind(town);
+        // Landlords build ahead of the town: a few empty beds draw settlers down the road. And however many beds stand
+        // empty, the poorest want the cheapest, so a town keeps a few tenements for them.
+        var tenement = town.Content.Building("tenement");
+        bool full = homeless <= openBeds && openBeds >= 2;
+        bool slum = City.Unlocked(town, tenement)
+            && Js.Sum(town.Buildings.Where(b => b.Def.Id == tenement.Id), b => b.Def.Housing) < town.Content.City.Slum * town.Workers.Count
+            // A landlord who can't afford a tenement stops here either way while beds stand empty: spare the search.
+            && (!full || a.Gold >= (town.LotPrice(Town.Grid) + tenement.Cost + Planning.Materials(town, tenement)) * 1.5)
+            && FindLot(town, tenement) != null;
+        if (!slum && full) return;
+        var house = slum ? tenement : RentalKind(town, a);
         if (a.Gold < (town.LotPrice(Town.Grid) + house.Cost + Planning.Materials(town, house)) * 1.5) return;
         if (TryBuild(town, a, house, true) && !a.Has(Trait.Greedy)) a.Ambition = Ambition.None;
     }
 
     /// <summary>
-    /// A landlord builds tall houses wall to wall on high-density land, tenements on open land outside the walls,
-    /// and cottages until the town has either.
+    /// A landlord builds tall houses wall to wall on high-density land or tenements on cheap ground (half of them
+    /// looking for the cheapest bed first), and cottages until the town has either.
     /// </summary>
-    private static BuildingDef RentalKind(Town town)
+    private static BuildingDef RentalKind(Town town, Agent a)
     {
+        var tenement = town.Content.Building("tenement");
+        bool cheap = a.Id % 2 == 1 && City.Unlocked(town, tenement) && FindLot(town, tenement) != null;
+        if (cheap) return tenement;
         foreach (var d in town.Content.Buildings.Where(d => d.Zone == Zone.Residential && d.Buildable && d.Density > Density.Low).OrderByDescending(d => d.Density).ThenBy(d => d.Id, StringComparer.Ordinal))
             if (City.Unlocked(town, d) && FindLot(town, d) != null) return d;
-        var tenement = town.Content.Building("tenement");
         return City.Unlocked(town, tenement) && FindLot(town, tenement) != null ? tenement : town.Content.Building("house");
     }
 

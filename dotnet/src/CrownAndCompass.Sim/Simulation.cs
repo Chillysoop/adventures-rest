@@ -188,6 +188,7 @@ public sealed class Simulation
         Omens.Daily(t);
         Weather.Daily(t);
         Economy.Daily(t);
+        Commons.Daily(t);
         Skills.Daily(t);
         Merchants.Daily(t);
         City.Daily(t, Hand("planning"));
@@ -228,7 +229,7 @@ public sealed class Simulation
         using (Asking("realm"))
         {
             World.Daily(t, Hand("realm"));
-            Trade.Daily(t, Hand("realm"));
+            Trade.Daily(t, Hand("realm"), Options);
         }
         using (Asking("armory")) Armory.Daily(t, Hand("armory"));
         Alchemy.Daily(t, Options.AutoMayor && Stewards.Mode(t, Options, "armory") == StewardMode.Steward);
@@ -451,6 +452,9 @@ public sealed class Simulation
     /// <summary>Who fills a sea ship's free marine places: "" nobody, "watch" lent watchmen, "hired" sellswords.</summary>
     public bool SetShipGuard(int shipId, string guard) => Voyages.SetGuard(Town, shipId, guard);
 
+    /// <summary>Give a sea ship a standing run to a port (-1 ends it): it sails there again with the best cargo each time it is home.</summary>
+    public bool SetShipRoute(int shipId, int settlementId) => Fleet.SetRoute(Town, shipId, settlementId);
+
     /// <summary>Fly an airship on a job: "patrol" over the town, "scout" a region, or "strike" a lair there, with heroes aboard as marines.</summary>
     public bool FlyShip(int shipId, string job, int regionId = -1, string siteId = "", IReadOnlyList<int>? marines = null) => Sky.Send(Town, shipId, job, regionId, siteId, marines);
 
@@ -610,6 +614,9 @@ public sealed class Simulation
 
     /// <summary>Post (or call off) a standing patrol over a cleared site, to keep it clear (<see cref="Lairs.Patrol"/>).</summary>
     public bool Patrol(string siteId, bool on) => Lairs.Patrol(Town, siteId, on);
+
+    /// <summary>Put council gold behind a settlement's plea, in escrow, so companies answer it.</summary>
+    public bool BackPlea(int pleaId) => World.BackPlea(Town, pleaId);
 
     /// <summary>Endow a temple to the town's god once the town is big enough.</summary>
     public Building? BuildTemple() => Shrines.BuildTemple(Town);

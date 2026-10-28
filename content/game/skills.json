@@ -23,6 +23,7 @@
     "herbalist": ["medicine", "nature"],
     "alchemist": ["arcana", "medicine"],
     "fisher": ["survival", "nature"],
+    "sailor": ["athletics", "survival"],
     "vintner": ["nature"],
     "scribe": ["history", "investigation"],
     "barkeep": ["insight", "persuasion"],

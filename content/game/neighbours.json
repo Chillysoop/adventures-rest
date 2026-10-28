@@ -28,7 +28,7 @@
     { "id": "stolen-livestock", "name": "stolen livestock", "kind": "site", "peoples": ["villagers", "halflings", "frostsworn"], "contact": "drover", "perDay": 1.8,
       "text": "Cattle are vanishing from the pastures of {settlement}, and the tracks lead toward {site}.",
       "solved": "The herds of {settlement} graze in peace again now that {site} is quiet.",
-      "failed": "{settlement} has lost half its herds. The {people} are slaughtering the rest before they too are taken." },
+      "failed": "{settlement} has lost half its herds. {People} are slaughtering the rest before they too are taken." },
     { "id": "trapped-miners", "name": "trapped miners", "kind": "site", "peoples": ["dwarves", "gnomes", "frostsworn"], "contact": "miner", "perDay": 2.2,
       "text": "A shaft below {settlement} broke into {site}. Something came up, and miners are trapped below.",
       "solved": "The trapped miners of {settlement} climb out into daylight, and the hold sings for a night.",
@@ -38,7 +38,7 @@
       "solved": "The survey team from {settlement} comes home with its maps, and shares them.",
       "failed": "The survey team from {settlement} is given up for lost." },
     { "id": "migrating-beast", "name": "a beast on the move", "kind": "site", "peoples": ["elves", "lizardfolk", "oasis"], "contact": "tracker", "perDay": 1.5,
-      "text": "Something has moved into {site} and hunts the paths of {settlement}. The {people} keep their children in at dusk.",
+      "text": "Something has moved into {site} and hunts the paths of {settlement}. {People} keep their children in at dusk.",
       "solved": "The paths of {settlement} are safe again with {site} cleared.",
       "failed": "{settlement} has given up the paths near {site}. Its people go hungry rather than walk them." },
     { "id": "vanished-barges", "name": "vanishing barges", "kind": "site", "peoples": ["freeport", "lizardfolk", "villagers"], "contact": "bargeman", "perDay": 1.6,
@@ -254,7 +254,7 @@
     "autoReserve": 400,
     "rally": { "days": 3, "dc": 10, "perDepth": 0.1, "base": 25, "perLevel": 3, "failed": 8, "renown": 3, "hurt": 0.25 },
     "forms": {
-      "dread": "Folk on the road say {settlement} keeps its shutters closed by day now. {people} whisper of {menace} and will not say its name.",
+      "dread": "Folk on the road say {settlement} keeps its shutters closed by day now. {People} whisper of {menace} and will not say its name.",
       "tribute": "Word comes that {settlement} has begun sending tribute to {menace}. Its carts no longer come to {town}'s market.",
       "cult": "Pilgrims say {people} have taken up {menace}'s hymns. There is a new shrine in {settlement}, and nobody will say who it is to."
     },

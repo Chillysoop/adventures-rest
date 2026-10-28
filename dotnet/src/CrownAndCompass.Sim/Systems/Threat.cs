@@ -282,9 +282,11 @@ public static class Threat
         var party = Lairs.AwayParty(town);
         string timing = party != null && Lairs.AwayShare(town) >= town.Content.Lairs.SoftShare ? $", while the {party.Name} are away" : "";
 
-        // They strike outside the walls: the farm or camp farthest from the town hall, or failing that whatever stands beyond the stone.
+        // They strike outside the walls: once the town has walls, the homes that spilled out past them first, then the farm
+        // or camp farthest from the town hall, or failing that whatever stands beyond the stone.
+        bool walled = Frontier.Walled(town);
         var target = Garrison.Unguarded(town, town.Buildings.Where(b => b.Complete && Exposed(town, b)).ToList())
-            .OrderByDescending(b => b.Def.Zone == Zone.Farmland || b.Def.Id == "lumber_camp" ? 1 : 0)
+            .OrderByDescending(b => walled && b.Def.Housing > 0 && b.Residents.Count > 0 ? 2 : b.Def.Zone == Zone.Farmland || b.Def.Id == "lumber_camp" ? 1 : 0)
             .ThenByDescending(b => Distance(town, b.LotId))
             .ThenBy(b => b.Id)
             .FirstOrDefault();
@@ -297,6 +299,11 @@ public static class Threat
         string where = target!.Name;
         Passage.Alarm(town, target);
         local *= Garrison.FlagFactor(town, target) * Elements.Watch(town, out string fog);
+        if (Founding.Flooded(town, town.Tick))
+        {
+            local *= 1 + Founding.Of(town).Tide!.Raid;
+            timing += ", wading the causeway against the tide";
+        }
         if (fog != "") timing += fog;
         if (Garrison.Covered(town, target)) timing += ", where the watch had planted its flag";
 
@@ -314,6 +321,13 @@ public static class Threat
         {
             double loot = Math.Floor(target.Cash * 0.6);
             target.Cash -= loot;
+            // A house is robbed of its families' purses.
+            foreach (var r in target.Residents.Select(town.Agent).Where(r => !r.Departed && r.Gold > 0))
+            {
+                double took = Math.Floor(r.Gold * 0.3);
+                r.Gold -= took;
+                loot += took;
+            }
             foreach (var (g, q) in target.Stock.ToList()) target.Stock[g] = Math.Floor(q * 0.3);
             text += loot > 0 ? $", carrying off the stores and {Js.Str(loot)} gold" : ", carrying off the stores";
             var workers = target.Workers.Select(town.Agent).Where(a => !a.Departed).ToList();
@@ -373,6 +387,13 @@ public static class Threat
         bool away = Lairs.AwayShare(town) >= l.SoftShare;
         if (town.Tick >= en.NextRaidTick)
         {
+            // An island's raiders wait for a night the causeway lies bare, as long as they wait for anything.
+            if (Founding.Flooded(town, town.Tick) && en.RaidWaited < l.MaxWaitDays)
+            {
+                en.RaidWaited++;
+                if (en.RaidWaited == 1) town.Log(LedgerCategory.War, Importance.Notable, $"Riders of {town.Content.Enemy.Name} reach the shore at dusk to find the causeway under the tide. They wait for the ebb.");
+                return false;
+            }
             if (away || en.RaidWaited >= l.MaxWaitDays) return true;
             en.RaidWaited++;
             if (en.RaidWaited == 1) town.Log(LedgerCategory.War, Importance.Notable, $"Riders of {town.Content.Enemy.Name} watch the gate from the treeline, counting the heroes at home. They do not come tonight.");

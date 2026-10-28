@@ -339,7 +339,7 @@ public static class Council
         var c = town.Content.Council;
         // A week's average, so one big land sale or charter house doesn't swing the council.
         double books = town.RecentNet.Count > 0 ? Js.Sum(town.RecentNet, v => v) / town.RecentNet.Count : 0;
-        double upkeep = -town.AccountsYesterday.Get(TreasuryAccount.Upkeep, 0) - town.AccountsYesterday.Get(TreasuryAccount.CountingHouse, 0) - town.AccountsYesterday.Get(TreasuryAccount.Watch, 0);
+        double upkeep = -town.AccountsYesterday.Get(TreasuryAccount.Upkeep, 0) - town.AccountsYesterday.Get(TreasuryAccount.CountingHouse, 0) - town.AccountsYesterday.Get(TreasuryAccount.Watch, 0) - town.AccountsYesterday.Get(TreasuryAccount.Commons, 0);
         var workers = town.Workers;
         int homeless = workers.Count(a => a.Homeless);
         double mood = workers.Count > 0 ? Js.Sum(workers, a => a.LastDayMood) / workers.Count : 65;

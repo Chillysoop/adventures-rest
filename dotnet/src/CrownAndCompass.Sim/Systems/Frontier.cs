@@ -33,11 +33,17 @@ public sealed record FrontierRules
     /// <summary>Below this share manned the Captain asks for more watch and the alert stands.</summary>
     public double WantManned { get; init; } = 0.8;
 
-    /// <summary>Chance a field beyond the walls with no guard over it is stripped tonight, at full danger.</summary>
+    /// <summary>Chance raiders fall on the open fields tonight, at full danger.</summary>
     public double FieldChance { get; init; }
 
     /// <summary>Days of a farm's food lost when its field is stripped.</summary>
     public double FieldDays { get; init; } = 1;
+
+    /// <summary>Tiles round the field a raid hits within which every open field is stripped too.</summary>
+    public double RaidReach { get; init; } = 4;
+
+    /// <summary>Fields stripped in one night that make it news (Notable) and send a seated captain to plant a flag.</summary>
+    public int BigRaid { get; init; } = 3;
 
     /// <summary>Danger to the fields: each stage of the warband from probing on, and each hostile menace alive.</summary>
     public double DangerPerStage { get; init; } = 0.25;
@@ -55,6 +61,12 @@ public sealed record FrontierRules
 
     /// <summary>Contentment a home beyond the outermost standing wall loses: its folk sleep with the raiders' road at the door.</summary>
     public double OutsideComfort { get; init; }
+
+    /// <summary>Share of homes past the only wall at which the town has outgrown it (the "outgrown" alert).</summary>
+    public double Outgrown { get; init; } = 0.5;
+
+    /// <summary>Rent a house past the walls fetches, against one inside: nobody pays dear to sleep where raiders come.</summary>
+    public double OutsideRent { get; init; } = 1;
 
     /// <summary>One incident a day for this many people, with the gates wide.</summary>
     public double StrangerPeople { get; init; } = 400;
@@ -142,6 +154,9 @@ public static class Frontier
 
     /// <summary>What a home beyond the outermost wall loses in contentment.</summary>
     public static double Comfort(Town town, Building house) => Outside(town, house) ? Rules(town).OutsideComfort : 0;
+
+    /// <summary>What a house's rent is multiplied by for standing past the walls.</summary>
+    public static double Rent(Town town, Building house) => Outside(town, house) ? Rules(town).OutsideRent : 1;
 
     /// <summary>How the gate is kept now; open whatever the order while there is no wall to keep it in.</summary>
     public static GateDef Gate(Town town) => Rules(town).Gate(Walled(town) ? town.Frontier.Gate : "open");
@@ -261,11 +276,15 @@ public static class Frontier
         s.FieldsLost = 0;
         s.FoodLost = 0;
         double danger = Danger(town);
-        if (danger > 0 && r.FieldChance > 0)
+        // One band of raiders a night at most, rarer than it once was, and it strips every open field round the one it hits.
+        var open = danger > 0 && r.FieldChance > 0 ? OpenFields(town) : [];
+        if (open.Count > 0 && rng.Chance(r.FieldChance * danger))
         {
-            foreach (var b in OpenFields(town))
+            var hit = town.Lot(rng.Pick(open).LotId);
+            foreach (var b in open)
             {
-                if (!rng.Chance(r.FieldChance * danger)) continue;
+                var lot = town.Lot(b.LotId);
+                if (Js.Hypot(lot.X - hit.X, lot.Y - hit.Y) > r.RaidReach) continue;
                 double food = b.Def.Produces.Where(p => p.Key == Good.Food).Sum(p => p.Value) * b.Workers.Count * 8 * r.FieldDays;
                 double lost = Math.Min(town.Market.Stock(Good.Food), food);
                 if (lost <= 0) continue;
@@ -274,10 +293,16 @@ public static class Frontier
                 s.FoodLost += lost;
             }
             if (s.FieldsLost > 0)
-                town.Log(LedgerCategory.War, Importance.Routine, $"Raiders and beasts strip {s.FieldsLost} {(s.FieldsLost == 1 ? "field" : "fields")} beyond the walls in the night: {Js.Str(Js.Round(s.FoodLost))} loads of food lost. No guard stood over them.");
+            {
+                bool big = s.FieldsLost >= r.BigRaid;
+                string where = Walled(town) ? "beyond the walls" : "round the town";
+                town.Log(LedgerCategory.War, big ? Importance.Notable : Importance.Routine,
+                    $"Raiders and beasts strip {s.FieldsLost} {(s.FieldsLost == 1 ? "field" : "fields")} {where} in the night: {Js.Str(Js.Round(s.FoodLost))} loads of food lost{(big ? ", and bread is dearer at market" : "")}. No guard stood over them.");
+            }
         }
         Strangers(town);
         if (auto) Steward(town);
+        else if (s.FieldsLost >= r.BigRaid && Council.Holder(town, SeatId.Captain) != null) Guard(town);
     }
 
     /// <summary>
@@ -288,7 +313,17 @@ public static class Frontier
     {
         var s = town.Frontier;
         if (s.Strangers > 0 && Walled(town) && s.Gate == "open") SetGate(town, "watched");
-        if (s.FieldsLost == 0 || town.Watch < 4) return;
+        if (s.FieldsLost == 0) return;
+        Guard(town);
+    }
+
+    /// <summary>
+    /// A guard flag over the open fields thickest on the ground. The stand-in plants it after any raid, a seated Captain of
+    /// the Watch on their own after a big one.
+    /// </summary>
+    private static void Guard(Town town)
+    {
+        if (town.Watch < 4) return;
         var fields = OpenFields(town);
         if (fields.Count == 0) return;
         double reach = town.Content.Garrison.FlagRadius;

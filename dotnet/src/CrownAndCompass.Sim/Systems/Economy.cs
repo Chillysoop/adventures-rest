@@ -362,7 +362,7 @@ public static class Economy
     }
 
     /// <summary>A bed's daily rent: the house's own, dearer or cheaper by what stands round it.</summary>
-    public static double RentOf(Town town, Building house) => Js.Round(house.Def.Rent * Neighbourhood.Rent(town, town.Lot(house.LotId)) * 10) / 10;
+    public static double RentOf(Town town, Building house) => Js.Round(house.Def.Rent * Neighbourhood.Rent(town, town.Lot(house.LotId)) * Frontier.Rent(town, house) * 10) / 10;
 
     /// <summary>Heroes lodge at the tavern between expeditions, even when married to a townsperson.</summary>
     public static void MoveIn(Town town, Agent a, Building home)

@@ -3,8 +3,10 @@
   "tilesPerGuard": 6,
   "unmanned": 0.35,
   "wantManned": 0.8,
-  "fieldChance": 0.12,
-  "fieldDays": 1,
+  "fieldChance": 0.18,
+  "fieldDays": 3,
+  "raidReach": 4,
+  "bigRaid": 3,
   "dangerPerStage": 0.3,
   "dangerPerMenace": 0.2,
   "strangersFrom": 150,
@@ -18,7 +20,7 @@
   "dangerPerThousand": 0.35,
   "dangerMost": 0.5,
   "outsideBuild": 0.5,
-  "outsideComfort": -0.05,
+  "outsideComfort": -0.1, "outsideRent": 0.85, "outgrown": 0.5,
   "gates": [
     {
       "id": "open",

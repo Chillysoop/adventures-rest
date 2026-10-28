@@ -22,7 +22,7 @@ public partial class Main
         new("Town", "tab-city", new Color("8cc084"), "The city, the mayor, its notables and the Ledger", [Tab.City, Tab.Mayor, Tab.Notables, Tab.Ledger]),
         new("Council", "tab-council", new Color("e8b93a"), "The council, institutions, faiths and the lesser council", [Tab.Council, Tab.Institutions, Tab.Faith, Tab.Automate]),
         new("Heroes", "tab-companies", new Color("74aee6"), "Bounties, companies and the armory", [Tab.Bounties, Tab.Companies, Tab.Armory]),
-        new("War", "tab-war", new Color("ef7f6f"), "Foes, the army and the town's defence", [Tab.War, Tab.Army, Tab.Defence]),
+        new("War", "tab-war", new Color("ef7f6f"), "Foes, the army, the fleet and the town's defence", [Tab.War, Tab.Army, Tab.Fleet, Tab.Defence]),
         new("Realm", "tab-campaign", new Color("5ec2b0"), "The campaign, diplomacy and trade", [Tab.Campaign, Tab.Diplomacy]),
         new("Lore", "tab-library", new Color("b996e6"), "Chronicles and the library", [Tab.Chronicles, Tab.Library]),
     ];
@@ -43,6 +43,7 @@ public partial class Main
         [Tab.Armory] = "Armory",
         [Tab.War] = "Foes",
         [Tab.Army] = "Army",
+        [Tab.Fleet] = "Fleet",
         [Tab.Defence] = "Defence",
         [Tab.Campaign] = "Campaign",
         [Tab.Diplomacy] = "Diplomacy",
@@ -66,6 +67,7 @@ public partial class Main
         [Tab.Armory] = "Gifts, loot and pacts with heroes",
         [Tab.War] = "Foes the town has met",
         [Tab.Army] = "Regiments, the levy, sellswords and commanders",
+        [Tab.Fleet] = "Ships, airships, sea runs and corsairs",
         [Tab.Defence] = "Guard, walls, towers and wardens",
         [Tab.Diplomacy] = "Peoples, envoys and trade routes",
         [Tab.Campaign] = "The region, its menaces and the big bad",
@@ -108,6 +110,7 @@ public partial class Main
         AlertWindow.Armory => Tab.Armory,
         AlertWindow.Institutions => Tab.Institutions,
         AlertWindow.Army => Tab.Army,
+        AlertWindow.Fleet => Tab.Fleet,
         AlertWindow.Notables => Tab.Notables,
         _ => null,
     };

@@ -6,6 +6,7 @@
   "demolish": { "unstarted": 1, "started": 0.6, "finished": 0.25 },
   "markets": { "_doc": "Market squares in shop paint: spacing between squares, the square's width and depth, how near a street it must lie, the pull (score off) of a square's rim for shops, the open shop-paint cells a square waits for, the cells round a new square that open unpainted ground is painted for shops, the shops the town keeps per square before it grows another, and the score added to a shop off the streets (tiles).", "spacing": 6, "width": 2.2, "depth": 1.6, "reach": 4, "pull": 3, "least": 60, "rim": 6, "shopsEach": 6, "offStreet": 1.5 },
   "closes": { "_doc": "Side lanes in home paint: once a day the open home paint at least 'deep' tiles from any street and within 'near' tiles of what's built gets a lane to the nearest street, 'perDay' at most.", "deep": 2.4, "near": 2.5, "perDay": 1 },
+  "commons": { "_doc": "Each neighbourhood a day: gold for its watchman, gold per resident for wells, drains and lamps times the land's density (low, medium, high), doubled over 'sprawl' tiles from the centre; unpaid days to full neglect, the mood its homes lose then, the daily chance of sickness then, and the neglect at which the Ledger reports it.", "watch": 4, "perResident": 0.15, "density": [1, 1.3, 1.7], "sprawl": 30, "days": 10, "dark": -6, "sick": 0.08, "report": 3 },
   "paving": { "tier": "town", "perDay": 0.6, "stone": 2, "gold": 6, "reserve": 500, "comfort": 0.03, "reach": 2 },
   "construction": { "crews": 3, "residents": 25, "most": 40, "footings": 0.1, "load": 3, "hire": 1.5, "hireHours": 10, "hireReserve": 150 },
   "wallLines": { "least": 5, "margin": 2, "apart": 3, "clear": 0.4, "snap": 2.5, "gateApart": 4, "most": 4, "gateCost": 60, "high": 0.5, "steep": 3 },
@@ -20,29 +21,29 @@
     { "id": "hamlet", "name": "Hamlet", "residents": 30, "requires": ["tavern"], "cost": 60,
       "blurb": "Enough hearths to call it a place. Quarries and sheepfolds can open." },
     { "id": "village", "name": "Village", "residents": 90, "requires": ["granary", "general_store"], "cost": 200,
-      "blurb": "A market green and a grain store. Land round the old town opens up, weavers and carpenters set up, and cottages grow into timber houses." },
+      "blurb": "A market green and a grain store. Weavers and carpenters set up, and cottages grow into timber houses." },
     { "id": "town", "name": "Town", "residents": 220, "heroes": 14, "requires": ["market_hall", "temple", "watch_house"], "cost": 600,
-      "blurb": "A chartered market town. Fisheries can work the river, stone walls can ring the old town, and land can be zoned medium density, where timber houses become stone townhouses." },
+      "blurb": "A chartered market town. Fisheries can work the river, stone walls can ring the old town, and well-kept timber houses grow into stone townhouses, and land can be zoned medium density." },
     { "id": "large_town", "name": "Large Town", "residents": 450, "heroes": 16, "requires": ["courthouse", "bathhouse"], "walls": "StoneWall", "cost": 1400,
-      "blurb": "Magistrates, guild money and stone walls. Manors rise on the dearest streets and tenements on the cheapest, vineyards, scriptoria, theatres and libraries follow, and the crowded old town can be zoned high density, where tall houses rise wall to wall." },
+      "blurb": "Magistrates, guild money and stone walls, and a city wall may ring the streets that spill past them. Manors rise on the dearest streets and tenements on the cheapest, vineyards, scriptoria, theatres and libraries follow, and the crowded old town can be zoned high density, where tall houses rise wall to wall." },
     { "id": "city", "name": "City", "residents": 800, "heroes": 18, "requires": ["library", "barracks", "theatre"], "cost": 3000,
-      "blurb": "A walled city of many faiths and trades. Manors rise on Castle Hill, Gateside and Tanners' Row can grow, and the city can raise a cathedral, an arena and a keep." },
+      "blurb": "A walled city of many faiths and trades. Its neighbourhoods each have a name and a temper, and the city can raise a cathedral, an arena and a keep." },
     { "id": "great_city", "name": "Great City", "residents": 1250, "heroes": 22, "requires": ["cathedral", "arena", "keep"], "walls": "CityWall", "cost": 6000,
       "blurb": "A great city whose name is known in every court. Its wealth draws the best heroes and the worst enemies." }
   ],
   "neighbourhood": {
     "reach": 3.5,
     "kinds": {
-      "Industry": { "land": -0.12, "rent": -0.1, "mood": -1.2 },
-      "Farmland": { "land": -0.03, "rent": -0.03, "mood": 0.1 },
-      "Holy": { "land": 0.12, "rent": 0.1, "mood": 1.2 },
-      "Fine": { "land": 0.07, "rent": 0.06, "mood": 0.4 },
-      "Poor": { "land": -0.08, "rent": -0.07, "mood": -0.6 }
+      "Industry": { "land": -0.18, "rent": -0.15, "mood": -3 },
+      "Farmland": { "land": -0.03, "rent": -0.03, "mood": 0.2 },
+      "Holy": { "land": 0.12, "rent": 0.1, "mood": 2.5 },
+      "Fine": { "land": 0.08, "rent": 0.07, "mood": 0.8 },
+      "Poor": { "land": -0.12, "rent": -0.1, "mood": -1.5 }
     },
-    "shops": { "near": 3.5, "good": 2, "land": 0.06, "rent": 0.04, "mood": 0.5, "noise": 0.5, "reach": 10, "far": { "land": -0.1, "rent": -0.08, "mood": -2 } },
+    "shops": { "near": 3.5, "good": 2, "land": 0.06, "rent": 0.04, "mood": 1, "noise": 1, "reach": 10, "far": { "land": -0.1, "rent": -0.08, "mood": -5 } },
     "land": [0.5, 1.8],
     "rent": [0.6, 1.6],
-    "mood": [-5, 4],
+    "mood": [-12, 10],
     "outerDensest": 1,
     "water": 30,
     "scholars": { "ids": ["library", "mage_tower", "alchemists_quarter", "observatory", "apothecary"], "reach": 7, "least": 3, "lore": 1.5, "name": "the scholars' quarter" },
@@ -54,15 +55,15 @@
       "rich": 1.2,
       "poor": 0.85,
       "names": {
-        "market": ["Market Street", "Silver Row", "Copper Lane", "the Bazaar Steps", "Cloth Street", "the Chandlery", "Spice Row", "Pennywalk"],
-        "workshops": ["Tanners' Row", "Smiths' Row", "the Kiln Yards", "Sawpit Lane", "Cinder Row", "the Forges", "Ropewalk", "Dyers' End"],
-        "farms": ["Barley End", "Millfield", "the Orchards", "Haymeadow", "Plough Lane", "Cowgate", "Applegarth", "Oatlands"],
-        "holy": ["Chapel Close", "Bell Lane", "the Sanctuary", "Candle Street", "Pilgrims' Rest", "Saints' Walk"],
-        "rich": ["Lantern Hill", "the Gardens", "Highcroft", "Goldmere", "Rosewall", "the Terraces"],
-        "poor": ["the Warrens", "Rag Lane", "Mudside", "the Shambles", "Crookback Alley", "Low Ditch"],
-        "homes": ["Elm Lanes", "Hearthside", "Willow Row", "Greenway", "Ashby", "Thornfield", "Wren Lane", "Brookside", "Oakhollow", "Bramble Close"],
-        "scholars": ["Lamplit Quarter", "Inkwell Lane", "Starwatch", "the Scriptorium"],
-        "river": ["Riverside", "the Wharves", "Ferry Lane", "Netmakers' Row"]
+        "market": ["Market Street", "Silver Row", "Copper Lane", "the Bazaar Steps", "Cloth Street", "the Chandlery", "Spice Row", "Pennywalk", "Haggle Row", "the Weighhouse", "Saltmarket", "Fishgate", "Butter Cross", "Corn Steps", "Tallow Street", "Ribbon Row"],
+        "workshops": ["Tanners' Row", "Smiths' Row", "the Kiln Yards", "Sawpit Lane", "Cinder Row", "the Forges", "Ropewalk", "Dyers' End", "Coopers' Yard", "Wheelwrights' Lane", "Glassblowers' Court", "Fullers' Row", "Nailers' End", "Brickfields", "Soapers' Alley", "Turners' Row"],
+        "farms": ["Barley End", "Millfield", "the Orchards", "Haymeadow", "Plough Lane", "Cowgate", "Applegarth", "Oatlands", "Ryebank", "Furrowfield", "Sheepcote", "Barnfold Green", "Hopgarden", "Wheatcroft", "Greenacre", "Mowbray Fields", "Henfold", "Beanlands", "Dovecote End", "Clover Leys", "Stackyard", "Marlpit", "Longacre", "Goosegreen"],
+        "holy": ["Chapel Close", "Bell Lane", "the Sanctuary", "Candle Street", "Pilgrims' Rest", "Saints' Walk", "Abbey Row", "Vesper Lane", "Shrine Street", "Cloister Walk", "Almonry", "Lychgate", "Hallow Close", "Censer Row"],
+        "rich": ["Lantern Hill", "the Gardens", "Highcroft", "Goldmere", "Rosewall", "the Terraces", "Silverhill", "Belvedere", "the Crescent", "Kingsmead", "Laurel Rise", "Swanholt", "Marble Row", "Orchard Court"],
+        "poor": ["the Warrens", "Rag Lane", "Mudside", "the Shambles", "Crookback Alley", "Low Ditch", "Tinker's Rookery", "Sootside", "Gutter Lane", "the Sinks", "Beggarsbush", "Old Middens", "Ratcatcher Row", "Threadneedle Yard"],
+        "homes": ["Elm Lanes", "Hearthside", "Willow Row", "Greenway", "Ashby", "Thornfield", "Wren Lane", "Brookside", "Oakhollow", "Bramble Close", "Hollybank", "Meadowgate", "Fernlea", "Ivy Row", "Larkrise", "Rowan End", "Birchgrove", "Primrose Hill", "Ashgrove", "Copper Beech", "Hazel Close", "Linden Row"],
+        "scholars": ["Lamplit Quarter", "Inkwell Lane", "Starwatch", "the Scriptorium", "Quill Court", "the Stacks", "Lantern Close", "Sage Row"],
+        "river": ["Riverside", "the Wharves", "Ferry Lane", "Netmakers' Row", "Bargeside", "Weir Lane", "Eelpot Row", "the Staithes", "Millrace", "Swan Quay"]
       }
     }
   },
@@ -79,9 +80,9 @@
   "densities": [
     { "id": "low", "name": "Low", "tier": "thorp", "lane": 1, "land": 1.0, "mood": 0,
       "blurb": "Cottages and timber houses with gardens and lanes between, as in any frontier village." },
-    { "id": "medium", "name": "Medium", "tier": "town", "lane": 1, "land": 1.15, "mood": 0,
-      "blurb": "Houses may rise to three-storey stone townhouses, and manors on Castle Hill." },
-    { "id": "high", "name": "High", "tier": "large_town", "lane": 0, "land": 1.4, "mood": -1,
+    { "id": "medium", "name": "Medium", "tier": "town", "lane": 1, "land": 1.15, "mood": 0, "grow": 0.5,
+      "blurb": "Rows of townhouses with yards behind, as in any market town: houses here grow a storey in half the time." },
+    { "id": "high", "name": "High", "tier": "large_town", "lane": 0, "land": 1.4, "mood": -3, "grow": 0.5,
       "blurb": "Tall houses of four and five storeys built wall to wall, the way a walled city's old core packs in. Crowded: residents grumble a little." }
   ],
   "sprawl": [
@@ -96,5 +97,6 @@
   "downgradeDays": 10,
   "upgradeAt": 0.85,
   "downgradeBelow": 0.4,
-  "needsMood": 6
+  "needsMood": 12,
+  "slum": 0.08
 }

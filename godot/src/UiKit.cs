@@ -137,6 +137,7 @@ public static partial class Ui
         ["Callings"] = "heroes",
         ["Champions of the lists"] = "ui-renown",
         ["Character sheet"] = "d20",
+        ["Fleet"] = "inst-harbour",
         ["Clockwork wardens"] = "tools",
         ["Crises"] = "ui-warn",
         ["Decrees in force"] = "decree",

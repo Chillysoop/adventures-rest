@@ -74,7 +74,7 @@ public sealed record NeighbourhoodRules
 
     /// <summary>
     /// The lean of each kind of neighbour at full strength: by zone ("Industry", "Farmland"), "Holy" for temples and
-    /// shrines, "Fine" for houses grown past the cottage and "Poor" for tenements. Shops have their own rules.
+    /// shrines, "Fine" for townhouses and manors and "Poor" for tenements. Shops have their own rules.
     /// </summary>
     public IReadOnlyDictionary<string, NeighbourLean> Kinds { get; init; } = new Dictionary<string, NeighbourLean>();
     public ShopRules Shops { get; init; } = new();
@@ -123,6 +123,9 @@ public sealed class Quarter
     /// <summary>What it was when it formed (market, workshops, homes...), which named it.</summary>
     public string Character { get; set; } = "";
     public int Day { get; set; }
+
+    /// <summary>Days its commons have gone unpaid, eased as they are paid again (<see cref="Commons"/>).</summary>
+    public double Neglect { get; set; }
 }
 
 /// <summary>A neighbourhood's figures for the map card and the City window.</summary>
@@ -141,12 +144,16 @@ public static class Neighbourhood
 {
     public static NeighbourhoodRules Rules(Town town) => town.Content.City.Neighbourhood;
 
+    /// <summary>Rent from which a house counts as a fine one.</summary>
+    public const double FineRent = 3;
+
     /// <summary>The neighbour kinds a building counts as.</summary>
     public static IEnumerable<string> KindsOf(BuildingDef d)
     {
         if (d.Zone is Zone.Commercial or Zone.Industry or Zone.Farmland) yield return d.Zone.ToString();
         if (d.Holy) yield return "Holy";
-        if (d.Housing > 0 && d.Id is not ("house" or "tenement")) yield return "Fine";
+        // Stone townhouses and manors make a street fine; cottages, timber houses and tall houses don't.
+        if (d.Housing > 0 && d.Rent >= FineRent) yield return "Fine";
         if (d.Id == "tenement") yield return "Poor";
     }
 
@@ -219,7 +226,9 @@ public static class Neighbourhood
         foreach (var b in town.Buildings)
         {
             if (!b.Complete) continue;
-            h = h * 1_000_003 + b.Id * 31 + b.LotId * 7 + (int)b.Def.Zone * 3 + (b.Def.Holy ? 1 : 0) + b.Def.Housing * 17 + b.Def.Id.Length;
+            // Only what the field reads of a building: a house growing a storey leaves it be unless it turns fine.
+            h = h * 1_000_003 + b.Id * 31 + b.LotId * 7 + (int)b.Def.Zone * 3 + (b.Def.Holy ? 1 : 0)
+                + (b.Def.Housing > 0 && b.Def.Rent >= FineRent ? 17 : 0) + (b.Def.Id == "tenement" ? 41 : 0);
         }
         return h;
     }
@@ -319,7 +328,9 @@ public static class Neighbourhood
     {
         if (d.Site is not { } s) return null;
         if (s.LandAtLeast > 0 && Land(town, x, y) < s.LandAtLeast) return "needs dearer ground: fine houses, a temple or a few shops round it";
-        if (s.LandAtMost > 0 && Land(town, x, y) > s.LandAtMost) return "only goes up on cheap ground";
+        // Ground past the outermost wall is cheap whatever stands round it: the raiders' road runs by.
+        if (s.LandAtMost > 0 && Land(town, x, y) * (Frontier.Walled(town) && !Frontier.Within(town, x, y) ? Frontier.Rules(town).OutsideRent : 1) > s.LandAtMost)
+            return "only goes up on cheap ground";
         if (s.Water && !Water(town, x, y)) return "needs to stand by the water";
         foreach (var (kind, count) in s.Near)
             if (Around(town, x, y, s.NearReach).Count(b => b.Def.Id == kind || KindsOf(b.Def).Contains(kind)) < count)

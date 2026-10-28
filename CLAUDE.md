@@ -63,8 +63,9 @@
   City.HeroCap, Trade, Shrines), not through Decrees.
 - Density (`Systems/Density.cs`, city.json `densities` and `sprawl`): low/medium/high per plan cell (`LandPlan.Density`), painted
   with homes and shops (`PaintZone(..., density)`, also over built land of the zone). `BuildingDef.Density` is the least a building
-  needs (townhouse/manor medium, tall_house high); `HousingDef.Dense` is the house it grows into on high land; high land drops
-  the lane between buildings. The stand-in mayor zones denser out to `reach * sqrt(population)` tiles, capped past the city
+  needs (tall_house high; townhouses and manors grow on any land, manors only on dear ground); `HousingDef.Dense` is the house it
+  grows into on high land; denser land grows storeys faster (`DensityDef.Grow`); high land drops the lane between buildings.
+  Landlords keep tenement beds for city.json `slum` of the workers, on cheap ground or past the walls (`Neighbourhood.Sited`). The stand-in mayor zones denser out to `reach * sqrt(population)` tiles, capped past the city
   wall's ring by `neighbourhood.outerDensest`.
 - Growth and construction (city.json `growth`, `construction`, `Systems/Construction.cs`): painting lays no streets. Buildings
   site on street fronts or off them beside what's built (`Streets.Growth`, nearest the built town first), and the feet going to
@@ -106,7 +107,13 @@
   fields beyond it with no guard flag over them are stripped by night by `Danger` (warband stage, hostile menaces, size, wealth).
   A wall gives its full strength (`Threat.Fortification`) only manned, a watchman per `tilesPerGuard` of it (`Frontier.Manned`).
   The gate law (`Simulation.SetGate`: open/watched/shut) turns away covert agents (`Blows.Strike`) and strangers who rob an
-  open town, at a cost in settlers. Raiders come bigger for a rich town (`Frontier.Lure`). Mood expectations grow with size (`Expect`).
+  open town, at a cost in settlers. Raiders come bigger for a rich town (`Frontier.Lure`). Mood expectations grow with size (`Expect`): homes below them
+  and blocs below `calm` feed unrest (`Taxes.Homes`, `BlocAnger`, taxes.json `discontent`), and each form of government carries
+  its own `unrest` and `levy`. Field raids are one band a night at most (`raidReach`, `bigRaid` makes news and sends a seated captain
+  to plant a flag). Homes past the outermost wall rent for less and are robbed first; the `outgrown` alert asks for the next ring.
+- Commons (`Systems/Commons.cs`, city.json `commons`): each neighbourhood pays a watchman and lamps/wells/drains per resident by
+  density and distance from the centre (account `Commons`), dearest ground first; unpaid ones build `Quarter.Neglect`: mood, sickness,
+  and stories (need `dark`, effect `commons`).
 - Story odds (`Systems/Odds.cs`, stories.json `odds`, `fromTier`/`untilTier`, `oddsCap`): a story's chance is its weight times
   1 + weight × reading for each reading of the town it names (tier, classes, notables, guilds, refugees, enemy agents, council
   moles, grudge heat, unrest, wealth, crowds, sickness, watch, gate law, season, zone land); readings only look, never roll.
@@ -247,6 +254,13 @@
   home, `tamed` research for harvests, `glass` research for the forecast. Bump `WeatherState.Version` when you change either list.
   Client: `Map/WeatherView.cs` (sky, rain, snow, lightning, shader `gale_wind`/`wet_ground`/`snow`), the campaign-map layer
   `Map/WeatherLayer.cs` (off by default, a toggle by the corner map), the top-bar chip `WeatherHud.cs`; clock stop `storm`.
+- The fleet (`Systems/Fleet.cs`, `Voyages.cs`, `content/game/sea.json`, client `godot/src/FleetWindow.cs`, War › Fleet): the open sea
+  (roads.json ocean `barrier: "sea"`, `Ways.Sea`) takes a ship, an airship or real flight; Water Walk crosses rivers and lakes only.
+  Trade routes to sea settlements need a harbour reaching the sea or a Sky Dock (`Fleet.Overseas`); ports are on a shore
+  (`Fleet.OnCoast`). Ships take standing runs (`Simulation.SetShipRoute`), crews are townsfolk sailors at the harbour
+  (`Building.Crew`, `Fleet.Manned`) and captains are residents who can drown (`Fleet.Sink`). Corsair raids come from the living
+  `corsair-fleet` group holds (`Fleet.Holds`, `FleetState.Wrath`, a named lord). Steward area `fleet`; alerts `ship`, `corsairs`,
+  `idle`. Island foundings start with a harbour and a tidal causeway (`Founding.Flooded`) raiders wait out.
 - Cliffs (`Systems/Cliffs.cs`, passage.json `cliffs`): plateaus in the near wilds past the plan, a pure function of the seed. Passage
   treats each as a barrier opened only at its ramps (`Passage.Obstacles`, `RoundCliffs` for roads); the client raises them
   (`WorldGen`) and faces them with rock (`WorldView.BuildCliffs`).
