@@ -106,6 +106,7 @@ public partial class Main
             string march = m.ArrivalTick is int at && at > t.Tick ? "  " + Tag($"marching, {Ui.Days((int)Math.Ceiling((at - t.Tick) / 24.0))} out", Ui.Bad) : "";
             string held = m.Holdings.Count > 0 ? $" It holds {m.Holdings.Count} more {(m.Holdings.Count == 1 ? "lair" : "lairs")}." : "";
             FoeCard(p, [m], $"{Ui.KindIcon(m.Kind, 20)}[b]{Ui.Esc(Ui.Cap(m.Name))}[/b]  {Tag(word, color)}  {Tag($"level {m.Level}")}{march}\n{Leader(m)}{Tag(Menaces.CunningOf(t, m).Name)}  {Tag(Menaces.AmbitionOf(t, m).Name)}{Temper(t, m)}{Heirs(t, m)}\n{Scores(t, m)}{Ui.C(Ui.Ink2, $"[font_size=12]{Ui.Esc(Annals.Motive(t, m))} {Ui.Esc(Wants(t, m))} {Seat(t, m)}{held}[/font_size]")}{Remembers(t, m)}{LastHeard(t, m)}{Plan(t, m)}{Assets(t, m)}{Backers(t, m)}", color);
+            RenderParley(p, t, m);
         }
         p.Note("A threat grows while nobody clears its seat, as far as its wits allow: a beast only hunts, a dull band takes a valley and stops, a cunning or masterful leader builds a domain and can become the big bad. What it wants decides what it does to the town. Clearing the seat breaks it, and it falls back to a lair it holds.");
 
@@ -209,7 +210,7 @@ public partial class Main
             p.Card($"{Ui.Img("dread", 20)} [b]Endless · era {Endless.EraNumber(t)}[/b]{rest}{past}", Ui.Accent);
         }
         var claimed = Victory.Claimed(t);
-        if (!Victory.Ready(t)) p.Note("Claim a road once the big bad shows itself.");
+        if (!Victory.Ready(t)) p.Note("Claim a road once the big bad shows itself. An early road draws it out.");
         foreach (var d in Victory.Roads(t))
         {
             var terms = Victory.Terms(t, d);
@@ -220,7 +221,7 @@ public partial class Main
                 : Victory.Met(t, d) ? Tag("ready", Ui.Good)
                 : Tag($"{pct}%");
             string chips = string.Join("  ", terms.Select(x => Tag($"{x.Label} {Js.Str(x.Have)}/{Js.Str(x.Need)}", x.Met ? Ui.Good : Ui.Ink2)));
-            string hold = d.Id == Victory.Slay || mine ? "" : $"  {Ui.C(Ui.Ink2, $"[font_size=12]hold {Ui.Days(d.Hold)}[/font_size]")}";
+            string hold = d.Id == Victory.Slay || mine ? "" : $"  {Ui.C(Ui.Ink2, $"[font_size=12]hold {Ui.Days(Victory.HoldOf(t, d))}[/font_size]")}{(d.Early && !Victory.Ready(t) ? "  " + Tag("early", Ui.Gold) : "")}";
             p.Card($"{Ui.Img(d.Icon, 20)} [b]{Ui.Esc(d.Name)}[/b]  {state}{hold}\n[font_size=12]{chips}[/font_size]", mine ? Ui.Good : d.Id == Victory.Slay ? Ui.Gold : null);
             if (claimed == null && Victory.ClaimBlocked(t, d.Id) == null)
             {

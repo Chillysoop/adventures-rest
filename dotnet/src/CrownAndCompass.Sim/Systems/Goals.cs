@@ -194,7 +194,7 @@ public static class Ahead
     {
         if (!t.Goals.Closed || t.Outcome != null) return ("", []);
         if (Victory.Claimed(t) is { } held)
-            return ($"Hold {held.Name}", [new(held.Icon, $"Hold {held.Name}", $"{Victory.Held(t)}/{held.Hold} days", (double)Victory.Held(t) / Math.Max(1, held.Hold), "tab:Campaign")]);
+            return ($"Hold {held.Name}", [new(held.Icon, $"Hold {held.Name}", $"{Victory.Held(t)}/{Victory.HoldOf(t, held)} days", (double)Victory.Held(t) / Math.Max(1, Victory.HoldOf(t, held)), "tab:Campaign")]);
         if (Victory.Ready(t) || City.NextTier(t) == null)
         {
             var road = Victory.Roads(t).OrderByDescending(d => Victory.Progress(t, d)).ThenBy(d => d.Id, StringComparer.Ordinal).FirstOrDefault();

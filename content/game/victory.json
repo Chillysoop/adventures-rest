@@ -1,5 +1,5 @@
 {
-  "_doc": "Roads to victory (Systems/Victory.cs). Every road ends the big bad's threat in its own way, so none can be claimed before the big bad has shown itself (been crowned). Slay is the Saga's own finale (Saga.Win). Once its terms hold the mayor may claim it (Simulation.ClaimRoad): the big bad marches at once, and the terms must hold `hold` days more. Numbers: allies = allied settlements and powers; powers = minor powers allied; sworn = standing a settlement needs to count as under the banner; fameTier = notoriety.json fame tier index (3 Renowned, 4 Legendary); tier = city.json charter id; cleared = share of known sites cleared; income = trade gold over the last month; liberty = the form of government's liberty at least (commonwealth) or at most (crown); moots = yearly moots held; content = share of the town (by bloc size) whose blocs feel well of the mayor; trust = the town's trust in the mayor's word; ruled = days under the present form; watch = the watch's strength.",
+  "_doc": "Roads to victory (Systems/Victory.cs). Every road ends the big bad's threat in its own way, so none can be claimed before the big bad has shown itself (been crowned), except an \"early\" road, which may be claimed from Act I on and draws the big bad out (Saga.Summon); its terms must then hold earlyHold days, not hold. Slay is the Saga's own finale (Saga.Win). Once its terms hold the mayor may claim it (Simulation.ClaimRoad): the big bad marches at once, and the terms must hold `hold` days more. Numbers: allies = allied settlements and powers; powers = minor powers allied; sworn = standing a settlement needs to count as under the banner; fameTier = notoriety.json fame tier index (3 Renowned, 4 Legendary); tier = city.json charter id; cleared = share of known sites cleared; income = trade gold over the last month; liberty = the form of government's liberty at least (commonwealth) or at most (crown); moots = yearly moots held; content = share of the town (by bloc size) whose blocs feel well of the mayor; trust = the town's trust in the mayor's word; ruled = days under the present form; watch = the watch's strength.",
   "roads": [
     {
       "id": "slay", "name": "Slay the Big Bad", "icon": "act-slay", "kind": "Heroic",
@@ -7,7 +7,7 @@
       "title": "The Long Night is over"
     },
     {
-      "id": "alliance", "name": "Grand Alliance", "icon": "standing", "kind": "Diplomatic",
+      "id": "alliance", "early": true, "earlyHold": 120, "name": "Grand Alliance", "icon": "standing", "kind": "Diplomatic",
       "blurb": "Your allies' combined might makes the big bad a spent force.",
       "title": "The Grand Alliance stands",
       "ending": "The banners of {allies} allies gather under {town}'s. Counted against them, {name} is a spent force: {leader} sues for terms, gives up {seat} and is never heard of again.",

@@ -110,7 +110,6 @@
     "othersHit": 4,
     "grudgeGain": 10,
     "askGain": 20,
-    "grudges": [["dwarves", "elves"], ["lizardfolk", "villagers"], ["frostsworn", "templars"], ["freeport", "oasis"], ["gnomes", "dwarves"]],
     "askChance": 0.01,
     "askDays": 30,
     "loot": 12,

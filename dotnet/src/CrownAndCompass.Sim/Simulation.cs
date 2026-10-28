@@ -235,6 +235,7 @@ public sealed class Simulation
         Alchemy.Daily(t, Options.AutoMayor && Stewards.Mode(t, Options, "armory") == StewardMode.Steward);
         Spoils.Daily(t, Options.AutoMayor && Options.AutoArmory);
         using (Asking("realm")) Neighbours.Daily(t, Hand("realm"));
+        using (Asking("realm")) Accords.Daily(t, Hand("realm"));
         Founding.Daily(t);
         using (Asking("defence"))
         {
@@ -410,6 +411,12 @@ public sealed class Simulation
 
     /// <summary>Make an overture to a people ("people:id") or power ("power:id") the way one of its manners likes. Returns the roll, or null.</summary>
     public StoryBeat? Overture(string key, string manner) => Manners.Overture(Town, key, manner);
+
+    /// <summary>Answer an ally's ask (yes pays it or promises the site; no costs standing). Returns whether it was answered.</summary>
+    public bool AnswerAllyAsk(int askId, bool yes) => Accords.Answer(Town, askId, yes);
+
+    /// <summary>Words with a known menace: "truce", "ransom" or "turn" (<see cref="Accords.Parley"/>). Returns the roll, or null.</summary>
+    public StoryBeat? Parley(int menaceId, string kind) => Accords.Parley(Town, menaceId, kind);
 
     /// <summary>Send coin and goods to see a settlement through its trouble.</summary>
     public bool AidSettlement(int settlementId) => Neighbours.Aid(Town, settlementId);

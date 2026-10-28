@@ -414,6 +414,18 @@ public static class Saga
     /// <summary>The town is strong enough for the act: its champions and its people both.</summary>
     public static bool Strong(Town town, ActDef act) => ChampionLevel(town) >= LevelFor(town, act) && town.Population >= PopulationFor(town, act);
 
+    /// <summary>Whether a claimed road could call the big bad out now: from Act I on, before the finale.</summary>
+    public static bool CanSummon(Town town) => town.Saga.Enabled && town.Outcome == null && town.Saga.Act >= 1 && !Finale(town) && BigBad(town) == null;
+
+    /// <summary>The town's claim draws the big bad out early: the finale opens now.</summary>
+    public static void Summon(Town town)
+    {
+        if (!CanSummon(town)) return;
+        int last = Rules(town).Acts.Count - 1;
+        while (last > 0 && !Rules(town).Acts[last].Finale) last--;
+        if (last > town.Saga.Act) OpenAct(town, last);
+    }
+
     private static void OpenAct(Town town, int act)
     {
         var s = town.Saga;

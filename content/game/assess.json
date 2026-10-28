@@ -109,6 +109,7 @@
     "calling": { "unit": 1, "sign": 1, "icon": "heroes", "name": "heroes" },
     "fixture": { "unit": 1, "sign": 1, "icon": "mandate", "name": "mandate" },
     "project": { "unit": 1, "sign": 1, "icon": "standing", "name": "allies" },
+    "promise": { "unit": 1, "sign": 1, "icon": "standing", "name": "allies" },
     "decree": { "unit": 1, "sign": 0, "icon": "decree", "name": "the law" },
     "precedent": { "unit": 1, "sign": 0, "icon": "decree", "name": "the law" }
   }

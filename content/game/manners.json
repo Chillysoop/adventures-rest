@@ -138,7 +138,6 @@
   },
   "standOff": {
     "label": "Make no promise",
-    "tags": ["order"],
     "success": { "text": "{town} keeps its counsel, and they go home.", "effects": {} }
   },
   "dismiss": {
@@ -193,7 +192,7 @@
       "terms": {
         "label": "Promise them a place of honour at your table",
         "tags": ["order"],
-        "success": { "text": "They will be seated first at every feast in {town}. They like that very much.", "effects": { "warm": 8 } }
+        "success": { "text": "They will be seated first at every feast in {town}. They like that very much.", "effects": { "promise:honour": 1, "warm": 8 } }
       },
       "parley": {
         "label": "Receive the herald with full ceremony",
@@ -209,7 +208,7 @@
         "skill": "history",
         "dc": 12,
         "every": 30,
-        "win": 12,
+        "win": 18,
         "crit": 6,
         "lose": -4,
         "won": "The town crier tells the old victories of {name} in the square. Word reaches them.",
@@ -236,7 +235,7 @@
         "tags": ["coin"],
         "skill": "insight",
         "dc": 12,
-        "success": { "text": "You guess what they are short of. They buy it at once, and gladly.", "effects": { "warm": 6, "gold": 25 } },
+        "success": { "text": "You guess what they are short of. They buy it at once, and gladly.", "effects": { "promise:share": 1, "warm": 6, "gold": 25 } },
         "failure": { "text": "You misjudge what they need, and nothing changes hands.", "effects": {} }
       },
       "parley": {
@@ -251,8 +250,8 @@
         "skill": "persuasion",
         "dc": 10,
         "cost": 80,
-        "every": 20,
-        "win": 14,
+        "every": 30,
+        "win": 21,
         "crit": 6,
         "lose": 5,
         "won": "The purse is counted twice and found pleasing. {name} think better of {town}.",
@@ -274,7 +273,7 @@
       "terms": {
         "label": "Promise to keep your riders off their land",
         "tags": ["mercy"],
-        "success": { "text": "They want nothing more than that. They will hold you to it.", "effects": { "warm": 8 } }
+        "success": { "text": "They want nothing more than that. They will hold you to it.", "effects": { "promise:riders": 1, "warm": 8 } }
       },
       "parley": {
         "label": "Have the herald followed home",
@@ -287,8 +286,8 @@
       "overture": {
         "name": "Leave them in peace",
         "icon": "ui-heart",
-        "every": 40,
-        "win": 6,
+        "every": 30,
+        "win": 9,
         "won": "No envoys, no riders: only a gift left at the boundary stone. {name} take it, and are glad of the quiet."
       }
     },
@@ -309,7 +308,7 @@
         "tags": ["mercy"],
         "skill": "persuasion",
         "dc": 11,
-        "success": { "text": "They clasp hands on it. Neither side will go hungry while the other eats.", "effects": { "warm": 8 } },
+        "success": { "text": "They clasp hands on it. Neither side will go hungry while the other eats.", "effects": { "promise:lean": 1, "warm": 8 } },
         "failure": { "text": "The promise sounds hollow, even to you.", "effects": { "warm": 2 } }
       },
       "parley": {
@@ -325,8 +324,8 @@
         "icon": "food",
         "skill": "persuasion",
         "dc": 12,
-        "every": 45,
-        "win": 4,
+        "every": 30,
+        "win": 6,
         "lose": -2,
         "effects": { "food": 25 },
         "won": "{name} send carts of food, and are glad to be asked.",
@@ -349,7 +348,7 @@
       "terms": {
         "label": "Invite them to the next fair",
         "tags": ["mercy"],
-        "success": { "text": "They promise to come, and bring friends. The fair will be loud.", "effects": { "warm": 6, "festival": 1 } }
+        "success": { "text": "They promise to come, and bring friends. The fair will be loud.", "effects": { "promise:fair": 1, "warm": 6, "festival": 1 } }
       },
       "parley": {
         "label": "Get the herald drunk",
@@ -365,8 +364,8 @@
         "skill": "performance",
         "dc": 11,
         "cost": 50,
-        "every": 25,
-        "win": 12,
+        "every": 30,
+        "win": 18,
         "crit": 6,
         "lose": 4,
         "effects": { "mandate": 1 },
@@ -392,7 +391,7 @@
       "terms": {
         "label": "Swear to stand with them in battle",
         "tags": ["valor"],
-        "success": { "text": "They cut their palms and yours. It is a serious oath to them.", "effects": { "warm": 10 } }
+        "success": { "text": "They cut their palms and yours. It is a serious oath to them.", "effects": { "promise:battle": 1, "warm": 10 } }
       },
       "parley": {
         "label": "Answer the challenge in kind",
@@ -407,8 +406,8 @@
         "icon": "rivals",
         "skill": "athletics",
         "dc": 14,
-        "every": 35,
-        "win": 16,
+        "every": 30,
+        "win": 24,
         "crit": 6,
         "lose": -6,
         "effects": { "mandate": 2 },
@@ -435,7 +434,7 @@
         "label": "Name a street after their heroes",
         "tags": ["mercy", "coin"],
         "cost": 20,
-        "success": { "text": "A new sign goes up by the square, and their poet writes it into a song.", "effects": { "warm": 10 } }
+        "success": { "text": "A new sign goes up by the square, and their poet writes it into a song.", "effects": { "promise:street": 1, "warm": 10 } }
       },
       "parley": {
         "label": "Trade verses with the herald",
@@ -451,7 +450,7 @@
         "skill": "performance",
         "dc": 13,
         "every": 30,
-        "win": 14,
+        "win": 21,
         "crit": 6,
         "lose": -3,
         "won": "{town}'s bard sings for {name} under the stars. They will remember the night.",
@@ -478,7 +477,7 @@
         "tags": ["coin"],
         "skill": "persuasion",
         "dc": 13,
-        "success": { "text": "A share of every caravan's tolls, in writing. They sign quickly.", "effects": { "warm": 10 } },
+        "success": { "text": "A share of every caravan's tolls, in writing. They sign quickly.", "effects": { "promise:roads": 1, "warm": 10 } },
         "failure": { "text": "They want a bigger share than you can give.", "effects": { "warm": -2 } }
       },
       "parley": {
@@ -496,7 +495,7 @@
         "dc": 13,
         "cost": 60,
         "every": 30,
-        "win": 12,
+        "win": 18,
         "crit": 6,
         "lose": -2,
         "effects": { "prosperity": 6 },
@@ -523,7 +522,7 @@
         "label": "Promise a shrine to their faith",
         "tags": ["mercy", "coin"],
         "cost": 40,
-        "success": { "text": "A small shrine goes up by the gate. Their pilgrims will stop there.", "effects": { "warm": 12 } }
+        "success": { "text": "A small shrine goes up by the gate. Their pilgrims will stop there.", "effects": { "promise:shrine": 1, "warm": 12 } }
       },
       "parley": {
         "label": "Bless the gate against them",
@@ -539,7 +538,7 @@
         "skill": "religion",
         "dc": 12,
         "every": 30,
-        "win": 12,
+        "win": 18,
         "crit": 6,
         "lose": -3,
         "effects": { "security": 5 },
@@ -567,7 +566,7 @@
         "tags": ["guile"],
         "skill": "investigation",
         "dc": 12,
-        "success": { "text": "Letters, ciphers and the odd useful rumour, both ways. They like the arrangement.", "effects": { "warm": 6 } },
+        "success": { "text": "Letters, ciphers and the odd useful rumour, both ways. They like the arrangement.", "effects": { "promise:letters": 1, "warm": 6 } },
         "failure": { "text": "Your first letter is read by the wrong people.", "effects": { "warm": -2 } }
       },
       "parley": {
@@ -584,7 +583,7 @@
         "skill": "investigation",
         "dc": 13,
         "every": 30,
-        "win": 8,
+        "win": 12,
         "crit": 4,
         "lose": -6,
         "effects": { "reveal": 1 },
@@ -611,7 +610,7 @@
         "label": "Pay for their goodwill",
         "tags": ["coin"],
         "cost": 60,
-        "success": { "text": "They take the gold without thanks. It buys peace, for now.", "effects": { "warm": 8 } }
+        "success": { "text": "They take the gold without thanks. It buys peace, for now.", "effects": { "promise:goodwill": 1, "warm": 8 } }
       },
       "parley": {
         "label": "Show the herald the gallows",
@@ -626,7 +625,7 @@
         "icon": "gold",
         "cost": 120,
         "every": 30,
-        "win": 10,
+        "win": 15,
         "effects": { "mandate": -2 },
         "won": "{town} pays what {name} ask. They are pleased. The townsfolk are not."
       }
@@ -649,7 +648,7 @@
       "terms": {
         "label": "Promise your walls if trouble comes",
         "tags": ["valor", "mercy"],
-        "success": { "text": "Shelter behind {town}'s walls: it is the thing they wanted most.", "effects": { "warm": 10 } }
+        "success": { "text": "Shelter behind {town}'s walls: it is the thing they wanted most.", "effects": { "promise:walls": 1, "warm": 10 } }
       },
       "parley": {
         "label": "Call the watch out in force",
@@ -665,7 +664,7 @@
         "skill": "persuasion",
         "dc": 11,
         "every": 30,
-        "win": 12,
+        "win": 18,
         "crit": 4,
         "lose": -3,
         "effects": { "security": 6 },

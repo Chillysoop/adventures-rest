@@ -18,6 +18,12 @@ public sealed record RoadDef
     /// <summary>Days in a row every term must hold.</summary>
     public int Hold { get; init; }
 
+    /// <summary>May be claimed before the big bad shows itself (from Act I on): claiming it draws the big bad out.</summary>
+    public bool Early { get; init; }
+
+    /// <summary>Days the terms must hold when claimed early: the summoned big bad gets its chance to break them.</summary>
+    public int EarlyHold { get; init; }
+
     // Grand Alliance: how many allies, with minor powers among them (and nobody backing the big bad).
     public int Allies { get; init; }
 
@@ -77,6 +83,9 @@ public sealed class VictoryState
     public string Claimed { get; set; } = "";
     public int ClaimDay { get; set; }
 
+    /// <summary>An early claim drew the big bad out, so early roads' terms must hold <see cref="RoadDef.EarlyHold"/> days from then on.</summary>
+    public bool Summoned { get; set; }
+
     /// <summary>The road the campaign was won by; empty until then, or when it was lost.</summary>
     public string Road { get; set; } = "";
 }
@@ -108,7 +117,11 @@ public static class Victory
 
     /// <summary>Days the claimed road has held, and the days it still needs.</summary>
     public static int Held(Town town) => Claimed(town) == null ? 0 : town.Day - town.Victory.ClaimDay;
-    public static int DaysLeft(Town town) => Claimed(town) is { } d ? Math.Max(0, d.Hold - Held(town)) : 0;
+    public static int DaysLeft(Town town) => Claimed(town) is { } d ? Math.Max(0, HoldOf(town, d) - Held(town)) : 0;
+
+    /// <summary>The days a road's terms must hold, longer for a claim made before the big bad showed itself.</summary>
+    public static int HoldOf(Town town, RoadDef d) =>
+        d.Early && d.EarlyHold > 0 && (town.Victory.Summoned || !Ready(town)) ? d.EarlyHold : d.Hold;
 
     /// <summary>No road can be claimed until the big bad has been crowned.</summary>
     public static bool Ready(Town town) => town.Saga.Enabled && town.Outcome == null && Saga.BigBad(town) is { Alive: true };
@@ -184,7 +197,7 @@ public static class Victory
     {
         if (Def(town, id) is not { } d || d.Id == Slay || town.Victory.Off.Contains(id)) return "That road is not open.";
         if (town.Outcome != null) return "The campaign is over.";
-        if (!Ready(town)) return "The big bad has not shown itself.";
+        if (!Ready(town) && !(d.Early && Saga.CanSummon(town))) return "The big bad has not shown itself.";
         if (Claimed(town) != null) return $"{Claimed(town)!.Name} is already claimed.";
         if (!Met(town, d)) return "Not every term holds yet.";
         return null;
@@ -195,11 +208,15 @@ public static class Victory
     {
         if (ClaimBlocked(town, id) != null) return false;
         var d = Def(town, id)!;
-        var m = Saga.BigBad(town)!;
+        // An early road draws the big bad out before its time.
+        bool early = !Ready(town);
+        if (early) Saga.Summon(town);
+        if (Saga.BigBad(town) is not { Alive: true } m) return false;
         town.Victory.Claimed = d.Id;
         town.Victory.ClaimDay = town.Day;
+        if (early) town.Victory.Summoned = true;
         Menaces.Provoke(town, m);
-        town.Log(LedgerCategory.War, Importance.Major, Saga.Fill(town, $"{town.Name} claims the road of {d.Name}. Word reaches {{leader}}, and {{name}} gathers everything it has to stop it. Hold for {d.Hold} days.", m));
+        town.Log(LedgerCategory.War, Importance.Major, Saga.Fill(town, $"{town.Name} claims the road of {d.Name}. Word reaches {{leader}}, and {{name}} gathers everything it has to stop it. Hold for {HoldOf(town, d)} days.", m));
         return true;
     }
 
@@ -213,7 +230,7 @@ public static class Victory
             if (town.Outcome == null) town.Log(LedgerCategory.War, Importance.Major, $"The road of {d.Name} slips away: its terms no longer hold. It may be claimed again once they do.");
             return;
         }
-        if (Held(town) >= d.Hold) Win(town, d);
+        if (Held(town) >= HoldOf(town, d)) Win(town, d);
     }
 
     /// <summary>The campaign is won by this road: the big bad's threat ends its way.</summary>

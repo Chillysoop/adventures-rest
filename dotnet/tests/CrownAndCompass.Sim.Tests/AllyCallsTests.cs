@@ -77,6 +77,8 @@ public class AllyCallsTests
             Hours(sim, 17);
         }
         Assert.Equal(CallState.Holdout, c!.State);
+        // So low a friend walks away from the alliance at dawn (Accords); this one is kept for the test.
+        s.Allied = true;
         Assert.True(c.Price > 0);
         Assert.Equal("holding out", AllyCalls.CallBlocked(t, s));
 
